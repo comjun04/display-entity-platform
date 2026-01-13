@@ -1,9 +1,15 @@
 import { type FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FaGithub } from 'react-icons/fa6'
 import { LuArchiveRestore, LuFilePlus, LuFolderOpen } from 'react-icons/lu'
 import { useShallow } from 'zustand/shallow'
 
-import { Disclaimer, SpecialThanks, Title } from '@/components/brandings'
+import {
+  Disclaimer,
+  OpenSourceNotice,
+  SpecialThanks,
+  Title,
+} from '@/components/brandings'
 import { clearProject } from '@/lib/actions'
 import { openFileFromUserSelect } from '@/lib/file-handler'
 import AutosaveService from '@/lib/services/autosave.service'
@@ -131,6 +137,7 @@ const WelcomeDialog: FC = () => {
           </div>
           <Disclaimer />
           <SpecialThanks />
+          <OpenSourceNotice />
         </div>
       </div>
     </Dialog>
