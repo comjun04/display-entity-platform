@@ -9,6 +9,7 @@ import { getLogger } from '@/lib/logger'
 import { generateModelMeshIngredients } from '@/lib/resources/modelMesh'
 import { stripMinecraftPrefix } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEntityRefStore } from '@/stores/entityRefStore'
 import { useInstancedMeshStore } from '@/stores/instancedMeshStore'
 
 interface InstancedEntityProps {
@@ -153,6 +154,12 @@ export const InstancedModel: FC<InstacedModelProps> = ({
     }
 
     const { setMatrix } = useInstancedMeshStore.getState()
+
+    // There is a weird behavior where parent DisplayEntity group worldMatrix does not auto-update when running useFrame hook
+    // so force-update it and children (including this component) make worldMatrix useful again
+    // TODO: This should be a temporary fix, remove this when root issue gets fixed
+    const refData = useEntityRefStore.getState().entityRefs.get(entityId)!
+    refData.objectRef.current.updateWorldMatrix(false, true)
 
     // if object world matrix changed, set matrix of batch instance
     if (!objectRef.current.matrixWorld.equals(matrixRef.current)) {
