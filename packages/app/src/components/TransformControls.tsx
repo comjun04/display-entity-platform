@@ -224,6 +224,17 @@ const TransformControls: FC = () => {
         onMouseDown={() => {
           setUsingTransformControl(true)
           logger.debug('onMouseDown')
+
+          // TODO: iterate over selected entities, update position/rotation/scale
+          // from displayEntityStore state to selectedEntityInitialTransformation ref storage
+          // This fixes the bug where manually changing selected entities' transformation data using TransformationPanel on sidebar and moving with dragging
+          // causes selected entities to be teleported weirdly because selectedEntityInitialTransformation holds old values on displayEntityStore state change
+
+          for (const initialTransform of selectedEntityInitialTransformations.current) {
+            initialTransform.position.copy(initialTransform.object.position)
+            initialTransform.quaternion.copy(initialTransform.object.quaternion)
+            initialTransform.scale.copy(initialTransform.object.scale)
+          }
         }}
         onMouseUp={() => {
           setUsingTransformControl(false)
