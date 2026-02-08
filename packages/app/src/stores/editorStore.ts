@@ -51,6 +51,11 @@ type EditorState = {
     size?: PartialNumber3Tuple
   }) => void
 
+  transformControl: {
+    needsSelectedEntitiesTransformationUpdate: boolean
+    setSelectedEntitiesTransformationUpdateFlag: (value: boolean) => void
+  }
+
   projectDirty: boolean
   setProjectDirty: (isDirty: boolean) => void
 
@@ -149,6 +154,17 @@ export const useEditorStore = create(
             state.selectionBaseTransformation.size = scaleDraft
           }
         }),
+
+      transformControl: {
+        // This flag is used by TransformControls to refetch entities' initial transformation on changes outside of TransformControls
+        // acting as a global store-based signaling.
+        needsSelectedEntitiesTransformationUpdate: false,
+        setSelectedEntitiesTransformationUpdateFlag: (value) =>
+          set((state) => {
+            state.transformControl.needsSelectedEntitiesTransformationUpdate =
+              value
+          }),
+      },
 
       projectDirty: false,
       setProjectDirty: (isDirty) =>
