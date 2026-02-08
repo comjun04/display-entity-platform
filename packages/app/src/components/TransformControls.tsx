@@ -71,12 +71,15 @@ const TransformControls: FC = () => {
     rotationSpace,
     setUsingTransformControl,
     setSelectionBaseTransformation,
+    needsSelectedEntitiesInitialTransformationsUpdate,
   } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
       rotationSpace: state.rotationSpace,
       setUsingTransformControl: state.setUsingTransformControl,
       setSelectionBaseTransformation: state.setSelectionBaseTransformation,
+      needsSelectedEntitiesInitialTransformationsUpdate:
+        state.transformControl.needsSelectedEntitiesTransformationUpdate,
     })),
   )
 
@@ -116,28 +119,8 @@ const TransformControls: FC = () => {
     })
   }, [selectedEntityIds])
 
-  // reparent pivot when first selected entity is changed
-  useEffect(() => {
-    logger.debug('reparenting pivot')
-    const { rootGroupRefData } = useEntityRefStore.getState()
-
-    if (firstSelectedEntityRefData != null) {
-      const parent =
-        firstSelectedEntityRefData.objectRef.current.parent ??
-        rootGroupRefData.objectRef.current
-      parent.add(pivot)
-    } else {
-      const parent = rootGroupRefData.objectRef.current
-      parent.add(pivot)
-    }
-  }, [firstSelectedEntityRefData, pivot])
-
-  useEffect(() => {
-    updateBoundingBox()
-  }, [selectedEntityIds, updateBoundingBox])
-
-  useEffect(() => {
-    const { entities } = useDisplayEntityStore.getState()
+  const updateSelectedEntityInitialTransformations = useCallback(() => {
+    const { entities, selectedEntityIds } = useDisplayEntityStore.getState()
     const selectedEntities = [...entities.values()].filter((e) =>
       selectedEntityIds.includes(e.id),
     )
@@ -163,14 +146,51 @@ const TransformControls: FC = () => {
         scale: scaleVec,
       })
     }
+  }, [])
 
+  // reparent pivot when first selected entity is changed
+  useEffect(() => {
+    logger.debug('reparenting pivot')
+    const { rootGroupRefData } = useEntityRefStore.getState()
+
+    if (firstSelectedEntityRefData != null) {
+      const parent =
+        firstSelectedEntityRefData.objectRef.current.parent ??
+        rootGroupRefData.objectRef.current
+      parent.add(pivot)
+    } else {
+      const parent = rootGroupRefData.objectRef.current
+      parent.add(pivot)
+    }
+  }, [firstSelectedEntityRefData, pivot])
+
+  // update when selected entity changes
+  useEffect(() => {
+    updateSelectedEntityInitialTransformations()
+
+    // selection bounding box shows when multiple entities are selected
     if (selectedEntityIds.length > 1) {
       updateBoundingBox()
     }
   }, [
-    // entities,
     selectedEntityIds,
-    firstSelectedEntityId,
+    updateSelectedEntityInitialTransformations,
+    updateBoundingBox,
+  ])
+
+  // updates when selected entities' transformations changes outside of TransformControls
+  useEffect(() => {
+    if (needsSelectedEntitiesInitialTransformationsUpdate) {
+      updateSelectedEntityInitialTransformations()
+      updateBoundingBox()
+
+      useEditorStore
+        .getState()
+        .transformControl.setSelectedEntitiesTransformationUpdateFlag(false)
+    }
+  }, [
+    needsSelectedEntitiesInitialTransformationsUpdate,
+    updateSelectedEntityInitialTransformations,
     updateBoundingBox,
   ])
 
@@ -224,6 +244,17 @@ const TransformControls: FC = () => {
         onMouseDown={() => {
           setUsingTransformControl(true)
           logger.debug('onMouseDown')
+
+          // TODO: iterate over selected entities, update position/rotation/scale
+          // from displayEntityStore state to selectedEntityInitialTransformation ref storage
+          // This fixes the bug where manually changing selected entities' transformation data using TransformationPanel on sidebar and moving with dragging
+          // causes selected entities to be teleported weirdly because selectedEntityInitialTransformation holds old values on displayEntityStore state change
+
+          for (const initialTransform of selectedEntityInitialTransformations.current) {
+            initialTransform.position.copy(initialTransform.object.position)
+            initialTransform.quaternion.copy(initialTransform.object.quaternion)
+            initialTransform.scale.copy(initialTransform.object.scale)
+          }
         }}
         onMouseUp={() => {
           setUsingTransformControl(false)
