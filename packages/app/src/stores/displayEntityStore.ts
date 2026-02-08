@@ -393,6 +393,11 @@ export const useDisplayEntityStore = create(
           { beforeState: Number3Tuple; afterState: Number3Tuple }
         >()
 
+        const { selectedEntityIds } = state
+        let shouldUpdateTransformControlSelectedEntitiesData = false
+
+        let hasChanges = false
+
         data.forEach((item) => {
           const entity = state.entities.get(item.id)
           if (entity == null) return
@@ -411,6 +416,7 @@ export const useDisplayEntityStore = create(
             })
 
             entity.position = positionDraft
+            hasChanges = true
           }
           if (item.rotation != null) {
             const rotationDraft = entity.rotation.slice() as Number3Tuple
@@ -426,6 +432,7 @@ export const useDisplayEntityStore = create(
             })
 
             entity.rotation = rotationDraft
+            hasChanges = true
           }
           if (item.scale != null) {
             const scaleDraft = entity.size.slice() as Number3Tuple
@@ -441,8 +448,24 @@ export const useDisplayEntityStore = create(
             })
 
             entity.size = scaleDraft
+            hasChanges = true
+          }
+
+          if (
+            !shouldUpdateTransformControlSelectedEntitiesData &&
+            hasChanges &&
+            selectedEntityIds.includes(item.id)
+          ) {
+            // set update flag when this entity is selected and has entity transformation changes
+            shouldUpdateTransformControlSelectedEntitiesData = true
           }
         })
+
+        if (shouldUpdateTransformControlSelectedEntitiesData) {
+          useEditorStore
+            .getState()
+            .transformControl.setSelectedEntitiesTransformationUpdateFlag(true)
+        }
 
         if (!skipHistoryAdd) {
           const { entities } = get()
