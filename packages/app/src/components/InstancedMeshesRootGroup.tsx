@@ -4,6 +4,7 @@ import { type FC } from 'react'
 // import { useShallow } from 'zustand/shallow'
 import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 // import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import {
   type InstancedMeshBatchData,
@@ -43,7 +44,8 @@ const InstancedMeshBatch: FC<InstancedMeshBatchProps> = ({ batch }) => {
       _rebuildBatch(batch.key)
     }
 
-    if (batch.shouldComputeBounds) {
+    const { usingTransformControl } = useEditorStore.getState()
+    if (batch.shouldComputeBounds && !usingTransformControl) {
       _computeBoundsForBatch(batch.key)
     }
   })
