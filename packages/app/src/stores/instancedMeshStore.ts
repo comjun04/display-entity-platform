@@ -13,6 +13,7 @@ import { stripMinecraftPrefix } from '@/lib/utils'
 
 const DEFAULT_CAPACITY = 16
 const ZeroScaleMatrix4 = new Matrix4().makeScale(0, 0, 0)
+const ZeroScaleMatrix4Arr = ZeroScaleMatrix4.toArray()
 
 export type InstancedMeshBatchData = {
   status: 'loading' | 'ready'
@@ -81,7 +82,7 @@ export const useInstancedMeshStore = create<InstancedMeshStoreState>(
           /* eslint-enable @typescript-eslint/no-explicit-any */
           dummyMesh.instanceMatrix.setUsage(DynamicDrawUsage)
           dummyMesh.instanceMatrix.copyArray(
-            Array(16 * DEFAULT_CAPACITY).fill(0),
+            getFlattenedZeroScaleMatrixElements(DEFAULT_CAPACITY),
           )
           dummyMesh.instanceMatrix.needsUpdate = true
 
@@ -168,7 +169,7 @@ export const useInstancedMeshStore = create<InstancedMeshStoreState>(
             newMesh.instanceMatrix.setUsage(DynamicDrawUsage)
             newMesh.instanceMatrix.copyArray(oldBatch.mesh.instanceMatrix.array)
             newMesh.instanceMatrix.set(
-              Array(oldBatch.capacity * 16).fill(0),
+              getFlattenedZeroScaleMatrixElements(oldBatch.capacity),
               oldBatch.capacity * 16,
             )
             newMesh.instanceMatrix.needsUpdate = true
@@ -309,7 +310,9 @@ export const useInstancedMeshStore = create<InstancedMeshStoreState>(
         newMesh.instanceMatrix.setUsage(DynamicDrawUsage)
         newMesh.instanceMatrix.copyArray(oldBatch.mesh.instanceMatrix.array)
         newMesh.instanceMatrix.set(
-          Array((newMesh.count - oldBatch.mesh.count) * 16).fill(0),
+          getFlattenedZeroScaleMatrixElements(
+            newMesh.count - oldBatch.mesh.count,
+          ),
           oldBatch.mesh.count * 16,
         ) // hide newly created instance slots by default
         newMesh.instanceMatrix.needsUpdate = true
@@ -339,6 +342,17 @@ function errorLog(...content: unknown[]) {
   if (!__IS_DEV__ || shouldLog) {
     console.error(...content)
   }
+}
+
+/**
+ * Gets flattened matrix elements with all matrixes are correctly zero-scaled.
+ * @param matrixCount count of matrixes to include
+ * @returns array of flattened zero-scaled matrix elements
+ */
+function getFlattenedZeroScaleMatrixElements(matrixCount: number) {
+  return Array<typeof ZeroScaleMatrix4Arr>(matrixCount)
+    .fill(ZeroScaleMatrix4Arr)
+    .flat()
 }
 
 async function prepareMeshIngredients(resourceLocation: string) {
