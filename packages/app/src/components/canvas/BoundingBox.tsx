@@ -36,7 +36,6 @@ const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
 
     m.decompose(object.position, object.quaternion, object.scale)
     object.updateMatrix()
-    object.updateMatrixWorld() // needed to correctly calculate world matrix after this job
 
     // Prevent the helpers from blocking rays
     boxHelperRef.current.traverse((child) => (child.raycast = () => null))
@@ -47,6 +46,8 @@ const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
     if (parent != null) {
       parent.add(object)
     }
+
+    object.updateMatrixWorld() // needed to correctly calculate world matrix after all jobs
   })
 
   return (
