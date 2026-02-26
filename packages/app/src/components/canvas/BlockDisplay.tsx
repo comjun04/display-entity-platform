@@ -96,6 +96,8 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
                 entityId={id}
                 modelId={`${id};${resourceLocation};${idx}`}
                 resourceLocation={resourceLocation}
+                xRotation={modelToApply.x}
+                yRotation={modelToApply.y}
               />
             </>
           )

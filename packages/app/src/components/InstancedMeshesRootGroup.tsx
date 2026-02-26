@@ -1,27 +1,22 @@
 import { type ThreeEvent, useFrame } from '@react-three/fiber'
 import { type FC } from 'react'
 
-import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
-import { useEditorStore } from '@/stores/editorStore'
 import {
-  type InstancedMeshBatchData,
+  InstancedMeshManager,
+  type MinimalInstancedMeshBatchData,
   useInstancedMeshStore,
 } from '@/stores/instancedMeshStore'
 
-const logger = getLogger('InstancedMeshesRootGroup')
-
 interface InstancedMeshBatchProps {
-  batch: InstancedMeshBatchData
+  batchInfo: MinimalInstancedMeshBatchData
 }
-const InstancedMeshBatch: FC<InstancedMeshBatchProps> = ({ batch }) => {
+const InstancedMeshBatch: FC<InstancedMeshBatchProps> = ({ batchInfo }) => {
   const handleClick = (event: ThreeEvent<MouseEvent>, batchKey: string) => {
     // event.stopPropagation()
     console.log(event)
 
-    const latestBatchData = useInstancedMeshStore
-      .getState()
-      .batches.get(batchKey)
+    const latestBatchData = InstancedMeshManager.instance.getBatch(batchKey)
     if (latestBatchData == null) return
 
     const instance = [...latestBatchData.instances.values()].find(
@@ -33,24 +28,15 @@ const InstancedMeshBatch: FC<InstancedMeshBatchProps> = ({ batch }) => {
   }
 
   useFrame(() => {
-    const { _rebuildBatch, _computeBoundsForBatch } =
-      useInstancedMeshStore.getState()
-    if (batch.shouldRebuild) {
-      logger.debug(`Rebuilding batch ${batch.key}`)
-      _rebuildBatch(batch.key)
-    }
-
-    const { usingTransformControl } = useEditorStore.getState()
-    if (batch.shouldComputeBounds && !usingTransformControl) {
-      _computeBoundsForBatch(batch.key)
-    }
+    const instancedMeshManager = InstancedMeshManager.instance
+    instancedMeshManager.updateDirty()
   })
 
-  return batch.status === 'ready' ? (
+  return batchInfo.status === 'ready' ? (
     <primitive
-      key={batch.key}
-      object={batch.mesh}
-      onClick={(evt: ThreeEvent<MouseEvent>) => handleClick(evt, batch.key)}
+      key={batchInfo.key}
+      object={batchInfo.mesh}
+      onClick={(evt: ThreeEvent<MouseEvent>) => handleClick(evt, batchInfo.key)}
     />
   ) : null
 }
@@ -60,8 +46,8 @@ export const InstancedMeshesRootGroup: FC = () => {
   return (
     <>
       <group name="InstancedMesh Root Group">
-        {[...batches.values()].map((batch) => (
-          <InstancedMeshBatch key={batch.key} batch={batch} />
+        {[...batches.values()].map((batchInfo) => (
+          <InstancedMeshBatch key={batchInfo.key} batchInfo={batchInfo} />
         ))}
       </group>
     </>
