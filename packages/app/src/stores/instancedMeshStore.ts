@@ -287,10 +287,11 @@ export class InstancedMeshManager {
         batch.mesh.computeBoundingSphere()
       }
     }
+    if (touchedBatches.size > 0) {
+      invalidate()
+    }
 
     this.dirtyEntities.clear()
-
-    invalidate()
   }
 
   setRotation(modelId: string, newRotation: { x?: number; y?: number }) {
