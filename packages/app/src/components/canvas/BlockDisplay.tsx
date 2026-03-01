@@ -4,11 +4,22 @@ import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import useBlockStates from '@/hooks/useBlockStates'
+import { getMatchingBlockstateModel } from '@/lib/resources/blockstates'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import type { BlockstatesData } from '@/types/base'
 
 import BoundingBox from './BoundingBox'
 import Model from './Model'
 import { InstancedModel } from './instanced'
+
+const useMatchingBlockstatesModel = (data: {
+  blockstatesData?: BlockstatesData
+  blockstates: Record<string, string>
+}) => {
+  if (data.blockstatesData == null) return
+
+  return getMatchingBlockstateModel(data.blockstatesData, data.blockstates)
+}
 
 type BlockDisplayProps = {
   id: string
@@ -43,6 +54,10 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
   // =====
 
   const { data: blockstatesData } = useBlockStates(type)
+  const matchingBlockstatesModel = useMatchingBlockstatesModel({
+    blockstatesData,
+    blockstates: thisEntity?.kind === 'block' ? thisEntity.blockstates : {},
+  })
 
   if (thisEntity?.kind !== 'block') return null
 
@@ -55,32 +70,7 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
       />
 
       <group name="base2" onClick={onClick}>
-        {(blockstatesData?.models ?? []).map((model, idx) => {
-          let shouldRender = model.when.length < 1 // when 배열 안에 조건이 정의되어 있지 않다면 무조건 렌더링
-          for (const conditionObject of model.when) {
-            let andConditionCheckSuccess = true
-            for (const conditionKey in conditionObject) {
-              if (
-                thisEntity.blockstates[conditionKey] == null ||
-                !conditionObject[conditionKey].includes(
-                  thisEntity.blockstates[conditionKey],
-                )
-              ) {
-                andConditionCheckSuccess = false
-                break
-              }
-            }
-
-            if (andConditionCheckSuccess) {
-              shouldRender = true
-              break
-            }
-          }
-
-          if (!shouldRender) return null
-
-          // apply가 여러 개 있는 경우(랜덤), 맨 처음 것만 고정으로 사용
-          const modelToApply = model.apply[0]
+        {(matchingBlockstatesModel ?? []).map((modelToApply, idx) => {
           const resourceLocation = modelToApply.model
           return (
             <>

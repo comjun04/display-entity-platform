@@ -38,6 +38,8 @@ export function getMatchingBlockstateModel(
         }
       }
 
+      // when there are several `apply`s, (minecraft then randomly selects what to render)
+      // then just return the first one (hardcoded for display entities)
       return shouldRender ? model.apply[0] : null
     })
     .filter((d) => d != null)
