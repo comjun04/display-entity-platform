@@ -7,7 +7,7 @@ import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { type Number3Tuple } from '@/types/base'
 
-import BoundingBox from './BoundingBox'
+import { BoundingBoxForInstanced } from './BoundingBox'
 import Model from './Model'
 import PlayerHeadPainter from './PlayerHeadPainter'
 import { InstancedModel } from './instanced'
@@ -78,11 +78,13 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
     ],
   )
 
+  const modelResourceLocation = `item/${type}`
+
   return (
     <object3D ref={ref}>
       {/* {thisEntitySelected && <Helper type={BoxHelper} args={['gold']} />} */}
-      <BoundingBox
-        object={boundingBoxTargetRef.current ?? undefined}
+      <BoundingBoxForInstanced
+        modelResourceLocations={[modelResourceLocation]}
         visible={thisEntitySelected}
         color="#06b6d4" // tailwind v3 cyan-500
       />
@@ -95,7 +97,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
         /> */}
         <MemoizedInstancedModel
           entityId={id}
-          resourceLocation={`item/${type}`}
+          resourceLocation={modelResourceLocation}
           modelId={`${id};item/${type}`}
         />
       </group>

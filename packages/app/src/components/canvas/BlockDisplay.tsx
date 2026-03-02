@@ -8,7 +8,7 @@ import { getMatchingBlockstateModel } from '@/lib/resources/blockstates'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import type { BlockstatesData } from '@/types/base'
 
-import BoundingBox from './BoundingBox'
+import { BoundingBoxForInstanced } from './BoundingBox'
 import Model from './Model'
 import { InstancedModel } from './instanced'
 
@@ -16,7 +16,7 @@ const useMatchingBlockstatesModel = (data: {
   blockstatesData?: BlockstatesData
   blockstates: Record<string, string>
 }) => {
-  if (data.blockstatesData == null) return
+  if (data.blockstatesData == null) return []
 
   return getMatchingBlockstateModel(data.blockstatesData, data.blockstates)
 }
@@ -63,14 +63,14 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
 
   return (
     <group ref={ref}>
-      <BoundingBox
-        object={ref?.current}
+      <BoundingBoxForInstanced
+        modelResourceLocations={matchingBlockstatesModel.map((d) => d.model)}
         visible={thisEntitySelected}
         color="gold"
       />
 
       <group name="base2" onClick={onClick}>
-        {(matchingBlockstatesModel ?? []).map((modelToApply, idx) => {
+        {matchingBlockstatesModel.map((modelToApply, idx) => {
           const resourceLocation = modelToApply.model
           return (
             <>
