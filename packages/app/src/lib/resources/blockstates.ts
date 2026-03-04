@@ -292,6 +292,8 @@ export function calculateDefaultBlockstates(
       )
         ? blockstateValues.default
         : [...blockstateValues.states.values()][0]
+    } else {
+      newBlockstateObject[blockstateKey] = existingValue
     }
   }
 
