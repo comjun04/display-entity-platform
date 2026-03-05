@@ -16,7 +16,6 @@ import { loadModel } from '@/lib/resources/model'
 import { generateModelMeshIngredients } from '@/lib/resources/modelMesh'
 import { stripMinecraftPrefix } from '@/lib/utils'
 
-import { useEditorStore } from './editorStore'
 import { useEntityRefStore } from './entityRefStore'
 
 const DEFAULT_CAPACITY = 16
@@ -121,6 +120,7 @@ export class InstancedMeshManager {
           newMesh.instanceMatrix.setUsage(DynamicDrawUsage)
           newMesh.instanceMatrix.copyArray(batch.mesh.instanceMatrix.array)
           newMesh.instanceMatrix.needsUpdate = true
+          newMesh.geometry.computeBoundingBox()
 
           batch.mesh.dispose()
 
@@ -278,14 +278,10 @@ export class InstancedMeshManager {
       }
     }
 
-    const { usingTransformControl } = useEditorStore.getState()
     for (const batch of touchedBatches) {
       batch.mesh.instanceMatrix.needsUpdate = true
-      // skip expensive bounding box/sphere computing when selected entities are moving
-      if (!usingTransformControl) {
-        batch.mesh.computeBoundingBox()
-        batch.mesh.computeBoundingSphere()
-      }
+
+      batch.mesh.computeBoundingSphere()
     }
     if (touchedBatches.size > 0) {
       invalidate()
