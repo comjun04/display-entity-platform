@@ -9,7 +9,6 @@ import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import type { BlockstatesData } from '@/types/base'
 
 import { BoundingBoxForInstanced } from './BoundingBox'
-import Model from './Model'
 import { InstancedModel } from './instanced'
 
 const useMatchingBlockstatesModel = (data: {
@@ -32,7 +31,6 @@ type BlockDisplayProps = {
   objectRef?: MutableRefObject<Group>
 }
 
-const MemoizedModel = memo(Model)
 const MemoizedInstancedModel = memo(InstancedModel)
 
 const BlockDisplay: FC<BlockDisplayProps> = ({
@@ -72,24 +70,16 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
       <group name="base2" onClick={onClick}>
         {matchingBlockstatesModel.map((modelToApply, idx) => {
           const resourceLocation = modelToApply.model
+          const modelId = `${id};${resourceLocation};${idx}`
           return (
-            <>
-              {/* <MemoizedModel
-                key={idx}
-                initialResourceLocation={modelToApply.model}
-                xRotation={modelToApply.x}
-                yRotation={modelToApply.y}
-              /> */}
-
-              <MemoizedInstancedModel
-                key={idx}
-                entityId={id}
-                modelId={`${id};${resourceLocation};${idx}`}
-                resourceLocation={resourceLocation}
-                xRotation={modelToApply.x}
-                yRotation={modelToApply.y}
-              />
-            </>
+            <MemoizedInstancedModel
+              key={modelId}
+              entityId={id}
+              modelId={modelId}
+              resourceLocation={resourceLocation}
+              xRotation={modelToApply.x}
+              yRotation={modelToApply.y}
+            />
           )
         })}
       </group>
