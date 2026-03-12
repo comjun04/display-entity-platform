@@ -122,5 +122,7 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
     }
   }, [box, batches])
 
-  return <box3Helper args={[box, color]} visible={visible} />
+  return (
+    <box3Helper args={[box, color]} visible={visible} raycast={() => null} />
+  )
 }
