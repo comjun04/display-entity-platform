@@ -1,4 +1,4 @@
-import type { ThreeEvent } from '@react-three/fiber'
+import { type ThreeEvent, extend } from '@react-three/fiber'
 import { type FC, type MutableRefObject, memo, useMemo, useRef } from 'react'
 import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
@@ -8,9 +8,11 @@ import { useEditorStore } from '@/stores/editorStore'
 import { type Number3Tuple } from '@/types/base'
 
 import { BoundingBoxForInstanced } from './BoundingBox'
-import Model from './Model'
 import PlayerHeadPainter from './PlayerHeadPainter'
 import { InstancedModel } from './instanced'
+import { ZeroScaledGroup } from './zero-scaled-group'
+
+extend({ ZeroScaledGroup })
 
 type ItemDisplayProps = {
   id: string
@@ -22,7 +24,6 @@ type ItemDisplayProps = {
   objectRef?: MutableRefObject<Group>
 }
 
-const MemoizedModel = memo(Model)
 const MemoizedInstancedModel = memo(InstancedModel)
 
 const ItemDisplay: FC<ItemDisplayProps> = ({
@@ -81,7 +82,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
   const modelResourceLocation = `item/${type}`
 
   return (
-    <object3D ref={ref}>
+    <zeroScaledGroup ref={ref}>
       {/* {thisEntitySelected && <Helper type={BoxHelper} args={['gold']} />} */}
       <BoundingBoxForInstanced
         modelResourceLocations={[modelResourceLocation]}
@@ -108,7 +109,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
           playerHeadProperties={thisEntityPlayerHeadProperties}
         />
       )}
-    </object3D>
+    </zeroScaledGroup>
   )
 }
 

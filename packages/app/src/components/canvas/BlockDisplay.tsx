@@ -1,4 +1,4 @@
-import type { ThreeEvent } from '@react-three/fiber'
+import { type ThreeEvent, extend } from '@react-three/fiber'
 import { type FC, type MutableRefObject, memo } from 'react'
 import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
@@ -10,6 +10,9 @@ import type { BlockstatesData } from '@/types/base'
 
 import { BoundingBoxForInstanced } from './BoundingBox'
 import { InstancedModel } from './instanced'
+import { ZeroScaledGroup } from './zero-scaled-group'
+
+extend({ ZeroScaledGroup })
 
 const useMatchingBlockstatesModel = (data: {
   blockstatesData?: BlockstatesData
@@ -60,7 +63,7 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
   if (thisEntity?.kind !== 'block') return null
 
   return (
-    <group ref={ref}>
+    <zeroScaledGroup ref={ref}>
       <BoundingBoxForInstanced
         modelResourceLocations={matchingBlockstatesModel.map((d) => d.model)}
         visible={thisEntitySelected}
@@ -83,7 +86,7 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
           )
         })}
       </group>
-    </group>
+    </zeroScaledGroup>
   )
 }
 

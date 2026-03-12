@@ -6,6 +6,7 @@ import {
   type Material,
   Matrix4,
   Quaternion,
+  Vector3,
 } from 'three'
 import { MathUtils } from 'three'
 import { Euler } from 'three'
@@ -219,7 +220,8 @@ export class InstancedMeshManager {
     const { entityRefs } = useEntityRefStore.getState()
 
     const touchedBatches = new Set<InstancedMeshBatchData>()
-    const tempMatrix4 = new Matrix4()
+    const tempRotatedMatrix4 = new Matrix4()
+    const tempVector = new Vector3()
 
     for (const entityId of this.dirtyEntities) {
       const entityRefData = entityRefs.get(entityId)
@@ -249,28 +251,32 @@ export class InstancedMeshManager {
           continue
         }
 
-        // apply rotations
-        const rotatedMatrix = tempMatrix4
-          .identity()
-          .premultiply(ReverseHalfBlockTranslatedMatrix)
-          .premultiply(
-            // set x rotation
-            new Matrix4().makeRotationFromQuaternion(
-              new Quaternion().setFromEuler(
-                new Euler(MathUtils.degToRad(-instance.rotation[0]), 0, 0),
+        tempVector.setFromMatrixScale(matrix)
+        // continue processing if scale is not (0,0,0) which indicates uninitialized
+        if (tempVector.x !== 0 || tempVector.y !== 0 || tempVector.z !== 0) {
+          // apply rotations
+          tempRotatedMatrix4
+            .identity()
+            .premultiply(ReverseHalfBlockTranslatedMatrix)
+            .premultiply(
+              // set x rotation
+              new Matrix4().makeRotationFromQuaternion(
+                new Quaternion().setFromEuler(
+                  new Euler(MathUtils.degToRad(-instance.rotation[0]), 0, 0),
+                ),
               ),
-            ),
-          )
-          .premultiply(
-            // set y rotation
-            new Matrix4().makeRotationFromQuaternion(
-              new Quaternion().setFromEuler(
-                new Euler(0, MathUtils.degToRad(-instance.rotation[1]), 0),
+            )
+            .premultiply(
+              // set y rotation
+              new Matrix4().makeRotationFromQuaternion(
+                new Quaternion().setFromEuler(
+                  new Euler(0, MathUtils.degToRad(-instance.rotation[1]), 0),
+                ),
               ),
-            ),
-          )
-          .premultiply(HalfBlockTranslatedMatrix)
-        matrix.multiply(rotatedMatrix)
+            )
+            .premultiply(HalfBlockTranslatedMatrix)
+          matrix.multiply(tempRotatedMatrix4)
+        }
 
         batch.mesh.setMatrixAt(instance.instanceIndex, matrix)
 
