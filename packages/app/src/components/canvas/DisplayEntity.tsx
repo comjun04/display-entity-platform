@@ -1,4 +1,4 @@
-import { type ThreeEvent } from '@react-three/fiber'
+import { type ThreeEvent, invalidate } from '@react-three/fiber'
 import { type FC, useCallback, useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 
@@ -85,6 +85,7 @@ const DisplayEntity: FC<DisplayEntityProps> = ({ id }) => {
     thisEntityRefObj.scale.set(...thisEntity.size)
 
     thisEntityRefObj.updateMatrix() // need to update transformation properly when modifying outside render loop
+    invalidate()
   }, [
     thisEntity?.position,
     thisEntity?.rotation,
