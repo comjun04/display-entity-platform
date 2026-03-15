@@ -1,4 +1,3 @@
-import { Tooltip } from '@heroui/tooltip'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoMdTrash } from 'react-icons/io'
@@ -16,6 +15,11 @@ import {
 import { TbDiamondFilled } from 'react-icons/tb'
 import { useShallow } from 'zustand/shallow'
 
+import {
+  Tooltip as CustomTooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { toggleGroup } from '@/lib/actions'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -69,59 +73,59 @@ const QuickActionPanel: FC = () => {
       <div className="flex flex-row rounded-lg bg-black">
         {/* Desktop - show all 'Add Display Entity' buttons */}
         <div className="hidden flex-row sm:flex">
-          <Tooltip
-            content={t(($) => $.editor.topBar.blockDisplay)}
-            placement="bottom"
-            size="sm"
-            offset={0}
-            delay={300}
-            closeDelay={0}
-          >
-            <FloatingButton
-              disabled={headPainterEnabled}
-              onClick={() => {
-                setOpenedDialog('blockDisplaySelect')
-              }}
-            >
-              <IoCubeOutline size={24} />
-            </FloatingButton>
-          </Tooltip>
+          <CustomTooltip>
+            <TooltipTrigger
+              render={
+                <FloatingButton
+                  disabled={headPainterEnabled}
+                  onClick={() => {
+                    setOpenedDialog('blockDisplaySelect')
+                  }}
+                >
+                  <IoCubeOutline size={24} />
+                </FloatingButton>
+              }
+            />
+            <TooltipContent side="bottom">
+              {t(($) => $.editor.topBar.blockDisplay)}
+            </TooltipContent>
+          </CustomTooltip>
 
-          <Tooltip
-            content={t(($) => $.editor.topBar.itemDisplay)}
-            placement="bottom"
-            size="sm"
-            offset={0}
-            delay={300}
-            closeDelay={0}
-          >
-            <FloatingButton
-              onClick={() => {
-                setOpenedDialog('itemDisplaySelect')
-              }}
-            >
-              <TbDiamondFilled size={24} />
-            </FloatingButton>
-          </Tooltip>
+          <CustomTooltip>
+            <TooltipTrigger
+              render={
+                <FloatingButton
+                  onClick={() => {
+                    setOpenedDialog('itemDisplaySelect')
+                  }}
+                >
+                  <TbDiamondFilled size={24} />
+                </FloatingButton>
+              }
+            />
+            <TooltipContent side="bottom">
+              {t(($) => $.editor.topBar.itemDisplay)}
+            </TooltipContent>
+          </CustomTooltip>
 
-          <Tooltip
-            content={t(($) => $.editor.topBar.textDisplay)}
-            placement="bottom"
-            size="sm"
-            offset={0}
-            delay={300}
-            closeDelay={0}
-          >
-            <FloatingButton
-              onClick={() => {
-                useDisplayEntityStore
-                  .getState()
-                  .createNew([{ kind: 'text', text: 'Enter Text' }])
-              }}
-            >
-              <LuType size={24} />
-            </FloatingButton>
-          </Tooltip>
+          <CustomTooltip>
+            <TooltipTrigger
+              render={
+                <FloatingButton
+                  onClick={() => {
+                    useDisplayEntityStore
+                      .getState()
+                      .createNew([{ kind: 'text', text: 'Enter Text' }])
+                  }}
+                >
+                  <LuType size={24} />
+                </FloatingButton>
+              }
+            />
+            <TooltipContent side="bottom">
+              {t(($) => $.editor.topBar.textDisplay)}
+            </TooltipContent>
+          </CustomTooltip>
         </div>
         {/* Mobile - show dropdown menu for 'Add Display Entity' action */}
         <DropdownMenu>
@@ -172,108 +176,110 @@ const QuickActionPanel: FC = () => {
 
         <div className="my-2 border-l border-gray-700" />
 
-        <Tooltip
-          content={t(($) => $.editor.topBar.addPlayerHead)}
-          placement="bottom"
-          size="sm"
-          offset={0}
-          delay={300}
-          closeDelay={0}
-        >
-          <FloatingButton
-            onClick={() => {
-              useDisplayEntityStore
-                .getState()
-                .createNew([{ kind: 'item', type: 'player_head' }])
-            }}
-          >
-            <LuSmile size={24} />
-          </FloatingButton>
-        </Tooltip>
+        <CustomTooltip>
+          <TooltipTrigger
+            render={
+              <FloatingButton
+                onClick={() => {
+                  useDisplayEntityStore
+                    .getState()
+                    .createNew([{ kind: 'item', type: 'player_head' }])
+                }}
+              >
+                <LuSmile size={24} />
+              </FloatingButton>
+            }
+          />
+          <TooltipContent side="bottom">
+            {t(($) => $.editor.topBar.addPlayerHead)}
+          </TooltipContent>
+        </CustomTooltip>
 
-        <Tooltip
-          content={t(($) => $.editor.topBar.headPainterMode)}
-          placement="bottom"
-          size="sm"
-          offset={0}
-          delay={300}
-          closeDelay={0}
-        >
-          <FloatingButton
-            onClick={() => {
-              const {
-                headPainter: {
-                  enabled: headPainterEnabled,
-                  setEnabled: setHeadPainterEnabled,
-                },
-              } = useEditorStore.getState()
-              setHeadPainterEnabled(!headPainterEnabled)
-            }}
-          >
-            <LuBrush size={24} />
-          </FloatingButton>
-        </Tooltip>
+        <CustomTooltip>
+          <TooltipTrigger
+            render={
+              <FloatingButton
+                onClick={() => {
+                  const {
+                    headPainter: {
+                      enabled: headPainterEnabled,
+                      setEnabled: setHeadPainterEnabled,
+                    },
+                  } = useEditorStore.getState()
+                  setHeadPainterEnabled(!headPainterEnabled)
+                }}
+              >
+                <LuBrush size={24} />
+              </FloatingButton>
+            }
+          />
+          <TooltipContent side="bottom">
+            {t(($) => $.editor.topBar.headPainterMode)}
+          </TooltipContent>
+        </CustomTooltip>
 
         <div className="my-2 border-l border-gray-700" />
 
-        <Tooltip
-          content={t(($) => $.editor.topBar.duplicate)}
-          placement="bottom"
-          size="sm"
-          offset={0}
-          delay={300}
-          closeDelay={0}
-        >
-          <FloatingButton
-            disabled={selectedEntityIds.length < 1}
-            onClick={() => useDisplayEntityStore.getState().duplicateSelected()}
-          >
-            <LuCopyPlus size={24} />
-          </FloatingButton>
-        </Tooltip>
+        <CustomTooltip>
+          <TooltipTrigger
+            render={
+              <FloatingButton
+                disabled={selectedEntityIds.length < 1}
+                onClick={() =>
+                  useDisplayEntityStore.getState().duplicateSelected()
+                }
+              >
+                <LuCopyPlus size={24} />
+              </FloatingButton>
+            }
+          />
+          <TooltipContent side="bottom">
+            {t(($) => $.editor.topBar.duplicate)}
+          </TooltipContent>
+        </CustomTooltip>
 
-        <Tooltip
-          content={t(($) =>
-            singleSelectedEntityIsGrouped
-              ? $.editor.topBar.ungroup
-              : $.editor.topBar.group,
-          )}
-          placement="bottom"
-          size="sm"
-          offset={0}
-          delay={300}
-          closeDelay={0}
-        >
-          {singleSelectedEntityIsGrouped ? (
-            <FloatingButton onClick={toggleGroup}>
-              <LuUngroup size={24} />
-            </FloatingButton>
-          ) : (
-            <FloatingButton
-              disabled={selectedEntityIds.length < 1}
-              onClick={toggleGroup}
-            >
-              <LuGroup size={24} />
-            </FloatingButton>
-          )}
-        </Tooltip>
+        <CustomTooltip>
+          <TooltipTrigger
+            render={
+              singleSelectedEntityIsGrouped ? (
+                <FloatingButton onClick={toggleGroup}>
+                  <LuUngroup size={24} />
+                </FloatingButton>
+              ) : (
+                <FloatingButton
+                  disabled={selectedEntityIds.length < 1}
+                  onClick={toggleGroup}
+                >
+                  <LuGroup size={24} />
+                </FloatingButton>
+              )
+            }
+          />
+          <TooltipContent side="bottom">
+            {t(($) =>
+              singleSelectedEntityIsGrouped
+                ? $.editor.topBar.ungroup
+                : $.editor.topBar.group,
+            )}
+          </TooltipContent>
+        </CustomTooltip>
 
-        <Tooltip
-          content={t(($) => $.editor.topBar.delete)}
-          placement="bottom"
-          size="sm"
-          offset={0}
-          delay={300}
-          closeDelay={0}
-        >
-          <FloatingButton
-            onClick={() => {
-              deleteEntities(selectedEntityIds)
-            }}
-          >
-            <IoMdTrash size={24} />
-          </FloatingButton>
-        </Tooltip>
+        <CustomTooltip>
+          <TooltipTrigger
+            render={
+              <FloatingButton
+                onClick={() => {
+                  deleteEntities(selectedEntityIds)
+                }}
+              >
+                <IoMdTrash size={24} />
+              </FloatingButton>
+            }
+          />
+          <TooltipContent side="bottom">
+            {t(($) => $.editor.topBar.delete)}
+          </TooltipContent>
+        </CustomTooltip>
       </div>
     </div>
   )
