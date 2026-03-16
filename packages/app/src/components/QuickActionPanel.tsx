@@ -16,7 +16,7 @@ import { TbDiamondFilled } from 'react-icons/tb'
 import { useShallow } from 'zustand/shallow'
 
 import {
-  Tooltip as CustomTooltip,
+  Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
@@ -73,7 +73,7 @@ const QuickActionPanel: FC = () => {
       <div className="flex flex-row rounded-lg bg-black">
         {/* Desktop - show all 'Add Display Entity' buttons */}
         <div className="hidden flex-row sm:flex">
-          <CustomTooltip>
+          <Tooltip>
             <TooltipTrigger
               render={
                 <FloatingButton
@@ -89,9 +89,9 @@ const QuickActionPanel: FC = () => {
             <TooltipContent side="bottom">
               {t(($) => $.editor.topBar.blockDisplay)}
             </TooltipContent>
-          </CustomTooltip>
+          </Tooltip>
 
-          <CustomTooltip>
+          <Tooltip>
             <TooltipTrigger
               render={
                 <FloatingButton
@@ -106,9 +106,9 @@ const QuickActionPanel: FC = () => {
             <TooltipContent side="bottom">
               {t(($) => $.editor.topBar.itemDisplay)}
             </TooltipContent>
-          </CustomTooltip>
+          </Tooltip>
 
-          <CustomTooltip>
+          <Tooltip>
             <TooltipTrigger
               render={
                 <FloatingButton
@@ -125,7 +125,7 @@ const QuickActionPanel: FC = () => {
             <TooltipContent side="bottom">
               {t(($) => $.editor.topBar.textDisplay)}
             </TooltipContent>
-          </CustomTooltip>
+          </Tooltip>
         </div>
         {/* Mobile - show dropdown menu for 'Add Display Entity' action */}
         <DropdownMenu>
@@ -179,7 +179,7 @@ const QuickActionPanel: FC = () => {
 
         <div className="my-2 border-l border-gray-700" />
 
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton
@@ -196,9 +196,9 @@ const QuickActionPanel: FC = () => {
           <TooltipContent side="bottom">
             {t(($) => $.editor.topBar.addPlayerHead)}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
 
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton
@@ -219,11 +219,11 @@ const QuickActionPanel: FC = () => {
           <TooltipContent side="bottom">
             {t(($) => $.editor.topBar.headPainterMode)}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
 
         <div className="my-2 border-l border-gray-700" />
 
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton
@@ -239,9 +239,9 @@ const QuickActionPanel: FC = () => {
           <TooltipContent side="bottom">
             {t(($) => $.editor.topBar.duplicate)}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
 
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             render={
               singleSelectedEntityIsGrouped ? (
@@ -265,9 +265,9 @@ const QuickActionPanel: FC = () => {
                 : $.editor.topBar.group,
             )}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
 
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton
@@ -282,7 +282,7 @@ const QuickActionPanel: FC = () => {
           <TooltipContent side="bottom">
             {t(($) => $.editor.topBar.delete)}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
       </div>
     </div>
   )

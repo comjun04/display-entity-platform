@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { LuCheck, LuEraser, LuUndo } from 'react-icons/lu'
 
 import {
-  Tooltip as CustomTooltip,
+  Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
@@ -155,7 +155,7 @@ const ShortcutKeyInput: FC<ShortcutKeyInputProps> = ({ id }) => {
           editMode && 'group-hover:pointer-events-auto group-hover:opacity-100',
         )}
       >
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             delay={0}
             render={
@@ -175,9 +175,9 @@ const ShortcutKeyInput: FC<ShortcutKeyInputProps> = ({ id }) => {
           <TooltipContent side="top">
             {t(($) => $.dialog.settings.page.shortcuts.buttons.undo)}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
 
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             delay={0}
             render={
@@ -197,9 +197,9 @@ const ShortcutKeyInput: FC<ShortcutKeyInputProps> = ({ id }) => {
           <TooltipContent side="top">
             {t(($) => $.dialog.settings.page.shortcuts.buttons.unset)}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
 
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             delay={0}
             render={
@@ -221,7 +221,7 @@ const ShortcutKeyInput: FC<ShortcutKeyInputProps> = ({ id }) => {
           <TooltipContent side="top">
             {t(($) => $.dialog.settings.page.shortcuts.buttons.save)}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
       </div>
     </div>
   )

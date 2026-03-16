@@ -11,7 +11,7 @@ import {
 import { useShallow } from 'zustand/shallow'
 
 import {
-  Tooltip as CustomTooltip,
+  Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
@@ -169,7 +169,7 @@ const LeftButtonPanel: FC = () => {
       </DropdownMenu>
 
       <div className="flex flex-row gap-2">
-        <CustomTooltip>
+        <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton onClick={() => undoHistory()}>
@@ -182,8 +182,8 @@ const LeftButtonPanel: FC = () => {
               shortcutSettings['general.undo'] ?? '',
             )})`}
           </TooltipContent>
-        </CustomTooltip>
-        <CustomTooltip>
+        </Tooltip>
+        <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton onClick={() => redoHistory()}>
@@ -196,10 +196,10 @@ const LeftButtonPanel: FC = () => {
               shortcutSettings['general.redo'] ?? '',
             )})`}
           </TooltipContent>
-        </CustomTooltip>
+        </Tooltip>
       </div>
 
-      <CustomTooltip>
+      <Tooltip>
         <TooltipTrigger
           render={
             <FloatingButton
@@ -216,9 +216,9 @@ const LeftButtonPanel: FC = () => {
             shortcutSettings['editor.translateMode'] ?? '',
           )})`}
         </TooltipContent>
-      </CustomTooltip>
+      </Tooltip>
 
-      <CustomTooltip>
+      <Tooltip>
         <TooltipTrigger
           render={
             <FloatingButton
@@ -235,9 +235,9 @@ const LeftButtonPanel: FC = () => {
             shortcutSettings['editor.rotateMode'] ?? '',
           )})`}
         </TooltipContent>
-      </CustomTooltip>
+      </Tooltip>
 
-      <CustomTooltip>
+      <Tooltip>
         <TooltipTrigger
           render={
             <FloatingButton
@@ -254,9 +254,9 @@ const LeftButtonPanel: FC = () => {
             shortcutSettings['editor.scaleMode'] ?? '',
           )})`}
         </TooltipContent>
-      </CustomTooltip>
+      </Tooltip>
 
-      <CustomTooltip>
+      <Tooltip>
         <TooltipTrigger
           render={
             <FloatingButton
@@ -271,7 +271,7 @@ const LeftButtonPanel: FC = () => {
         <TooltipContent side="right">
           {t(($) => $.editor.changeSpaceMode)}
         </TooltipContent>
-      </CustomTooltip>
+      </Tooltip>
 
       {/* dummy element just to make spacing */}
       <div />
