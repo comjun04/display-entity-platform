@@ -16,7 +16,6 @@
     "@headlessui/react": "^2.2.7",
     "@heroui/system": "^2.4.25",
     "@heroui/theme": "2.4.25",
-    "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-tooltip": "^1.1.7",
     "@react-hookz/web": "^25.1.1",
     "@react-three/drei": "^9.114.3",
