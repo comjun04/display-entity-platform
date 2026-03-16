@@ -1,9 +1,10 @@
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import Sketch from '@uiw/react-color-sketch'
 import { type JSX, forwardRef } from 'react'
 
 import { cn } from '@/lib/utils'
 import '@/styles/colorpicker-darkmode.css'
+
+import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 const ColorPickerInput = forwardRef<
   HTMLDivElement,
@@ -37,16 +38,17 @@ const ColorPickerInput = forwardRef<
         value={'#' + transformedValueHex}
       />
       <Popover>
-        <PopoverButton
-          className="h-full rounded-r border-2 border-neutral-700 px-4"
+        <PopoverTrigger
+          className="rounded-r border-2 border-neutral-700 px-4"
           style={{
             backgroundColor: `#${transformedValueHex}`,
           }}
         />
-        <PopoverPanel
-          transition
-          anchor="top end"
-          className="z-50 transition duration-200 data-closed:translate-y-1 data-closed:opacity-0"
+        <PopoverContent
+          // anchor="top end"
+          align="end"
+          side="top"
+          className="z-50 w-auto p-0"
         >
           <Sketch
             color={transformedValueHex}
@@ -67,7 +69,7 @@ const ColorPickerInput = forwardRef<
               }
             }}
           />
-        </PopoverPanel>
+        </PopoverContent>
       </Popover>
     </div>
   )
