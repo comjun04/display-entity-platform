@@ -129,12 +129,15 @@ const QuickActionPanel: FC = () => {
         </div>
         {/* Mobile - show dropdown menu for 'Add Display Entity' action */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild disabled={headPainterEnabled}>
-            <FloatingButton className="flex flex-row items-center gap-1 sm:hidden">
-              <LuPlus size={24} />
-              <LuChevronDown size={16} />
-            </FloatingButton>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={
+              <FloatingButton className="flex flex-row items-center gap-1 sm:hidden">
+                <LuPlus size={24} />
+                <LuChevronDown size={16} />
+              </FloatingButton>
+            }
+            disabled={headPainterEnabled}
+          />
           <DropdownMenuContent
             side="bottom"
             align="start"

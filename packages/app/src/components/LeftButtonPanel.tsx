@@ -74,16 +74,18 @@ const LeftButtonPanel: FC = () => {
   return (
     <div className="absolute top-0 left-0 z-5 mt-4 ml-4 flex flex-col items-start gap-2">
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <FloatingButton>
-            <LuMenu size={24} />
-          </FloatingButton>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <FloatingButton>
+              <LuMenu size={24} />
+            </FloatingButton>
+          }
+        />
         <DropdownMenuContent
           side="right"
           sideOffset={10}
           align="start"
-          className="data-[state=open]:slide-in-from-left-0 origin-top-left sm:min-w-52"
+          className="origin-top-left sm:min-w-52"
         >
           <DropdownMenuItem
             className="w-full"
