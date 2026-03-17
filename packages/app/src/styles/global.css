@@ -4,10 +4,6 @@ layer(base);
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@plugin '../../src/hero.ts';
-
-@source '../../../../node_modules/@heroui/theme/dist/components/popover.js';
-
 /* darkMode: class */
 @custom-variant dark (&:is(.dark *));
 
@@ -30,7 +26,7 @@ layer(base);
 
   /* set button default cursor to `pointer` */
   button:not(:disabled),
-  [role="button"]:not(:disabled) {
+  [role='button']:not(:disabled) {
     cursor: pointer;
   }
 }
