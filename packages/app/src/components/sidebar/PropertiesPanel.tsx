@@ -25,7 +25,7 @@ import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import { ColorPickerInput } from '../ui/ColorPicker'
-import Switch from '../ui/Switch'
+import { Switch } from '../ui/switch'
 
 const displayValue: (ModelDisplayPositionKey | null)[] = [
   null,
@@ -372,10 +372,10 @@ const TextDisplayProperties: FC = () => {
       </div>
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">default_background</label>
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col justify-center">
           <Switch
             checked={singleSelectedEntity.defaultBackground}
-            onChange={(value) => {
+            onCheckedChange={(value) => {
               useDisplayEntityStore
                 .getState()
                 .setTextDisplayProperties(singleSelectedEntity.id, {
@@ -387,10 +387,10 @@ const TextDisplayProperties: FC = () => {
       </div>
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">see_through</label>
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col justify-center">
           <Switch
             checked={singleSelectedEntity.seeThrough}
-            onChange={(value) => {
+            onCheckedChange={(value) => {
               useDisplayEntityStore
                 .getState()
                 .setTextDisplayProperties(singleSelectedEntity.id, {
@@ -402,10 +402,10 @@ const TextDisplayProperties: FC = () => {
       </div>
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">shadow</label>
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col justify-center">
           <Switch
             checked={singleSelectedEntity.shadow}
-            onChange={(value) => {
+            onCheckedChange={(value) => {
               useDisplayEntityStore
                 .getState()
                 .setTextDisplayProperties(singleSelectedEntity.id, {
