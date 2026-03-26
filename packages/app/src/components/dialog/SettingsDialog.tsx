@@ -40,11 +40,9 @@ const SettingsDialog: FC = () => {
       title={t(($) => $.dialog.settings.title)}
       open={isOpen}
       onClose={closeActiveDialog}
+      className={cn(selectedPage === 'appearance' && 'bg-background/60')}
       backdropClassName={cn(
         selectedPage === 'appearance' && 'sm:backdrop-blur-none',
-      )}
-      innerPanelClassName={cn(
-        selectedPage === 'appearance' && 'bg-neutral-800/60',
       )}
     >
       <div className="flex h-full w-full flex-col overflow-auto sm:flex-row">

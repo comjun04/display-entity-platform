@@ -308,7 +308,6 @@ const ExportToMinecraftDialog: FC = () => {
       title={t(($) => $.dialog.exportToMinecraft.title)}
       open={isOpen}
       onClose={closeActiveDialog}
-      className="relative z-50"
     >
       <div className="mt-2 rounded-lg bg-neutral-700 p-2">
         <TagValidatorInput onChange={setBaseTag} />

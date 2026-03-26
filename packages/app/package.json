@@ -23,6 +23,7 @@
     "@uiw/react-color-sketch": "^2.7.1",
     "async-mutex": "^0.5.0",
     "camera-controls": "^2.9.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.0.5",
     "i18next": "^25.5.2",

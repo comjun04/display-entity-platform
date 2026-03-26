@@ -116,7 +116,6 @@ const ItemDisplaySelectDialog: FC = () => {
       title={t(($) => $.dialog.itemDisplaySelect.title)}
       open={isOpen}
       onClose={closeActiveDialog}
-      className="relative z-50"
     >
       <div className="flex flex-row items-center gap-4">
         <span>{t(($) => $.dialog.itemDisplaySelect.search.label)}</span>

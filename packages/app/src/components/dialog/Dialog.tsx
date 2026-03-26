@@ -1,20 +1,25 @@
-import {
-  DialogBackdrop,
-  DialogPanel,
-  DialogTitle,
-  Dialog as OriginalDialog,
-} from '@headlessui/react'
 import type { FC, ReactNode } from 'react'
-import { LuX } from 'react-icons/lu'
 
 import { cn } from '@/lib/utils'
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog'
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Dialog as DialogUIRoot,
+} from '../ui/dialog'
 
 type DialogProps = {
   open: boolean
   onClose?: () => void
   className?: string
   backdropClassName?: string
-  innerPanelClassName?: string
   // whether to use large static size for dialog.
   // dialog will be fullscreen on mobile when this is set to true
   useLargeStaticSize?: boolean
@@ -30,60 +35,51 @@ const Dialog: FC<DialogProps> = ({
   onClose,
   className,
   backdropClassName,
-  innerPanelClassName,
   useLargeStaticSize = true,
   modal = false,
   title,
   children,
 }) => {
-  return (
-    <OriginalDialog
+  return modal ? (
+    <AlertDialog
       open={open}
-      onClose={() => {
-        if (!modal) {
+      onOpenChange={(value) => {
+        if (!value) {
           onClose?.()
         }
       }}
-      className={cn('relative z-50', className)}
     >
-      <DialogBackdrop
-        transition
-        className={cn(
-          'fixed inset-0 bg-black/30 duration-200 ease-out data-closed:opacity-0',
-          useLargeStaticSize ? 'sm:backdrop-blur-xs' : 'backdrop-blur-xs',
-          backdropClassName,
-        )}
-      />
+      <AlertDialogContent className={className}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+        </AlertDialogHeader>
 
-      <div
+        {children}
+      </AlertDialogContent>
+    </AlertDialog>
+  ) : (
+    <DialogUIRoot
+      open={open}
+      onOpenChange={(value) => {
+        if (!value) {
+          onClose?.()
+        }
+      }}
+    >
+      <DialogContent
         className={cn(
-          'fixed inset-0 flex w-screen items-center justify-center',
-          useLargeStaticSize ? 'sm:p-4' : 'p-4',
+          useLargeStaticSize && 'h-[calc(100%-2rem)] sm:h-[75vh]',
+          className,
         )}
+        backdropClassName={backdropClassName}
       >
-        <DialogPanel
-          transition
-          className={cn(
-            'flex w-full max-w-(--breakpoint-md) flex-col gap-2 bg-neutral-800 p-4 duration-200 ease-out select-none data-closed:scale-95 data-closed:opacity-0',
-            useLargeStaticSize
-              ? 'h-full sm:h-[75vh] sm:rounded-xl'
-              : 'rounded-xl',
-            innerPanelClassName,
-          )}
-        >
-          <DialogTitle className="flex flex-row items-center">
-            <span className="grow text-2xl font-bold">{title}</span>
-            {!modal && (
-              <button onClick={onClose}>
-                <LuX size={24} />
-              </button>
-            )}
-          </DialogTitle>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
 
-          {children}
-        </DialogPanel>
-      </div>
-    </OriginalDialog>
+        {children}
+      </DialogContent>
+    </DialogUIRoot>
   )
 }
 

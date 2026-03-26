@@ -40,18 +40,13 @@ const WelcomeDialog: FC = () => {
   }
 
   return (
-    <Dialog
-      title=""
-      open={isOpen}
-      onClose={closeDialog}
-      className="relative z-50"
-    >
+    <Dialog title="" open={isOpen} onClose={closeDialog}>
       <div className="flex h-full flex-col gap-2 overflow-auto">
         <Title />
         <div className="h-full overflow-y-auto pt-4 pb-8">
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex-1">
-              {/* v1.3.0 */}
+              {/* v0.0.0 */}
               <div className="text-2xl text-sky-200">v{__VERSION__}</div>
               <div className="ml-4 text-sm text-neutral-400">
                 <ul className="list-disc">
