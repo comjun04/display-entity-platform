@@ -16,6 +16,9 @@ import {
 } from '../ui/dialog'
 
 type DialogProps = {
+  // specifies the type of dialog. `alert` uses AlertDialog to render.
+  // Changing this when mounted causes dialog to unmount and remount! (uses different component to render)
+  type?: 'default' | 'alert'
   open: boolean
   onClose?: () => void
   className?: string
@@ -23,24 +26,26 @@ type DialogProps = {
   // whether to use large static size for dialog.
   // dialog will be fullscreen on mobile when this is set to true
   useLargeStaticSize?: boolean
-  // whether to enable modal mode.
-  // modal mode disables closing dialog by clicking backdrop and removes close button
-  modal?: boolean
+  // whether to prevent user from closing the dialog.
+  // disables closing dialog by clicking backdrop and removes close button
+  // this option is useless when using `alert` type dialog, as alert dialogs passively has this feature
+  disableUserClose?: boolean
   title?: string
   children?: ReactNode
 }
 
 const Dialog: FC<DialogProps> = ({
+  type = 'default',
   open,
   onClose,
   className,
   backdropClassName,
   useLargeStaticSize = true,
-  modal = false,
+  disableUserClose = false,
   title,
   children,
 }) => {
-  return modal ? (
+  return type === 'alert' ? (
     <AlertDialog
       open={open}
       onOpenChange={(value) => {
@@ -65,6 +70,7 @@ const Dialog: FC<DialogProps> = ({
           onClose?.()
         }
       }}
+      disablePointerDismissal={disableUserClose}
     >
       <DialogContent
         className={cn(
@@ -72,6 +78,7 @@ const Dialog: FC<DialogProps> = ({
           className,
         )}
         backdropClassName={backdropClassName}
+        showCloseButton={!disableUserClose}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

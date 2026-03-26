@@ -26,11 +26,11 @@ const PromptDialog: FC = () => {
 
   return (
     <Dialog
+      type="alert"
       title={modalData.title}
       open={isOpen}
       onClose={closeDialog}
       useLargeStaticSize={false}
-      modal
     >
       <AlertDialogDescription>{modalData.content}</AlertDialogDescription>
       <AlertDialogFooter>
