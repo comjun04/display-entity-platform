@@ -54,7 +54,13 @@ const Dialog: FC<DialogProps> = ({
         }
       }}
     >
-      <AlertDialogContent className={className}>
+      <AlertDialogContent
+        className={cn(
+          useLargeStaticSize && 'h-[calc(100%-2rem)] sm:h-[75vh]',
+          className,
+        )}
+        backdropClassName={backdropClassName}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
         </AlertDialogHeader>
