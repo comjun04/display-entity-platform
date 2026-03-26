@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { Toaster } from './ui/Sonner'
 
 const ToastContainer: FC = () => {
-  // headless ui uses portal to render dialogs and such
+  // ui frameworks uses portal to render dialogs and such
   // which prevents toast elements from receiving pointer events without using portal itself
   return createPortal(
     <div id="ToastContainer">
