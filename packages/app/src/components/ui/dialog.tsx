@@ -62,8 +62,8 @@ function DialogContent({
           <DialogPrimitive.Close
             data-slot="dialog-close"
             render={
-              <button className="absolute top-2 right-2">
-                <LuX />
+              <button className="absolute top-3 right-3">
+                <LuX size={24} />
                 <span className="sr-only">Close</span>
               </button>
             }
@@ -113,7 +113,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-base leading-none font-medium', className)}
+      className={cn('text-xl leading-none font-medium', className)}
       {...props}
     />
   )
