@@ -72,7 +72,15 @@ export type BlockstatesData = {
 }
 
 export type ModelData = {
-  textures: Record<string, string>
+  textures: Record<
+    string,
+    | string
+    | {
+        // new textures map format added in minecraft 26.1
+        sprite: string
+        force_translucent: boolean
+      }
+  >
   textureSize?: [number, number]
   display: Record<
     ModelDisplayPositionKey,

@@ -12,6 +12,7 @@ import { mergeBufferGeometries, mergeVertices } from 'three-stdlib'
 
 import { isValidTextureUrl, stripMinecraftPrefix } from '@/lib/utils'
 import type {
+  ModelData,
   ModelElement,
   ModelFaceKey,
   Number3Tuple,
@@ -27,12 +28,15 @@ const getTextureResourceLocation = (
   textureResourceLocationMap: Record<string, string>,
   key: string,
 ) => {
-  if (key.startsWith('#'))
+  if (key.startsWith('#')) {
+    // provided key is a reference
     return getTextureResourceLocation(textureResourceLocationMap, key.slice(1))
+  }
 
   if (!(key in textureResourceLocationMap)) return
 
   if (textureResourceLocationMap[key].startsWith('#'))
+    // the result is a reference, so search again with that reference as key
     return getTextureResourceLocation(
       textureResourceLocationMap,
       textureResourceLocationMap[key].slice(1),
@@ -43,7 +47,7 @@ const getTextureResourceLocation = (
 export type LoadModelMaterialsArgs = {
   modelResourceLocation: string
   elements: ModelElement[]
-  textures: Record<string, string>
+  textures: ModelData['textures']
   isItemModel: boolean
   playerHeadData?: {
     textureData: NonNullable<PlayerHeadProperties['texture']>
@@ -67,12 +71,17 @@ export async function loadModelMaterials({
   // player_head check
   const isPlayerHead = modelResourceLocation === 'item/player_head'
 
+  const textureResourceLocationMap: Record<string, string> = {}
+  for (const [key, val] of Object.entries(textures)) {
+    textureResourceLocationMap[key] = typeof val === 'string' ? val : val.sprite
+  }
+
   for (const element of elements) {
     for (const faceKey in element.faces) {
       const face = faceKey as ModelFaceKey
       const faceData = element.faces[face]!
       const textureResourceLocation = getTextureResourceLocation(
-        textures,
+        textureResourceLocationMap,
         faceData.texture,
       )
       if (textureResourceLocation == null) {
@@ -132,7 +141,7 @@ export async function loadModelMaterials({
 export type LoadModelMeshArgs = {
   modelResourceLocation: string
   elements: ModelElement[]
-  textures: Record<string, string>
+  textures: ModelData['textures']
   isItemModel: boolean
   isBlockShapedItemModel: boolean
   playerHeadData?: {
@@ -172,12 +181,18 @@ export async function loadModelMesh({
     const geometries: PlaneGeometry[] = []
     const geometryGroups: GeometryGroup[] = []
 
+    const textureResourceLocationMap: Record<string, string> = {}
+    for (const [key, val] of Object.entries(textures)) {
+      textureResourceLocationMap[key] =
+        typeof val === 'string' ? val : val.sprite
+    }
+
     let faceIdx = 0
     for (const faceKey in element.faces) {
       const face = faceKey as ModelFaceKey
       const faceData = element.faces[face]!
       const textureResourceLocation = getTextureResourceLocation(
-        textures,
+        textureResourceLocationMap,
         faceData.texture,
       )
       if (textureResourceLocation == null) {
