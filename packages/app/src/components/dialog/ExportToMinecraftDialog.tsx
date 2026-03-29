@@ -1,7 +1,7 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { type FC, type JSX, useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { LuCopy, LuCopyCheck } from 'react-icons/lu'
+import { LuCircleSlash, LuCopy, LuCopyCheck } from 'react-icons/lu'
 import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
 import { useShallow } from 'zustand/shallow'
 
@@ -321,6 +321,15 @@ const ExportToMinecraftDialog: FC = () => {
 
       <hr className="my-2 border-gray-600" />
 
+      {nbtStrings.length < 1 && (
+        <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
+          <LuCircleSlash size={48} className="" />
+          <span className="text-center text-lg">
+            {t(($) => $.dialog.exportToMinecraft.result.noEntities)}
+          </span>
+        </div>
+      )}
+
       <div className="overflow-y-auto">
         {nbtStrings.map((nbt, idx) => {
           const summonCommand = `/summon block_display ~ ~ ~ ${nbt}`
@@ -346,22 +355,24 @@ const ExportToMinecraftDialog: FC = () => {
           )
         })}
 
-        <div>
-          <div className="flex flex-row items-center">
-            <span className="grow">
-              {t(($) => $.dialog.exportToMinecraft.result.removeCommand)}
-            </span>
-            <CopyButton valueToCopy={removeCommand} />
+        {nbtStrings.length > 0 && (
+          <div>
+            <div className="flex flex-row items-center">
+              <span className="grow">
+                {t(($) => $.dialog.exportToMinecraft.result.removeCommand)}
+              </span>
+              <CopyButton valueToCopy={removeCommand} />
+            </div>
+            <Textarea
+              className="resize-none"
+              readOnly
+              value={removeCommand}
+              onFocus={(evt) => {
+                evt.target.select()
+              }}
+            />
           </div>
-          <Textarea
-            className="resize-none"
-            readOnly
-            value={removeCommand}
-            onFocus={(evt) => {
-              evt.target.select()
-            }}
-          />
-        </div>
+        )}
       </div>
     </Dialog>
   )

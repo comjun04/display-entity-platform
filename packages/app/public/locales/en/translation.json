@@ -46,6 +46,7 @@
         "invalidTagNotice": "Tag must contain only alphabets, numbers, <2>_</2>, <5>-</5>, <8>.</8>, and <11>+</11> characters."
       },
       "result": {
+        "noEntities": "No display entities to export",
         "summonCommand": "Summon command {{n}}",
         "removeCommand": "Remove command",
         "copyBtn": {

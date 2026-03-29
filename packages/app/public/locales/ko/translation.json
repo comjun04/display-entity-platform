@@ -46,6 +46,7 @@
         "invalidTagNotice": "태그는 반드시 영문자, 숫자, <2>_</2>, <5>-</5>, <8>.</8>, 그리고 <11>+</11> 글자만 포함되어야 합니다."
       },
       "result": {
+        "noEntities": "내보낼 디스플레이 엔티티가 없습니다",
         "summonCommand": "소환 명령어 {{n}}",
         "removeCommand": "제거 명령어",
         "copyBtn": {
