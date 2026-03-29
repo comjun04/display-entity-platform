@@ -89,24 +89,27 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
   const [hasValidationErrors, setHasValidationErrors] = useState(false)
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <span className="flex-none">
-        {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
-      </span>
-      <Input
-        value={input}
-        onChange={(evt) => {
-          const text = evt.target.value
-          setInput(text)
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <span className="flex-none">
+          {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
+        </span>
+        <Input
+          value={input}
+          onChange={(evt) => {
+            const text = evt.target.value
+            setInput(text)
 
-          if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
-            setHasValidationErrors(false)
-            onChange?.(text)
-          } else {
-            setHasValidationErrors(true)
-          }
-        }}
-      />
+            if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
+              setHasValidationErrors(false)
+              onChange?.(text)
+            } else {
+              setHasValidationErrors(true)
+            }
+          }}
+        />
+      </div>
+
       {hasValidationErrors && (
         <span className="text-sm text-red-500">
           <Trans
@@ -312,7 +315,7 @@ const ExportToMinecraftDialog: FC = () => {
       open={isOpen}
       onClose={closeActiveDialog}
     >
-      <div className="mt-2 rounded-lg bg-neutral-700 p-2">
+      <div className="rounded-lg bg-neutral-700 p-2">
         <TagValidatorInput onChange={setBaseTag} />
       </div>
 
