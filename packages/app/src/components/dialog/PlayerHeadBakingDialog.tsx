@@ -118,7 +118,7 @@ const PlayerHeadBakingDialog: FC = () => {
     <Dialog
       title="Baking Player Heads..."
       useLargeStaticSize={false}
-      modal={running}
+      disableUserClose={running}
       open={isOpen}
       onClose={closeActiveDialog}
     >

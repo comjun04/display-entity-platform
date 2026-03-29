@@ -1,4 +1,3 @@
-import { Tooltip } from '@heroui/tooltip'
 import { useSet } from '@react-hookz/web'
 import {
   type FC,
@@ -11,6 +10,11 @@ import {
 import { useTranslation } from 'react-i18next'
 import { LuCheck, LuEraser, LuUndo } from 'react-icons/lu'
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import type { Settings } from '@/lib/settings'
 import { cn, getFormattedShortcutKeyString } from '@/lib/utils'
 import { useEditorStore } from '@/stores/editorStore'
@@ -151,63 +155,72 @@ const ShortcutKeyInput: FC<ShortcutKeyInputProps> = ({ id }) => {
           editMode && 'group-hover:pointer-events-auto group-hover:opacity-100',
         )}
       >
-        <Tooltip
-          content={t(($) => $.dialog.settings.page.shortcuts.buttons.undo)}
-          placement="top"
-          size="sm"
-          closeDelay={0}
-        >
-          <button
-            className="rounded-sm p-1 transition-colors duration-150 hover:bg-neutral-900"
-            onClick={(evt) => {
-              evt.stopPropagation()
+        <Tooltip>
+          <TooltipTrigger
+            delay={0}
+            render={
+              <button
+                className="rounded-sm p-1 transition-colors duration-150 hover:bg-neutral-900"
+                onClick={(evt) => {
+                  evt.stopPropagation()
 
-              // discard changes
-              setCurrentlyEditingKeyId(null)
-            }}
-          >
-            <LuUndo size={14} />
-          </button>
+                  // discard changes
+                  setCurrentlyEditingKeyId(null)
+                }}
+              >
+                <LuUndo size={14} />
+              </button>
+            }
+          />
+          <TooltipContent side="top">
+            {t(($) => $.dialog.settings.page.shortcuts.buttons.undo)}
+          </TooltipContent>
         </Tooltip>
 
-        <Tooltip
-          content={t(($) => $.dialog.settings.page.shortcuts.buttons.unset)}
-          placement="top"
-          size="sm"
-          closeDelay={0}
-        >
-          <button
-            className="rounded-sm p-1 transition-colors duration-150 hover:bg-neutral-900"
-            onClick={(evt) => {
-              evt.stopPropagation()
+        <Tooltip>
+          <TooltipTrigger
+            delay={0}
+            render={
+              <button
+                className="rounded-sm p-1 transition-colors duration-150 hover:bg-neutral-900"
+                onClick={(evt) => {
+                  evt.stopPropagation()
 
-              // set keybind as unset
-              pressedKeys.clear()
-            }}
-          >
-            <LuEraser size={14} />
-          </button>
+                  // set keybind as unset
+                  pressedKeys.clear()
+                }}
+              >
+                <LuEraser size={14} />
+              </button>
+            }
+          />
+          <TooltipContent side="top">
+            {t(($) => $.dialog.settings.page.shortcuts.buttons.unset)}
+          </TooltipContent>
         </Tooltip>
 
-        <Tooltip
-          content={t(($) => $.dialog.settings.page.shortcuts.buttons.save)}
-          placement="top"
-          size="sm"
-          closeDelay={0}
-        >
-          <button
-            className="rounded-sm p-1 transition-colors duration-150 hover:bg-neutral-900"
-            onClick={(evt) => {
-              evt.stopPropagation()
+        <Tooltip>
+          <TooltipTrigger
+            delay={0}
+            render={
+              <button
+                className="rounded-sm p-1 transition-colors duration-150 hover:bg-neutral-900"
+                onClick={(evt) => {
+                  evt.stopPropagation()
 
-              // save changes
-              if (saveChanges()) {
-                setCurrentlyEditingKeyId(null)
-              }
-            }}
-          >
-            <LuCheck size={14} />
-          </button>
+                  // save changes
+                  if (saveChanges()) {
+                    setCurrentlyEditingKeyId(null)
+                  }
+                }}
+              >
+                <LuCheck size={14} />
+              </button>
+            }
+          />
+          <TooltipContent side="top">
+            {t(($) => $.dialog.settings.page.shortcuts.buttons.save)}
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>

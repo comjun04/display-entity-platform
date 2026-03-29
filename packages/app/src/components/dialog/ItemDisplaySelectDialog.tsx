@@ -9,6 +9,7 @@ import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useProjectStore } from '@/stores/projectStore'
 
+import { Input } from '../ui/input'
 import Dialog from './Dialog'
 
 interface VirtualListProps {
@@ -116,13 +117,10 @@ const ItemDisplaySelectDialog: FC = () => {
       title={t(($) => $.dialog.itemDisplaySelect.title)}
       open={isOpen}
       onClose={closeActiveDialog}
-      className="relative z-50"
     >
       <div className="flex flex-row items-center gap-4">
         <span>{t(($) => $.dialog.itemDisplaySelect.search.label)}</span>
-        <input
-          type="text"
-          className="grow rounded-sm px-2 py-1 text-sm outline-hidden"
+        <Input
           value={searchQuery}
           onChange={(evt) => setSearchQuery(evt.target.value)}
         />
