@@ -118,7 +118,7 @@ await cp(pathJoin(pathResolve(), 'hardcoded'), assetsMinecraftFolderPath, {
 // generate server resource reports file to get blocks.json and items.json
 console.log('Generating server.jar resource reports...')
 const serverJarfilePath = pathJoin(workdirFolderPath, 'server.jar')
-spawnSync(
+const spawnResult = spawnSync(
   'java',
   [
     '-DbundlerMainClass=net.minecraft.data.Main',
@@ -130,6 +130,11 @@ spawnSync(
     cwd: workdirFolderPath,
   },
 )
+if (spawnResult.status !== 0) {
+  throw new Error(
+    `server.jar resource report generation failed with error: ${spawnResult.stderr}`,
+  )
+}
 
 const reportsPath = pathJoin(workdirFolderPath, 'generated', 'reports')
 
