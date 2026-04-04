@@ -194,7 +194,7 @@ const ExportToMinecraftDialog: FC = () => {
         <TagValidatorInput onChange={setBaseTag} />
       </div>
 
-      <hr className="my-2 border-gray-600" />
+      <hr className="border-gray-600" />
 
       {nbtStrings.length < 1 && (
         <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
@@ -217,7 +217,7 @@ const ExportToMinecraftDialog: FC = () => {
               <CopyButton valueToCopy={command} />
             </div>
             <Textarea
-              className="resize-none"
+              className="h-18 resize-none"
               readOnly
               value={command}
               onFocus={(evt) => {
@@ -236,7 +236,7 @@ const ExportToMinecraftDialog: FC = () => {
               <CopyButton valueToCopy={removeCommand} />
             </div>
             <Textarea
-              className="resize-none"
+              className="h-18 resize-none"
               readOnly
               value={removeCommand}
               onFocus={(evt) => {
