@@ -20,6 +20,7 @@ import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { Textarea } from '../ui/textarea'
 import Dialog from './Dialog'
 
@@ -195,64 +196,71 @@ const ExportToMinecraftDialog: FC = () => {
         <TagValidatorInput onChange={setBaseTag} />
       </div>
 
-      <hr className="border-gray-600" />
+      <Tabs defaultValue="command" className="h-full">
+        <TabsList>
+          <TabsTrigger value="command">Commands</TabsTrigger>
+          <TabsTrigger value="datapack">Data Pack</TabsTrigger>
+        </TabsList>
 
-      <div className="flex gap-2">
-        <Button onClick={() => downloadAsMcfunction(summonCommands)}>
-          Download summon .mcfunction
-        </Button>
-      </div>
-
-      {nbtStrings.length < 1 && (
-        <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
-          <LuCircleSlash size={48} className="" />
-          <span className="text-center text-lg">
-            {t(($) => $.dialog.exportToMinecraft.result.noEntities)}
-          </span>
-        </div>
-      )}
-
-      <div className="overflow-y-auto">
-        {summonCommands.map((command, idx) => (
-          <div key={idx}>
-            <div className="flex flex-row items-center">
-              <span className="grow">
-                {t(($) => $.dialog.exportToMinecraft.result.summonCommand, {
-                  n: idx + 1,
-                })}
-              </span>
-              <CopyButton valueToCopy={command} />
-            </div>
-            <Textarea
-              className="h-18 resize-none"
-              readOnly
-              value={command}
-              onFocus={(evt) => {
-                evt.target.select()
-              }}
-            />
+        <TabsContent value="command" className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <Button onClick={() => downloadAsMcfunction(summonCommands)}>
+              Download summon .mcfunction
+            </Button>
           </div>
-        ))}
 
-        {nbtStrings.length > 0 && (
-          <div>
-            <div className="flex flex-row items-center">
-              <span className="grow">
-                {t(($) => $.dialog.exportToMinecraft.result.removeCommand)}
+          {nbtStrings.length < 1 && (
+            <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
+              <LuCircleSlash size={48} className="" />
+              <span className="text-center text-lg">
+                {t(($) => $.dialog.exportToMinecraft.result.noEntities)}
               </span>
-              <CopyButton valueToCopy={removeCommand} />
             </div>
-            <Textarea
-              className="h-18 resize-none"
-              readOnly
-              value={removeCommand}
-              onFocus={(evt) => {
-                evt.target.select()
-              }}
-            />
+          )}
+
+          <div className="overflow-y-auto">
+            {summonCommands.map((command, idx) => (
+              <div key={idx}>
+                <div className="flex flex-row items-center">
+                  <span className="grow">
+                    {t(($) => $.dialog.exportToMinecraft.result.summonCommand, {
+                      n: idx + 1,
+                    })}
+                  </span>
+                  <CopyButton valueToCopy={command} />
+                </div>
+                <Textarea
+                  className="h-18 resize-none"
+                  readOnly
+                  value={command}
+                  onFocus={(evt) => {
+                    evt.target.select()
+                  }}
+                />
+              </div>
+            ))}
+
+            {nbtStrings.length > 0 && (
+              <div>
+                <div className="flex flex-row items-center">
+                  <span className="grow">
+                    {t(($) => $.dialog.exportToMinecraft.result.removeCommand)}
+                  </span>
+                  <CopyButton valueToCopy={removeCommand} />
+                </div>
+                <Textarea
+                  className="h-18 resize-none"
+                  readOnly
+                  value={removeCommand}
+                  onFocus={(evt) => {
+                    evt.target.select()
+                  }}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </Dialog>
   )
 }
