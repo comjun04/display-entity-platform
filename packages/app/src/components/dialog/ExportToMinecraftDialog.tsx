@@ -11,7 +11,11 @@ import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
 import { useProjectStore } from '@/stores/projectStore'
-import type { MinimalTextureValue, TextEffects } from '@/types/base'
+import type {
+  DisplayEntity,
+  MinimalTextureValue,
+  TextEffects,
+} from '@/types/base'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { Input } from '../ui/input'
@@ -164,149 +168,20 @@ const ExportToMinecraftDialog: FC = () => {
 
   useEffect(() => {
     if (!nbtDataGenerated && isOpen) {
-      const { entityRefs } = useEntityRefStore.getState()
-
-      const semveredGameVersion = semverCoerce(targetGameVersion)?.version
-      if (semveredGameVersion == null) {
-        console.error('semveredGameVersion is null, this should not happen')
-        return
-      }
-
-      // whether item uses data component instead of nbt
-      const isItemDataComponentEnabled = semverSatisfies(
-        semveredGameVersion,
-        '>=1.20.5',
+      const newNbtStrings = generateNbtStrings(
+        entities,
+        targetGameVersion,
+        baseTag,
       )
-      // whether text is represented as SNBT rather than JSON
-      const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
 
-      const tagString = baseTag.length > 0 ? `Tags:["${baseTag}"],` : ''
-      const passengersStrings = [...entities.values()]
-        .map((entity) => {
-          // 그룹은 커맨드 생성에 들어가지 않음
-          // 그룹 안에 있는 엔티티들은 world transform으로 반영됨
-          if (entity.kind === 'group') return
-
-          const refData = entityRefs.get(entity.id)
-          if (refData == null || refData.objectRef.current == null) {
-            logger.warn(
-              `entity ref of entity ${entity.id} not found, ignoring.`,
-            )
-            return
-          }
-
-          const worldMatrix = refData.objectRef.current.matrixWorld
-
-          const idText = entity.kind + '_display' // block_display, item_display, text_display
-          const transformationString = worldMatrix
-            .clone()
-            .transpose()
-            .toArray()
-            .map((num) => Math.round(num * 1_0000_0000) / 1_0000_0000 + 'f')
-            .join(',')
-
-          let specificData = ''
-          if (entity.kind === 'block') {
-            const propertiesText = Object.entries(entity.blockstates)
-              .map(([k, v]) => `${k}:"${v}"`)
-              .join(',')
-
-            specificData = `block_state:{Name:"${entity.type}",Properties:{${propertiesText}}}`
-          } else if (entity.kind === 'item') {
-            const displayText =
-              entity.display != null ? `,item_display:"${entity.display}"` : ''
-
-            let itemExtraData = ''
-            if (isItemDisplayPlayerHead(entity)) {
-              const textureData = entity.playerHeadProperties.texture
-              if (textureData?.baked) {
-                const o = {
-                  textures: {
-                    SKIN: {
-                      url: textureData.url,
-                    },
-                  },
-                } satisfies MinimalTextureValue
-                const textureValueString = btoa(JSON.stringify(o))
-                itemExtraData = isItemDataComponentEnabled
-                  ? `,components:{"minecraft:profile":{properties:[{name:"textures",value:"${textureValueString}"}]}}`
-                  : `,SkullOwner:{Properties:{textures:[{Value:"${textureValueString}"}]}}`
-              }
-            }
-            specificData = `item:{id:"${entity.type}"${itemExtraData}}${displayText}`
-          } else if (entity.kind === 'text') {
-            // text
-            const text = entity.text
-              .replaceAll('\\', '\\\\')
-              .replaceAll('\n', isTextFormatSNBT ? '\\n' : '\\\\n')
-              .replaceAll('"', '\\"')
-            const enabledTextEffects = (
-              Object.keys(entity.textEffects) as Array<keyof TextEffects>
-            ).filter((k) => entity.textEffects[k])
-            const enabledTextEffectsString =
-              enabledTextEffects.length > 0
-                ? ',' +
-                  enabledTextEffects
-                    .map((k) =>
-                      isTextFormatSNBT ? `${k}:true` : `"${k}":true`,
-                    )
-                    .join(',')
-                : ''
-            specificData = isTextFormatSNBT
-              ? `text:{text:"${text}"${enabledTextEffectsString},color:"#${entity.textColor.toString(16)}"}`
-              : `text:'{"text":"${text}"${enabledTextEffectsString},"color":"#${entity.textColor.toString(16)}"}'`
-
-            // TODO: omit optional nbt data if data value is default value
-
-            // alignment
-            specificData += `,alignment:"${entity.alignment}"`
-            // background_color
-            specificData += `,background_color:${entity.backgroundColor}`
-            // default_background
-            if (entity.defaultBackground) {
-              specificData += ',default_background:true'
-            }
-            // line_width
-            specificData += `,line_width:${entity.lineWidth}`
-            // see_through
-            if (entity.seeThrough) {
-              specificData += ',see_through:true'
-            }
-            // shadow
-            if (entity.shadow) {
-              specificData += ',shadow:true'
-            }
-            // text_opacity
-            specificData += `,text_opacity:${entity.textOpacity}`
-          }
-
-          return `{id:"${idText}",${tagString}${specificData},transformation:[${transformationString}]}`
-        })
-        .filter((d) => d != null)
-
-      let le = Infinity
-      const groupedPassengersStrings: string[] = []
-      for (const passengersStr of passengersStrings) {
-        // 32500 (max command length in command block) - 60 (length of `/summon block_display ~ ~ ~ {Tags:[""],Passengers:[]}` + alpha) - baseTag length
-        if (le + passengersStr.length > 32440 - baseTag.length) {
-          groupedPassengersStrings.push(passengersStr)
-          le = passengersStr.length + 1
-        } else {
-          groupedPassengersStrings[groupedPassengersStrings.length - 1] +=
-            ',' + passengersStr
-          le += passengersStr.length + 1
-        }
-      }
-
-      const newNbtStrings = groupedPassengersStrings.map(
-        (str) => `{${tagString}Passengers:[${str}]}`,
-      )
       setNbtStrings(newNbtStrings)
-
       setNbtDataGenerated(true)
     }
   }, [nbtDataGenerated, isOpen, baseTag, entities, targetGameVersion])
 
+  const summonCommands = nbtStrings.map(
+    (nbt) => `/summon block_display ~ ~ ~ ${nbt}`,
+  )
   const removeCommand = `/kill @e[${baseTag.length > 0 ? `tag=${baseTag}` : 'type=block_display'},distance=..2]`
 
   return (
@@ -331,29 +206,26 @@ const ExportToMinecraftDialog: FC = () => {
       )}
 
       <div className="overflow-y-auto">
-        {nbtStrings.map((nbt, idx) => {
-          const summonCommand = `/summon block_display ~ ~ ~ ${nbt}`
-          return (
-            <div key={idx}>
-              <div className="flex flex-row items-center">
-                <span className="grow">
-                  {t(($) => $.dialog.exportToMinecraft.result.summonCommand, {
-                    n: idx + 1,
-                  })}
-                </span>
-                <CopyButton valueToCopy={summonCommand} />
-              </div>
-              <Textarea
-                className="resize-none"
-                readOnly
-                value={summonCommand}
-                onFocus={(evt) => {
-                  evt.target.select()
-                }}
-              />
+        {summonCommands.map((command, idx) => (
+          <div key={idx}>
+            <div className="flex flex-row items-center">
+              <span className="grow">
+                {t(($) => $.dialog.exportToMinecraft.result.summonCommand, {
+                  n: idx + 1,
+                })}
+              </span>
+              <CopyButton valueToCopy={command} />
             </div>
-          )
-        })}
+            <Textarea
+              className="resize-none"
+              readOnly
+              value={command}
+              onFocus={(evt) => {
+                evt.target.select()
+              }}
+            />
+          </div>
+        ))}
 
         {nbtStrings.length > 0 && (
           <div>
@@ -376,6 +248,148 @@ const ExportToMinecraftDialog: FC = () => {
       </div>
     </Dialog>
   )
+}
+
+function generateNbtStrings(
+  entities: Map<string, DisplayEntity>,
+  targetGameVersion: string,
+  baseTag: string = '',
+): string[] {
+  const { entityRefs } = useEntityRefStore.getState()
+
+  const semveredGameVersion = semverCoerce(targetGameVersion)?.version
+  if (semveredGameVersion == null) {
+    console.error('semveredGameVersion is null, this should not happen')
+    return []
+  }
+
+  // whether item uses data component instead of nbt
+  const isItemDataComponentEnabled = semverSatisfies(
+    semveredGameVersion,
+    '>=1.20.5',
+  )
+  // whether text is represented as SNBT rather than JSON
+  const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
+
+  const tagString = baseTag.length > 0 ? `Tags:["${baseTag}"],` : ''
+  const passengersStrings = [...entities.values()]
+    .map((entity) => {
+      // 그룹은 커맨드 생성에 들어가지 않음
+      // 그룹 안에 있는 엔티티들은 world transform으로 반영됨
+      if (entity.kind === 'group') return
+
+      const refData = entityRefs.get(entity.id)
+      if (refData == null || refData.objectRef.current == null) {
+        logger.warn(`entity ref of entity ${entity.id} not found, ignoring.`)
+        return
+      }
+
+      const worldMatrix = refData.objectRef.current.matrixWorld
+
+      const idText = entity.kind + '_display' // block_display, item_display, text_display
+      const transformationString = worldMatrix
+        .clone()
+        .transpose()
+        .toArray()
+        .map((num) => Math.round(num * 1_0000_0000) / 1_0000_0000 + 'f')
+        .join(',')
+
+      let specificData = ''
+      if (entity.kind === 'block') {
+        const propertiesText = Object.entries(entity.blockstates)
+          .map(([k, v]) => `${k}:"${v}"`)
+          .join(',')
+
+        specificData = `block_state:{Name:"${entity.type}",Properties:{${propertiesText}}}`
+      } else if (entity.kind === 'item') {
+        const displayText =
+          entity.display != null ? `,item_display:"${entity.display}"` : ''
+
+        let itemExtraData = ''
+        if (isItemDisplayPlayerHead(entity)) {
+          const textureData = entity.playerHeadProperties.texture
+          if (textureData?.baked) {
+            const o = {
+              textures: {
+                SKIN: {
+                  url: textureData.url,
+                },
+              },
+            } satisfies MinimalTextureValue
+            const textureValueString = btoa(JSON.stringify(o))
+            itemExtraData = isItemDataComponentEnabled
+              ? `,components:{"minecraft:profile":{properties:[{name:"textures",value:"${textureValueString}"}]}}`
+              : `,SkullOwner:{Properties:{textures:[{Value:"${textureValueString}"}]}}`
+          }
+        }
+        specificData = `item:{id:"${entity.type}"${itemExtraData}}${displayText}`
+      } else if (entity.kind === 'text') {
+        // text
+        const text = entity.text
+          .replaceAll('\\', '\\\\')
+          .replaceAll('\n', isTextFormatSNBT ? '\\n' : '\\\\n')
+          .replaceAll('"', '\\"')
+        const enabledTextEffects = (
+          Object.keys(entity.textEffects) as Array<keyof TextEffects>
+        ).filter((k) => entity.textEffects[k])
+        const enabledTextEffectsString =
+          enabledTextEffects.length > 0
+            ? ',' +
+              enabledTextEffects
+                .map((k) => (isTextFormatSNBT ? `${k}:true` : `"${k}":true`))
+                .join(',')
+            : ''
+        specificData = isTextFormatSNBT
+          ? `text:{text:"${text}"${enabledTextEffectsString},color:"#${entity.textColor.toString(16)}"}`
+          : `text:'{"text":"${text}"${enabledTextEffectsString},"color":"#${entity.textColor.toString(16)}"}'`
+
+        // TODO: omit optional nbt data if data value is default value
+
+        // alignment
+        specificData += `,alignment:"${entity.alignment}"`
+        // background_color
+        specificData += `,background_color:${entity.backgroundColor}`
+        // default_background
+        if (entity.defaultBackground) {
+          specificData += ',default_background:true'
+        }
+        // line_width
+        specificData += `,line_width:${entity.lineWidth}`
+        // see_through
+        if (entity.seeThrough) {
+          specificData += ',see_through:true'
+        }
+        // shadow
+        if (entity.shadow) {
+          specificData += ',shadow:true'
+        }
+        // text_opacity
+        specificData += `,text_opacity:${entity.textOpacity}`
+      }
+
+      return `{id:"${idText}",${tagString}${specificData},transformation:[${transformationString}]}`
+    })
+    .filter((d) => d != null)
+
+  let le = Infinity
+  const groupedPassengersStrings: string[] = []
+  for (const passengersStr of passengersStrings) {
+    // 32500 (max command length in command block) - 60 (length of `/summon block_display ~ ~ ~ {Tags:[""],Passengers:[]}` + alpha) - baseTag length
+    if (le + passengersStr.length > 32440 - baseTag.length) {
+      groupedPassengersStrings.push(passengersStr)
+      le = passengersStr.length + 1
+    } else {
+      groupedPassengersStrings[groupedPassengersStrings.length - 1] +=
+        ',' + passengersStr
+      le += passengersStr.length + 1
+    }
+  }
+
+  const newNbtStrings = groupedPassengersStrings.map(
+    (str) => `{${tagString}Passengers:[${str}]}`,
+  )
+
+  return newNbtStrings
 }
 
 export default ExportToMinecraftDialog
