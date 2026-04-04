@@ -203,11 +203,13 @@ const ExportToMinecraftDialog: FC = () => {
         </TabsList>
 
         <TabsContent value="command" className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <Button onClick={() => downloadAsMcfunction(summonCommands)}>
-              Download summon .mcfunction
-            </Button>
-          </div>
+          {nbtStrings.length > 0 && (
+            <div className="flex gap-2">
+              <Button onClick={() => downloadAsMcfunction(summonCommands)}>
+                Download summon .mcfunction
+              </Button>
+            </div>
+          )}
 
           {nbtStrings.length < 1 && (
             <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
