@@ -18,6 +18,7 @@ import type {
 } from '@/types/base'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
+import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import Dialog from './Dialog'
@@ -195,6 +196,12 @@ const ExportToMinecraftDialog: FC = () => {
       </div>
 
       <hr className="border-gray-600" />
+
+      <div className="flex gap-2">
+        <Button onClick={() => downloadAsMcfunction(summonCommands)}>
+          Download summon .mcfunction
+        </Button>
+      </div>
 
       {nbtStrings.length < 1 && (
         <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
@@ -390,6 +397,19 @@ function generateNbtStrings(
   )
 
   return newNbtStrings
+}
+
+function downloadAsMcfunction(commands: string[]) {
+  const fullstr = commands.join('\n')
+  const blob = new Blob([fullstr], { type: 'application/octet-stream' }) // prevent chrome mobile from downloading as `filename.mcfunction.txt`
+  const objectUrl = URL.createObjectURL(blob)
+
+  const tempElement = document.createElement('a')
+  tempElement.href = objectUrl
+  tempElement.download = 'summon.mcfunction'
+  tempElement.click() // triggers download
+
+  URL.revokeObjectURL(objectUrl)
 }
 
 export default ExportToMinecraftDialog
