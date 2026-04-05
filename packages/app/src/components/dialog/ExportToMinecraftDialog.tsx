@@ -196,13 +196,13 @@ const ExportToMinecraftDialog: FC = () => {
         <TagValidatorInput onChange={setBaseTag} />
       </div>
 
-      <Tabs defaultValue="command" className="h-full">
+      <Tabs defaultValue="command" className="h-full min-h-0">
         <TabsList>
           <TabsTrigger value="command">Commands</TabsTrigger>
           <TabsTrigger value="datapack">Data Pack</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="command" className="flex flex-col gap-2">
+        <TabsContent value="command" className="flex min-h-0 flex-col gap-2">
           {nbtStrings.length > 0 && (
             <div className="flex gap-2">
               <Button onClick={() => downloadAsMcfunction(summonCommands)}>
