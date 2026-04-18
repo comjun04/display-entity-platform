@@ -6,6 +6,7 @@ import { LuCircleSlash, LuCopy, LuCopyCheck } from 'react-icons/lu'
 import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
 import { useShallow } from 'zustand/shallow'
 
+import { GameVersions } from '@/constants'
 import { getLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
@@ -322,7 +323,7 @@ const ExportToMinecraftDialog: FC = () => {
                   summon: summonCommands,
                   remove: [removeCommand],
                 },
-                datapackOptions,
+                { ...datapackOptions, gameVersion: targetGameVersion },
               ).catch(console.error)
             }}
           >
@@ -497,8 +498,16 @@ async function downloadAsDatapack(
   options: {
     namespace: string
     compress: boolean
+    gameVersion: string
   },
 ) {
+  const gameVersionData = GameVersions.find(
+    (ver) => ver.id === options.gameVersion,
+  )
+  if (gameVersionData == null) {
+    throw new Error('Invalid game version id')
+  }
+
   const zip = new JSZip()
   zip.file(
     'pack.mcmeta',
@@ -506,7 +515,7 @@ async function downloadAsDatapack(
       {
         pack: {
           description: '',
-          pack_format: 75, // 1.21.11
+          pack_format: gameVersionData.datapackVersion,
         },
       },
       null,
