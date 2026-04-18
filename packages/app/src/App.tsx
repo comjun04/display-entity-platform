@@ -15,6 +15,7 @@ import Modal from './components/dialog/Modal.tsx'
 import PlayerHeadBakingDialog from './components/dialog/PlayerHeadBakingDialog'
 import SettingsDialog from './components/dialog/SettingsDialog'
 import WelcomeDialog from './components/dialog/WelcomeDialog'
+import { TooltipProvider } from './components/ui/tooltip'
 import { queryClient } from './lib/query.ts'
 import AutosaveService from './lib/services/autosave.service.ts'
 import { useDialogStore } from './stores/dialogStore'
@@ -58,34 +59,36 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="relative flex h-full w-full overflow-hidden">
-        <div className="relative h-full flex-1 overflow-hidden">
-          {/* overflow-hidden is required to prevent child canvas width height from affecting parent div
+      <TooltipProvider delay={300}>
+        <div className="relative flex h-full w-full overflow-hidden">
+          <div className="relative h-full flex-1 overflow-hidden">
+            {/* overflow-hidden is required to prevent child canvas width height from affecting parent div
               and correctly measure parent container size for canvas resizing */}
-          <Scene />
+            <Scene />
 
-          {/* floating buttons */}
-          <LeftButtonPanel />
-          <QuickActionPanel />
-          <MobileBottomButtonPanel />
+            {/* floating buttons */}
+            <LeftButtonPanel />
+            <QuickActionPanel />
+            <MobileBottomButtonPanel />
+          </div>
+
+          <Sidebar />
+
+          <WelcomeDialog />
+          <Modal />
+          <SettingsDialog />
+          <BlockDisplaySelectDialog />
+          <ItemDisplaySelectDialog />
+          <ExportToMinecraftDialog />
+          <PlayerHeadBakingDialog />
+
+          <FileDropzone />
         </div>
 
-        <Sidebar />
+        <BrowserTitleHandler />
 
-        <WelcomeDialog />
-        <Modal />
-        <SettingsDialog />
-        <BlockDisplaySelectDialog />
-        <ItemDisplaySelectDialog />
-        <ExportToMinecraftDialog />
-        <PlayerHeadBakingDialog />
-
-        <FileDropzone />
-      </div>
-
-      <BrowserTitleHandler />
-
-      <ToastContainer />
+        <ToastContainer />
+      </TooltipProvider>
     </QueryClientProvider>
   )
 }

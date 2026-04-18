@@ -14,6 +14,8 @@ import { useProjectStore } from '@/stores/projectStore'
 import type { MinimalTextureValue, TextEffects } from '@/types/base'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
+import { Input } from '../ui/input'
+import { Textarea } from '../ui/textarea'
 import Dialog from './Dialog'
 
 const logger = getLogger('ExportToMinecraftDialog')
@@ -88,9 +90,10 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <span>{t(($) => $.dialog.exportToMinecraft.baseTag.title)}</span>
-      <input
-        className="rounded-sm p-1 text-sm outline-hidden"
+      <span className="flex-none">
+        {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
+      </span>
+      <Input
         value={input}
         onChange={(evt) => {
           const text = evt.target.value
@@ -308,7 +311,6 @@ const ExportToMinecraftDialog: FC = () => {
       title={t(($) => $.dialog.exportToMinecraft.title)}
       open={isOpen}
       onClose={closeActiveDialog}
-      className="relative z-50"
     >
       <div className="mt-2 rounded-lg bg-neutral-700 p-2">
         <TagValidatorInput onChange={setBaseTag} />
@@ -329,8 +331,8 @@ const ExportToMinecraftDialog: FC = () => {
                 </span>
                 <CopyButton valueToCopy={summonCommand} />
               </div>
-              <textarea
-                className="h-24 w-full resize-none rounded-lg p-2 break-all outline-hidden"
+              <Textarea
+                className="resize-none"
                 readOnly
                 value={summonCommand}
                 onFocus={(evt) => {
@@ -348,8 +350,8 @@ const ExportToMinecraftDialog: FC = () => {
             </span>
             <CopyButton valueToCopy={removeCommand} />
           </div>
-          <textarea
-            className="h-10 w-full resize-none rounded-lg p-2 break-all outline-hidden"
+          <Textarea
+            className="resize-none"
             readOnly
             value={removeCommand}
             onFocus={(evt) => {
