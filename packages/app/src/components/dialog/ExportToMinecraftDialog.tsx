@@ -25,6 +25,7 @@ import {
   Field,
   FieldContent,
   FieldDescription,
+  FieldGroup,
   FieldLabel,
   FieldLegend,
   FieldSet,
@@ -282,39 +283,44 @@ const ExportToMinecraftDialog: FC = () => {
           <FieldSet>
             <FieldLegend>Datapack Export Options</FieldLegend>
 
-            <Field orientation="horizontal">
-              <FieldContent>
-                <FieldLabel>Namespace</FieldLabel>
-                <FieldDescription>
-                  Set the namespace of generated mcfunction files
-                </FieldDescription>
-              </FieldContent>
-              <Input
-                className="w-auto"
-                value={datapackOptions.namespace}
-                onChange={(evt) =>
-                  setDatapackOptions((prev) => ({
-                    ...prev,
-                    namespace: evt.target.value,
-                  }))
-                }
-              />
-            </Field>
+            <FieldGroup>
+              <Field orientation="responsive">
+                <FieldContent>
+                  <FieldLabel>Namespace</FieldLabel>
+                  <FieldDescription>
+                    Set the namespace of generated mcfunction files
+                  </FieldDescription>
+                </FieldContent>
+                <Input
+                  className="w-auto"
+                  value={datapackOptions.namespace}
+                  onChange={(evt) =>
+                    setDatapackOptions((prev) => ({
+                      ...prev,
+                      namespace: evt.target.value,
+                    }))
+                  }
+                />
+              </Field>
 
-            <Field orientation="horizontal">
-              <FieldContent>
-                <FieldLabel>Compress datapack</FieldLabel>
-                <FieldDescription>
-                  Apply compression to the final datapack .zip file
-                </FieldDescription>
-              </FieldContent>
-              <Switch
-                checked={datapackOptions.compress}
-                onCheckedChange={(checked) =>
-                  setDatapackOptions((prev) => ({ ...prev, compress: checked }))
-                }
-              />
-            </Field>
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <FieldLabel>Compress datapack</FieldLabel>
+                  <FieldDescription>
+                    Apply compression to the final datapack .zip file
+                  </FieldDescription>
+                </FieldContent>
+                <Switch
+                  checked={datapackOptions.compress}
+                  onCheckedChange={(checked) =>
+                    setDatapackOptions((prev) => ({
+                      ...prev,
+                      compress: checked,
+                    }))
+                  }
+                />
+              </Field>
+            </FieldGroup>
           </FieldSet>
           <Button
             onClick={() => {
