@@ -1,4 +1,5 @@
 import { useDebouncedEffect } from '@react-hookz/web'
+import JSZip from 'jszip'
 import { type FC, type JSX, useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { LuCircleSlash, LuCopy, LuCopyCheck } from 'react-icons/lu'
@@ -19,7 +20,16 @@ import type {
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { Button } from '../ui/button'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '../ui/field'
 import { Input } from '../ui/input'
+import { Switch } from '../ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { Textarea } from '../ui/textarea'
 import Dialog from './Dialog'
@@ -186,6 +196,11 @@ const ExportToMinecraftDialog: FC = () => {
   )
   const removeCommand = `/kill @e[${baseTag.length > 0 ? `tag=${baseTag}` : 'type=block_display'},distance=..2]`
 
+  const [datapackOptions, setDatapackOptions] = useState({
+    namespace: 'minecraft',
+    compress: true,
+  })
+
   return (
     <Dialog
       title={t(($) => $.dialog.exportToMinecraft.title)}
@@ -261,6 +276,58 @@ const ExportToMinecraftDialog: FC = () => {
               </div>
             )}
           </div>
+        </TabsContent>
+        <TabsContent value="datapack" className="flex flex-col gap-2">
+          <FieldSet>
+            <FieldLegend>Datapack Export Options</FieldLegend>
+
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldLabel>Namespace</FieldLabel>
+                <FieldDescription>
+                  Set the namespace of generated mcfunction files
+                </FieldDescription>
+              </FieldContent>
+              <Input
+                className="w-auto"
+                value={datapackOptions.namespace}
+                onChange={(evt) =>
+                  setDatapackOptions((prev) => ({
+                    ...prev,
+                    namespace: evt.target.value,
+                  }))
+                }
+              />
+            </Field>
+
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldLabel>Compress datapack</FieldLabel>
+                <FieldDescription>
+                  Apply compression to the final datapack .zip file
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                checked={datapackOptions.compress}
+                onCheckedChange={(checked) =>
+                  setDatapackOptions((prev) => ({ ...prev, compress: checked }))
+                }
+              />
+            </Field>
+          </FieldSet>
+          <Button
+            onClick={() => {
+              downloadAsDatapack(
+                {
+                  summon: summonCommands,
+                  remove: [removeCommand],
+                },
+                datapackOptions,
+              ).catch(console.error)
+            }}
+          >
+            Download as Datapack
+          </Button>
         </TabsContent>
       </Tabs>
     </Dialog>
@@ -417,6 +484,54 @@ function downloadAsMcfunction(commands: string[]) {
   const tempElement = document.createElement('a')
   tempElement.href = objectUrl
   tempElement.download = 'summon.mcfunction'
+  tempElement.click() // triggers download
+
+  URL.revokeObjectURL(objectUrl)
+}
+
+async function downloadAsDatapack(
+  commands: {
+    summon: string[]
+    remove: string[]
+  },
+  options: {
+    namespace: string
+    compress: boolean
+  },
+) {
+  const zip = new JSZip()
+  zip.file(
+    'pack.mcmeta',
+    JSON.stringify(
+      {
+        pack: {
+          description: '',
+          pack_format: 75, // 1.21.11
+        },
+      },
+      null,
+      2,
+    ),
+  )
+
+  zip.file(
+    `data/function/${options.namespace}/summon.mcfunction`,
+    commands.summon.join('\n'),
+  )
+  zip.file(
+    `data/function/${options.namespace}/remove.mcfunction`,
+    commands.remove.join('\n'),
+  )
+
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    compression: options.compress ? 'DEFLATE' : 'STORE',
+  })
+  const objectUrl = URL.createObjectURL(blob)
+
+  const tempElement = document.createElement('a')
+  tempElement.href = objectUrl
+  tempElement.download = 'datapack.zip'
   tempElement.click() // triggers download
 
   URL.revokeObjectURL(objectUrl)

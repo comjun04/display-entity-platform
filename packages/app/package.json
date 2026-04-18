@@ -28,6 +28,7 @@
     "i18next": "^25.5.2",
     "i18next-http-backend": "^3.0.2",
     "immer": "^10.1.1",
+    "jszip": "^3.10.1",
     "lodash-es": "^4.17.21",
     "nanoid": "^5.1.5",
     "r3f-perf": "^7.2.3",
