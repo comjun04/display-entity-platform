@@ -70,12 +70,10 @@ const InstancedMeshBatch: FC<InstancedMeshBatchProps> = ({ batchInfo }) => {
 export const InstancedMeshesRootGroup: FC = () => {
   const batches = useInstancedMeshStore((state) => state.batches)
   return (
-    <>
-      <group name="InstancedMesh Root Group">
-        {[...batches.values()].map((batchInfo) => (
-          <InstancedMeshBatch key={batchInfo.key} batchInfo={batchInfo} />
-        ))}
-      </group>
-    </>
+    <group name="InstancedMesh Root Group">
+      {[...batches.values()].map((batchInfo) => (
+        <InstancedMeshBatch key={batchInfo.key} batchInfo={batchInfo} />
+      ))}
+    </group>
   )
 }
