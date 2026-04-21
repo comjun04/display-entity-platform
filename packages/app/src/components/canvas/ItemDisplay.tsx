@@ -1,15 +1,21 @@
-import type { ThreeEvent } from '@react-three/fiber'
+import { Helper } from '@react-three/drei'
+import { type ThreeEvent, extend } from '@react-three/fiber'
 import { type FC, type MutableRefObject, memo, useMemo, useRef } from 'react'
 import { Group } from 'three'
+import { BoxHelper } from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { type Number3Tuple } from '@/types/base'
 
-import BoundingBox from './BoundingBox'
+import { BoundingBoxForInstanced } from './BoundingBox'
 import Model from './Model'
 import PlayerHeadPainter from './PlayerHeadPainter'
+import { InstancedModel } from './instanced'
+import { ZeroScaledGroup } from './zero-scaled-group'
+
+extend({ ZeroScaledGroup })
 
 type ItemDisplayProps = {
   id: string
@@ -22,6 +28,7 @@ type ItemDisplayProps = {
 }
 
 const MemoizedModel = memo(Model)
+const MemoizedInstancedModel = memo(InstancedModel)
 
 const ItemDisplay: FC<ItemDisplayProps> = ({
   id,
@@ -60,6 +67,11 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
 
   const boundingBoxTargetRef = useRef<Group>(null)
 
+  // InstancedMeshManager does not support player head textures yet
+  // so use the legacy non-instanced model instead
+  // TODO: support player_head custom textures in InstancedMeshManager and remove this mess
+  const useInstancing = thisEntityPlayerHeadProperties == null
+
   const playerHeadData = useMemo(
     () =>
       thisEntityPlayerHeadProperties?.texture != null
@@ -76,21 +88,34 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
     ],
   )
 
+  const modelResourceLocation = `item/${type}`
+
   return (
-    <object3D ref={ref}>
-      {/* {thisEntitySelected && <Helper type={BoxHelper} args={['gold']} />} */}
-      <BoundingBox
-        object={boundingBoxTargetRef.current ?? undefined}
-        visible={thisEntitySelected}
-        color="#06b6d4" // tailwind v3 cyan-500
-      />
+    <zeroScaledGroup ref={ref}>
+      {useInstancing ? (
+        <BoundingBoxForInstanced
+          modelResourceLocations={[modelResourceLocation]}
+          visible={thisEntitySelected}
+          color="#06b6d4" // tailwind v3 cyan-500
+        />
+      ) : (
+        thisEntitySelected && <Helper type={BoxHelper} args={['gold']} />
+      )}
 
       <group onClick={onClick} ref={boundingBoxTargetRef}>
-        <MemoizedModel
-          initialResourceLocation={`item/${type}`}
-          displayType={thisEntityDisplay ?? undefined}
-          playerHeadData={playerHeadData}
-        />
+        {useInstancing ? (
+          <MemoizedInstancedModel
+            entityId={id}
+            resourceLocation={modelResourceLocation}
+            modelId={`${id};item/${type}`}
+          />
+        ) : (
+          <MemoizedModel
+            initialResourceLocation={`item/${type}`}
+            displayType={thisEntityDisplay ?? undefined}
+            playerHeadData={playerHeadData}
+          />
+        )}
       </group>
 
       {thisEntityPlayerHeadProperties != null && headPainterEnabled && (
@@ -99,7 +124,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
           playerHeadProperties={thisEntityPlayerHeadProperties}
         />
       )}
-    </object3D>
+    </zeroScaledGroup>
   )
 }
 

@@ -15,6 +15,7 @@ import { useHistoryStore } from '../stores/historyStore'
 import CustomCameraControls from './CustomCameraControls'
 import DisplayentitiesRootGroup from './DisplayEntitiesRootGroup'
 import DragSelectControl from './DragSelectControl'
+import { InstancedMeshesRootGroup } from './InstancedMeshesRootGroup'
 import ShortcutHandler from './ShortcutHandler'
 import TransformControls from './TransformControls'
 
@@ -161,6 +162,7 @@ const Scene: FC = () => {
       </line>
 
       <DisplayentitiesRootGroup />
+      <InstancedMeshesRootGroup />
 
       <TransformControls />
       <DragSelectControl />

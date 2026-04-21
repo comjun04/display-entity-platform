@@ -9,7 +9,7 @@ import { useEditorStore } from '@/stores/editorStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type { Number3Tuple } from '@/types/base'
 
-import BoundingBox from './BoundingBox'
+import { BoundingBox } from './BoundingBox'
 
 type TextDisplayProps = {
   id: string

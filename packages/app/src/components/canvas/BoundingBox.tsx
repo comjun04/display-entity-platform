@@ -1,16 +1,29 @@
 import { useFrame } from '@react-three/fiber'
-import { type FC, useRef } from 'react'
-import { BoxHelper, type ColorRepresentation, Matrix4, Object3D } from 'three'
+import { type FC, useEffect, useMemo, useRef } from 'react'
+import { Box3, BoxHelper, Matrix4, Object3D } from 'three'
+import { type ColorRepresentation } from 'three'
+import { Vector3 } from 'three'
+import { useShallow } from 'zustand/shallow'
+
+import {
+  InstancedMeshManager,
+  useInstancedMeshStore,
+} from '@/stores/instancedMeshStore'
 
 const dummyObject = new Object3D()
+const infinityVector = new Vector3(Infinity, Infinity, Infinity)
+const negativeInfinityVector = new Vector3(-Infinity, -Infinity, -Infinity)
 
-type BoundingBoxProps = {
+interface BoundingBoxProps {
   object?: Object3D
   visible: boolean
   color?: ColorRepresentation
 }
-
-const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
+export const BoundingBox: FC<BoundingBoxProps> = ({
+  object,
+  visible,
+  color,
+}) => {
   const boxHelperRef = useRef<BoxHelper>(null)
 
   useFrame(() => {
@@ -46,6 +59,8 @@ const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
     if (parent != null) {
       parent.add(object)
     }
+
+    object.updateMatrixWorld() // needed to correctly calculate world matrix after all jobs
   })
 
   return (
@@ -59,4 +74,55 @@ const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
   )
 }
 
-export default BoundingBox
+interface BoundingBoxForInstancedProps {
+  modelResourceLocations: string[]
+  visible?: boolean
+  color?: ColorRepresentation
+}
+export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
+  modelResourceLocations,
+  visible = true,
+  color,
+}) => {
+  // TODO: directly search batch by modelResourceLocation,
+  // find batch mesh geometry boundingbox and expandByBox() it
+
+  const box = useMemo(() => new Box3(), [])
+
+  const batches = useInstancedMeshStore(
+    useShallow((state) =>
+      modelResourceLocations.map((resourceLocation) => {
+        const minimalBatchInfo = state.batches.get(resourceLocation)
+        if (minimalBatchInfo?.status !== 'ready') {
+          return
+        }
+
+        const batches = InstancedMeshManager.instance.getBatch(resourceLocation)
+        if (batches?.status !== 'ready') {
+          // this should not happen
+          return
+        }
+
+        return batches
+      }),
+    ),
+  )
+
+  useEffect(() => {
+    box.set(infinityVector, negativeInfinityVector)
+
+    for (const batch of batches) {
+      if (batch == null) continue
+
+      if (batch.geometry.boundingBox == null) {
+        batch.geometry.computeBoundingBox()
+      }
+
+      box.union(batch.geometry.boundingBox!)
+    }
+  }, [box, batches])
+
+  return (
+    <box3Helper args={[box, color]} visible={visible} raycast={() => null} />
+  )
+}

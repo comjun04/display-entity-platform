@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 
-import BoundingBox from './BoundingBox'
+import { BoundingBox } from './BoundingBox'
 
 type DisplayEntityGroupProps = {
   id: string
