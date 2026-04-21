@@ -85,6 +85,8 @@ const DisplayEntity: FC<DisplayEntityProps> = ({ id }) => {
     thisEntityRefObj.scale.set(...thisEntity.size)
 
     thisEntityRefObj.updateMatrix() // need to update transformation properly when modifying outside render loop
+    thisEntityRefObj.updateMatrixWorld() // makes updated world matrix always available on next frame
+
     invalidate()
   }, [
     thisEntity?.position,
