@@ -97,7 +97,7 @@ const TextDisplay: FC<TextDisplayProps> = ({
   ])
 
   return (
-    <object3D ref={ref}>
+    <object3D ref={ref} name={`TextDisplay ${id}`}>
       <BoundingBox
         object={ref?.current}
         visible={thisEntitySelected}

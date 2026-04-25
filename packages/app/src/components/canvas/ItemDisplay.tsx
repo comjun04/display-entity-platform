@@ -99,7 +99,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
   )
 
   return (
-    <zeroScaledGroup ref={ref}>
+    <zeroScaledGroup ref={ref} name={`ItemDisplay ${id} ${type}`}>
       {useInstancing ? (
         <BoundingBoxForInstanced
           modelList={modelList}

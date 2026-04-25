@@ -51,12 +51,12 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
         const entity = state.entities.get(id)
         return {
           thisEntity: entity,
-      thisEntitySelected: state.selectedEntityIds.includes(id),
+          thisEntitySelected: state.selectedEntityIds.includes(id),
           thisEntityBlockstates:
             entity?.kind === 'block' ? entity.blockstates : undefined,
         }
       }),
-  )
+    )
 
   // =====
 
@@ -83,17 +83,18 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
   if (thisEntity?.kind !== 'block') return null
 
   return (
-    <zeroScaledGroup ref={ref}>
+    <zeroScaledGroup ref={ref} name={`BlockDisplay ${id} ${type}`}>
       <BoundingBoxForInstanced
         modelList={modelList}
         visible={thisEntitySelected}
         color="gold"
       />
 
-      <group name="base2" onClick={onClick}>
+      <group onClick={onClick}>
         {matchingBlockstatesModels.map((modelToApply, idx) => {
           const resourceLocation = modelToApply.model
-          const modelId = `${id};${resourceLocation};${idx}`
+          const modelId = `${id}|${resourceLocation}|x:${modelToApply.x}|y:${modelToApply.y}|${idx}`
+
           return (
             <MemoizedInstancedModel
               key={modelId}
