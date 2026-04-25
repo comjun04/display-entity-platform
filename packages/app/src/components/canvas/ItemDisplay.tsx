@@ -89,12 +89,20 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
   )
 
   const modelResourceLocation = `item/${type}`
+  const modelList = useMemo(
+    () => [
+      {
+        resourceLocation: modelResourceLocation,
+      },
+    ],
+    [modelResourceLocation],
+  )
 
   return (
     <zeroScaledGroup ref={ref}>
       {useInstancing ? (
         <BoundingBoxForInstanced
-          modelResourceLocations={[modelResourceLocation]}
+          modelList={modelList}
           visible={thisEntitySelected}
           color="#06b6d4" // tailwind v3 cyan-500
         />

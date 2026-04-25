@@ -1,5 +1,5 @@
 import { type ThreeEvent, extend } from '@react-three/fiber'
-import { type FC, type MutableRefObject, memo } from 'react'
+import { type FC, type MutableRefObject, memo, useMemo } from 'react'
 import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
 
@@ -45,33 +45,53 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
   onClick,
   objectRef: ref,
 }) => {
-  const { thisEntity, thisEntitySelected } = useDisplayEntityStore(
-    useShallow((state) => ({
-      thisEntity: state.entities.get(id),
+  const { thisEntity, thisEntitySelected, thisEntityBlockstates } =
+    useDisplayEntityStore(
+      useShallow((state) => {
+        const entity = state.entities.get(id)
+        return {
+          thisEntity: entity,
       thisEntitySelected: state.selectedEntityIds.includes(id),
-    })),
+          thisEntityBlockstates:
+            entity?.kind === 'block' ? entity.blockstates : undefined,
+        }
+      }),
   )
 
   // =====
 
   const { data: blockstatesData } = useBlockStates(type)
-  const matchingBlockstatesModel = useMatchingBlockstatesModel({
+  const matchingBlockstatesModels = useMatchingBlockstatesModel({
     blockstatesData,
     blockstates: thisEntity?.kind === 'block' ? thisEntity.blockstates : {},
   })
+
+  const modelList = useMemo(() => {
+    if (blockstatesData == null) return []
+
+    const matchingBlockstateModels = getMatchingBlockstateModel(
+      blockstatesData,
+      thisEntityBlockstates ?? {},
+    )
+    return matchingBlockstateModels.map((modelData) => ({
+      resourceLocation: modelData.model,
+      xRotation: modelData.x,
+      yRotation: modelData.y,
+    }))
+  }, [blockstatesData, thisEntityBlockstates])
 
   if (thisEntity?.kind !== 'block') return null
 
   return (
     <zeroScaledGroup ref={ref}>
       <BoundingBoxForInstanced
-        modelResourceLocations={matchingBlockstatesModel.map((d) => d.model)}
+        modelList={modelList}
         visible={thisEntitySelected}
         color="gold"
       />
 
       <group name="base2" onClick={onClick}>
-        {matchingBlockstatesModel.map((modelToApply, idx) => {
+        {matchingBlockstatesModels.map((modelToApply, idx) => {
           const resourceLocation = modelToApply.model
           const modelId = `${id};${resourceLocation};${idx}`
           return (

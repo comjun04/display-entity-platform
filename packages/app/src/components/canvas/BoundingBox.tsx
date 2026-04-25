@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { type FC, useEffect, useMemo, useRef } from 'react'
-import { Box3, BoxHelper, Matrix4, Object3D } from 'three'
+import { Box3, BoxHelper, MathUtils, Matrix4, Object3D } from 'three'
 import { type ColorRepresentation } from 'three'
 import { Vector3 } from 'three'
 import { useShallow } from 'zustand/shallow'
@@ -13,6 +13,8 @@ import {
 const dummyObject = new Object3D()
 const infinityVector = new Vector3(Infinity, Infinity, Infinity)
 const negativeInfinityVector = new Vector3(-Infinity, -Infinity, -Infinity)
+const HalfBlockTranslatedXZVector = new Vector3(0.5, 0, 0.5)
+const ReverseHalfBlockTranslatedXZVector = new Vector3(-0.5, 0, -0.5)
 
 interface BoundingBoxProps {
   object?: Object3D
@@ -75,12 +77,16 @@ export const BoundingBox: FC<BoundingBoxProps> = ({
 }
 
 interface BoundingBoxForInstancedProps {
-  modelResourceLocations: string[]
+  modelList: {
+    resourceLocation: string
+    xRotation?: number
+    yRotation?: number
+  }[]
   visible?: boolean
   color?: ColorRepresentation
 }
 export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
-  modelResourceLocations,
+  modelList,
   visible = true,
   color,
 }) => {
@@ -89,21 +95,23 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
 
   const box = useMemo(() => new Box3(), [])
 
-  const batches = useInstancedMeshStore(
+  const batchGeometries = useInstancedMeshStore(
     useShallow((state) =>
-      modelResourceLocations.map((resourceLocation) => {
-        const minimalBatchInfo = state.batches.get(resourceLocation)
+      modelList.map((modelData) => {
+        const minimalBatchInfo = state.batches.get(modelData.resourceLocation)
         if (minimalBatchInfo?.status !== 'ready') {
           return
         }
 
-        const batches = InstancedMeshManager.instance.getBatch(resourceLocation)
+        const batches = InstancedMeshManager.instance.getBatch(
+          modelData.resourceLocation,
+        )
         if (batches?.status !== 'ready') {
           // this should not happen
           return
         }
 
-        return batches
+        return batches.geometry
       }),
     ),
   )
@@ -111,16 +119,31 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
   useEffect(() => {
     box.set(infinityVector, negativeInfinityVector)
 
-    for (const batch of batches) {
-      if (batch == null) continue
+    const _matrix = new Matrix4()
 
-      if (batch.geometry.boundingBox == null) {
-        batch.geometry.computeBoundingBox()
+    for (let i = 0; i < modelList.length; i++) {
+      const modelData = modelList[i]
+      const geometry = batchGeometries[i]
+      if (geometry == null) continue
+
+      if (geometry.boundingBox == null) {
+        geometry.computeBoundingBox()
       }
 
-      box.union(batch.geometry.boundingBox!)
+      // grab geometry bounding box connected to batch, and use that to calculate entity's bounding box
+      const boundingBox = geometry.boundingBox!.clone()
+      boundingBox
+        .translate(ReverseHalfBlockTranslatedXZVector)
+        .applyMatrix4(
+          _matrix
+            .makeRotationX(MathUtils.degToRad(-1 * (modelData.xRotation ?? 0)))
+            .makeRotationY(MathUtils.degToRad(-1 * (modelData.yRotation ?? 0))),
+        )
+        .translate(HalfBlockTranslatedXZVector)
+
+      box.union(boundingBox)
     }
-  }, [box, batches])
+  }, [box, modelList, batchGeometries])
 
   return (
     <box3Helper args={[box, color]} visible={visible} raycast={() => null} />
