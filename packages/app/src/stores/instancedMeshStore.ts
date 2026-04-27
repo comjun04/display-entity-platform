@@ -16,10 +16,18 @@ import { getLogger } from '@/lib/logger'
 import { loadModel } from '@/lib/resources/model'
 import { generateModelMeshIngredients } from '@/lib/resources/modelMesh'
 import { stripMinecraftPrefix } from '@/lib/utils'
+import type {
+  ModelData,
+  ModelDisplayPositionKey,
+  Number3Tuple,
+} from '@/types/base'
 
 import { useEntityRefStore } from './entityRefStore'
 
 const DEFAULT_CAPACITY = 16
+const OriginVec = new Vector3()
+const DisplayTranslationMinVec = new Vector3(-80, -80, -80)
+const DisplayTranslationMaxVec = new Vector3(80, 80, 80)
 const ZeroScaleMatrix4 = new Matrix4().makeScale(0, 0, 0)
 const ZeroScaleMatrix4Arr = ZeroScaleMatrix4.toArray()
 const HalfBlockTranslatedMatrix = new Matrix4().makeTranslation(0.5, 0.5, 0.5)
@@ -89,6 +97,7 @@ export class InstancedMeshManager {
         mesh: dummyMesh,
         geometry: undefined,
         materials: undefined,
+        display: undefined,
 
         capacity: DEFAULT_CAPACITY,
         usedCount: 0,
@@ -128,6 +137,7 @@ export class InstancedMeshManager {
           batch.mesh = newMesh
           batch.geometry = meshIngredients.geometry
           batch.materials = meshIngredients.materials
+          batch.display = meshIngredients.rawModelData.display
 
           batch.status = 'ready'
 
@@ -224,6 +234,9 @@ export class InstancedMeshManager {
     const tempVector = new Vector3()
     const _matrix = new Matrix4()
 
+    const _displayTranslation = new Vector3()
+    const _displayScale = new Vector3()
+
     for (const entityId of this.dirtyEntities) {
       const entityRefData = entityRefs.get(entityId)
       if (entityRefData == null) {
@@ -258,9 +271,31 @@ export class InstancedMeshManager {
         tempVector.setFromMatrixScale(_matrix)
         // continue processing if scale is not (0,0,0) which indicates uninitialized
         if (tempVector.x !== 0 || tempVector.y !== 0 || tempVector.z !== 0) {
+          const displayInfo =
+            instance.display != null
+              ? (batch.display[instance.display] ?? {})
+              : {}
+          _displayTranslation
+            .set(...(displayInfo.translation ?? [0, 0, 0]))
+            .max(DisplayTranslationMinVec)
+            .min(DisplayTranslationMaxVec)
+            .divideScalar(16)
+          _displayScale.set(...(displayInfo.scale ?? [1, 1, 1]))
+          const displayRotation = (displayInfo.rotation ?? [0, 0, 0]).map((d) =>
+            MathUtils.degToRad(d),
+          ) as Number3Tuple
+
           // apply rotations
           tempRotatedMatrix4
-            .identity()
+            .makeTranslation(_displayTranslation) // set display translation first
+            .premultiply(
+              // set display rotation and scale
+              new Matrix4().compose(
+                OriginVec,
+                new Quaternion().setFromEuler(new Euler(...displayRotation)),
+                _displayScale,
+              ),
+            )
             .premultiply(ReverseHalfBlockTranslatedMatrix)
             .premultiply(
               // set x rotation
@@ -324,6 +359,23 @@ export class InstancedMeshManager {
 
     this.markEntityDirty(instance.entityId)
   }
+
+  setDisplay(
+    modelId: string,
+    displayType: ModelDisplayPositionKey | undefined,
+  ) {
+    const batchId = this.modelToBatch.get(modelId)
+    if (batchId == null) return
+    const batch = this.batches.get(batchId)
+    if (batch == null) return
+
+    const instance = batch.instances.get(modelId)
+    if (instance == null) return
+
+    instance.display = displayType
+
+    this.markEntityDirty(instance.entityId)
+  }
 }
 
 export type InstancedMeshBatchData = {
@@ -343,6 +395,7 @@ export type InstancedMeshBatchData = {
       instanceIndex: number
       entityId: string
       rotation: [number, number]
+      display?: ModelDisplayPositionKey
     }
   > // model id -> instance data
 } & (
@@ -351,12 +404,14 @@ export type InstancedMeshBatchData = {
       mesh: InstancedMesh // dummy mesh
       geometry: undefined
       materials: undefined
+      display: undefined
     }
   | {
       status: 'ready'
       mesh: InstancedMesh
       geometry: BufferGeometry
       materials: Material[]
+      display: ModelData['display']
     }
 )
 export type MinimalInstancedMeshBatchData = Pick<
@@ -425,5 +480,5 @@ async function prepareMeshIngredients(resourceLocation: string) {
     throw new Error(`Failed to load model mesh data for ${resourceLocation}`)
   }
 
-  return meshIngredients
+  return { ...meshIngredients, rawModelData: modelData }
 }

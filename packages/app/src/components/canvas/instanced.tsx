@@ -1,3 +1,4 @@
+import type { ModelDisplayPositionKey } from '@depl/shared'
 import { invalidate, useFrame } from '@react-three/fiber'
 import { type FC, useEffect, useRef } from 'react'
 import { Group, Matrix4 } from 'three'
@@ -11,6 +12,7 @@ interface InstacedModelProps {
   entityId: string
   modelId: string
   resourceLocation: string
+  displayType?: ModelDisplayPositionKey
   xRotation?: number
   yRotation?: number
 }
@@ -18,6 +20,7 @@ export const InstancedModel: FC<InstacedModelProps> = ({
   entityId,
   modelId,
   resourceLocation,
+  displayType,
   xRotation = 0,
   yRotation = 0,
 }) => {
@@ -75,6 +78,11 @@ export const InstancedModel: FC<InstacedModelProps> = ({
       y: yRotation,
     })
   }, [modelId, xRotation, yRotation])
+  useEffect(() => {
+    if (!allocatedRef.current) return
+
+    InstancedMeshManager.instance.setDisplay(modelId, displayType)
+  }, [modelId, displayType])
 
   useFrame(() => {
     // if batch is not ready, retry on next frame

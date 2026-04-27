@@ -116,6 +116,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
             entityId={id}
             resourceLocation={modelResourceLocation}
             modelId={`${id};item/${type}`}
+            displayType={thisEntityDisplay ?? undefined}
           />
         ) : (
           <MemoizedModel
