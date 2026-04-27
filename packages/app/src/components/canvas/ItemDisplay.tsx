@@ -105,6 +105,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
           modelList={modelList}
           visible={thisEntitySelected}
           color="#06b6d4" // tailwind v3 cyan-500
+          displayType={thisEntityDisplay ?? undefined}
         />
       ) : (
         thisEntitySelected && <Helper type={BoxHelper} args={['gold']} />
