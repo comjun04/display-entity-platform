@@ -108,7 +108,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
           displayType={thisEntityDisplay ?? undefined}
         />
       ) : (
-        thisEntitySelected && <Helper type={BoxHelper} args={['gold']} />
+        thisEntitySelected && <Helper type={BoxHelper} args={['#06b6d4']} />
       )}
 
       <group onClick={onClick} ref={boundingBoxTargetRef}>
