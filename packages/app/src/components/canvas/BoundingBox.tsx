@@ -1,8 +1,15 @@
 import { useFrame } from '@react-three/fiber'
 import { type FC, useEffect, useMemo, useRef } from 'react'
-import { Box3, BoxHelper, MathUtils, Matrix4, Object3D } from 'three'
-import { type ColorRepresentation } from 'three'
-import { Vector3 } from 'three'
+import {
+  Box3,
+  BoxHelper,
+  type ColorRepresentation,
+  Euler,
+  MathUtils,
+  Matrix4,
+  Object3D,
+  Vector3,
+} from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import {
@@ -120,6 +127,7 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
     box.set(infinityVector, negativeInfinityVector)
 
     const _matrix = new Matrix4()
+    const _euler = new Euler()
 
     for (let i = 0; i < modelList.length; i++) {
       const modelData = modelList[i]
@@ -135,9 +143,13 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
       boundingBox
         .translate(ReverseHalfBlockTranslatedXZVector)
         .applyMatrix4(
-          _matrix
-            .makeRotationX(MathUtils.degToRad(-1 * (modelData.xRotation ?? 0)))
-            .makeRotationY(MathUtils.degToRad(-1 * (modelData.yRotation ?? 0))),
+          _matrix.makeRotationFromEuler(
+            _euler.set(
+              MathUtils.degToRad(-1 * (modelData.xRotation ?? 0)),
+              MathUtils.degToRad(-1 * (modelData.yRotation ?? 0)),
+              0,
+            ),
+          ),
         )
         .translate(HalfBlockTranslatedXZVector)
 
