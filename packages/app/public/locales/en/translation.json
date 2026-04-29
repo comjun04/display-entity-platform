@@ -17,13 +17,9 @@
       },
       "showWelcomeOnStartup": "Show Welcome on Startup",
       "changeLogs": [
-        "Now supports Minecraft 1.21.11!",
-        "Added Player Head Painter, where you can now paint your own player head and bake it to use in-game!",
-        "Now you can change shortcuts. Configure as you want!",
-        "Improved asset loading by load them parallel.",
-        "Added toast system. More notifications will be added soon.",
-        "Sidebar width is now limited to 80% of window width.",
-        "Now changed sidebar width will be saved, no need to resize each time when opening the app.",
+        "Block Display and Item Display are now use instanced rendering, makes rendering much faster on large projects.",
+        "Now you can drag-and-drop a project file to open!",
+        "Changed some ui and designs, also reduced app bundle size to reduce first load times.",
         "...and several fixes to improve the app!"
       ]
     },
