@@ -1,11 +1,11 @@
-import { type FC, useCallback, useEffect, useRef, useState } from 'react'
+import { type FC, useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/shallow'
 
-import { getLogger } from '@/services/loggerService'
+import { getLogger } from '@/lib/logger'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
-import { isItemDisplayPlayerHead } from '@/types'
+import { isItemDisplayPlayerHead } from '@/types/guards'
 import type {
   HeadBakerWorkerMessage,
   HeadBakerWorkerResponse,
@@ -17,15 +17,11 @@ import Dialog from './Dialog'
 const logger = getLogger('PlayerHeadBakingDialog')
 
 const PlayerHeadBakingDialog: FC = () => {
-  const { isOpen, setOpenedDialog } = useDialogStore(
+  const { isOpen, closeActiveDialog } = useDialogStore(
     useShallow((state) => ({
-      isOpen: state.openedDialog === 'bakingPlayerHeads',
-      setOpenedDialog: state.setOpenedDialog,
+      isOpen: state.activeDialog === 'bakingPlayerHeads',
+      closeActiveDialog: state.closeActiveDialog,
     })),
-  )
-  const closeDialog = useCallback(
-    () => setOpenedDialog(null),
-    [setOpenedDialog],
   )
 
   const [running, setRunning] = useState(false)
@@ -122,9 +118,9 @@ const PlayerHeadBakingDialog: FC = () => {
     <Dialog
       title="Baking Player Heads..."
       useLargeStaticSize={false}
-      modal={running}
+      disableUserClose={running}
       open={isOpen}
-      onClose={closeDialog}
+      onClose={closeActiveDialog}
     >
       <MultiSegmentProgress
         segments={[
@@ -158,19 +154,19 @@ const PlayerHeadBakingDialog: FC = () => {
         </div>
         <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
           <div className="flex flex-row items-center gap-2">
-            <div className="h-4 w-12 rounded bg-gray-700" />
+            <div className="h-4 w-12 rounded-sm bg-gray-700" />
             <span>Waiting: {headsWaitingInQueue}</span>
           </div>
           <div className="flex flex-row items-center gap-2">
-            <div className="h-4 w-12 rounded bg-yellow-700" />
+            <div className="h-4 w-12 rounded-sm bg-yellow-700" />
             <span>Generating: {stats.generating}</span>
           </div>
           <div className="flex flex-row items-center gap-2">
-            <div className="h-4 w-12 rounded bg-red-800" />
+            <div className="h-4 w-12 rounded-sm bg-red-800" />
             <span>Error: {stats.error}</span>
           </div>
           <div className="flex flex-row items-center gap-2">
-            <div className="h-4 w-12 rounded bg-green-800" />
+            <div className="h-4 w-12 rounded-sm bg-green-800" />
             <span>Completed: {stats.completed}</span>
           </div>
         </div>
@@ -178,7 +174,7 @@ const PlayerHeadBakingDialog: FC = () => {
 
       <div className="flex flex-row justify-end gap-2">
         <button
-          className="rounded bg-red-700 px-3 py-2 transition disabled:opacity-30"
+          className="rounded-sm bg-red-700 px-3 py-2 transition disabled:opacity-30"
           disabled={!running}
           onClick={() => {
             workerRef.current?.terminate()
@@ -188,9 +184,9 @@ const PlayerHeadBakingDialog: FC = () => {
           Cancel
         </button>
         <button
-          className="rounded bg-gray-700 px-3 py-2 transition disabled:opacity-30"
+          className="rounded-sm bg-gray-700 px-3 py-2 transition disabled:opacity-30"
           disabled={running}
-          onClick={closeDialog}
+          onClick={closeActiveDialog}
         >
           Close
         </button>

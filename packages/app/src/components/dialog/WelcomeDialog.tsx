@@ -3,10 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { LuArchiveRestore, LuFilePlus, LuFolderOpen } from 'react-icons/lu'
 import { useShallow } from 'zustand/shallow'
 
-import { Disclaimer, SpecialThanks, Title } from '@/components/brandings'
-import { newProject } from '@/services/actions'
-import AutosaveService from '@/services/autosave'
-import { openFromFile } from '@/services/fileService'
+import {
+  Disclaimer,
+  OpenSourceNotice,
+  SpecialThanks,
+  Title,
+} from '@/components/brandings'
+import { clearProject } from '@/lib/actions'
+import { openFileFromUserSelect } from '@/lib/file-handler'
+import AutosaveService from '@/lib/services/autosave.service'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useEditorStore } from '@/stores/editorStore'
 
@@ -15,10 +20,10 @@ import Dialog from './Dialog'
 const WelcomeDialog: FC = () => {
   const { t } = useTranslation()
 
-  const { isOpen, setOpenedDialog } = useDialogStore(
+  const { isOpen, closeActiveDialog } = useDialogStore(
     useShallow((state) => ({
-      isOpen: state.openedDialog === 'welcome',
-      setOpenedDialog: state.setOpenedDialog,
+      isOpen: state.activeDialog === 'welcome',
+      closeActiveDialog: state.closeActiveDialog,
     })),
   )
   const { showWelcomeOnStartup, setSettings } = useEditorStore(
@@ -36,22 +41,17 @@ const WelcomeDialog: FC = () => {
 
   const closeDialog = () => {
     setShowRecoverSessionSection(false)
-    setOpenedDialog(null)
+    closeActiveDialog()
   }
 
   return (
-    <Dialog
-      title=""
-      open={isOpen}
-      onClose={closeDialog}
-      className="relative z-50"
-    >
+    <Dialog title="" open={isOpen} onClose={closeDialog}>
       <div className="flex h-full flex-col gap-2 overflow-auto">
         <Title />
-        <div className="h-full overflow-y-auto pb-8 pt-4">
+        <div className="h-full overflow-y-auto pt-4 pb-8">
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex-1">
-              {/* v1.3.0 */}
+              {/* v0.0.0 */}
               <div className="text-2xl text-sky-200">v{__VERSION__}</div>
               <div className="ml-4 text-sm text-neutral-400">
                 <ul className="list-disc">
@@ -65,19 +65,19 @@ const WelcomeDialog: FC = () => {
             </div>
             <div className="flex flex-1 flex-col gap-2">
               <button
-                className="flex flex-row items-center gap-2 rounded bg-neutral-900 px-4 py-2"
+                className="flex flex-row items-center gap-2 rounded-sm bg-neutral-900 px-4 py-2"
                 onClick={() => {
                   closeDialog()
-                  newProject()
+                  clearProject().catch(console.error)
                 }}
               >
                 <LuFilePlus size={24} />
                 <span>{t(($) => $.dialog.welcome.action.new)}</span>
               </button>
               <button
-                className="flex flex-row items-center gap-2 rounded bg-neutral-900 px-4 py-2"
+                className="flex flex-row items-center gap-2 rounded-sm bg-neutral-900 px-4 py-2"
                 onClick={() => {
-                  openFromFile()
+                  openFileFromUserSelect()
                   closeDialog()
                 }}
               >
@@ -85,11 +85,11 @@ const WelcomeDialog: FC = () => {
                 <span>{t(($) => $.dialog.welcome.action.open)}</span>
               </button>
               {showRecoverSessionSection && (
-                <div className="flex flex-col gap-2 rounded bg-neutral-700 p-4">
+                <div className="flex flex-col gap-2 rounded-sm bg-neutral-700 p-4">
                   <div>{t(($) => $.dialog.welcome.recoverProject.desc)}</div>
 
                   <button
-                    className="flex flex-row items-center gap-2 rounded bg-neutral-900 px-4 py-2"
+                    className="flex flex-row items-center gap-2 rounded-sm bg-neutral-900 px-4 py-2"
                     onClick={() => {
                       closeDialog()
                       autosaveService.loadSave().catch(console.error)
@@ -131,6 +131,7 @@ const WelcomeDialog: FC = () => {
           </div>
           <Disclaimer />
           <SpecialThanks />
+          <OpenSourceNotice />
         </div>
       </div>
     </Dialog>

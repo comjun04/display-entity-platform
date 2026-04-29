@@ -2,7 +2,7 @@ import type {
   MineSkinAPIV2_ListQueueJobsResponse,
   MineSkinAPIV2_QueueJobDetailResponse,
   MineSkinAPIV2_QueueSkinGenerationResponse,
-} from '@/types'
+} from '@/types/base'
 import type {
   HeadBakerWorkerMessage,
   HeadBakerWorkerResponse,

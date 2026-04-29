@@ -1,9 +1,9 @@
 import { type FC, useEffect, useMemo } from 'react'
 
-import { toggleGroup } from '@/services/actions'
-import { openFromFile, saveToFile } from '@/services/fileService'
-import { getLogger } from '@/services/loggerService'
-import type { ShortcutActionsEnum } from '@/services/settings'
+import { toggleGroup } from '@/lib/actions'
+import { openFileFromUserSelect, saveToFile } from '@/lib/file-handler'
+import { getLogger } from '@/lib/logger'
+import type { ShortcutActionsEnum } from '@/lib/settings'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -38,7 +38,8 @@ const ShortcutHandler: FC = () => {
     const { undoHistory, redoHistory } = useHistoryStore.getState()
 
     const handler = (evt: KeyboardEvent) => {
-      const { openedDialog, setOpenedDialog } = useDialogStore.getState()
+      const { activeDialog: openedDialog, openDialog: setOpenedDialog } =
+        useDialogStore.getState()
 
       // prevent default browser actions first
       // ctrl + o (open file)
@@ -96,7 +97,7 @@ const ShortcutHandler: FC = () => {
           // general
           case 'general.openFromFile':
             evt.preventDefault()
-            openFromFile()
+            openFileFromUserSelect()
             break
           case 'general.saveToFile':
             evt.preventDefault()

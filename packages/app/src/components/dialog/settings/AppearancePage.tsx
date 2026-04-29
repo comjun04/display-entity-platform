@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
-import type { Settings } from '@/services/settings'
+import type { Settings } from '@/lib/settings'
 import { useEditorStore } from '@/stores/editorStore'
 
 const AppearancePage: FC = () => {
@@ -39,7 +39,7 @@ const AppearancePage: FC = () => {
             </label>
             <select
               id="settings_appearance_quickActionPanel_location"
-              className="flex-none rounded bg-neutral-900 px-2 py-1"
+              className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
               value={settings.appearance.quickActionPanel.location}
               onChange={(evt) => {
                 setSettings({
@@ -79,7 +79,7 @@ const AppearancePage: FC = () => {
             </label>
             <input
               type="number"
-              className="w-16 shrink rounded bg-neutral-900 py-2 pl-2 text-xs outline-none"
+              className="w-16 shrink rounded-sm bg-neutral-900 py-2 pl-2 text-xs outline-hidden"
               value={settings.appearance.quickActionPanel.margin}
               onChange={(evt) => {
                 const newMargin = parseInt(evt.target.value)
@@ -110,7 +110,7 @@ const AppearancePage: FC = () => {
             </label>
             <select
               id="settings_appearance_gizmo_location"
-              className="flex-none rounded bg-neutral-900 px-2 py-1"
+              className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
               value={settings.appearance.gizmo.location}
               onChange={(evt) => {
                 setSettings({
@@ -148,7 +148,7 @@ const AppearancePage: FC = () => {
             <input
               type="number"
               id="settings_appearance_gizmo_marginHeight"
-              className="w-16 shrink rounded bg-neutral-900 py-2 pl-2 text-xs outline-none"
+              className="w-16 shrink rounded-sm bg-neutral-900 py-2 pl-2 text-xs outline-hidden"
               value={settings.appearance.gizmo.marginWidth}
               onChange={(evt) => {
                 const newMargin = parseInt(evt.target.value)
@@ -174,7 +174,7 @@ const AppearancePage: FC = () => {
             <input
               type="number"
               id="settings_appearance_gizmo_marginWidth"
-              className="w-16 shrink rounded bg-neutral-900 py-2 pl-2 text-xs outline-none"
+              className="w-16 shrink rounded-sm bg-neutral-900 py-2 pl-2 text-xs outline-hidden"
               value={settings.appearance.gizmo.marginHeight}
               onChange={(evt) => {
                 const newMargin = parseInt(evt.target.value)

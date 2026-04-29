@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
-import type { Settings } from '@/services/settings'
+import type { Settings } from '@/lib/settings'
 import { useEditorStore } from '@/stores/editorStore'
 
 const GeneralPage: FC = () => {
@@ -27,7 +27,7 @@ const GeneralPage: FC = () => {
         </label>
         <select
           id="settings_general_language"
-          className="flex-none rounded bg-neutral-900 px-2 py-1"
+          className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
           value={settings.general.language}
           onChange={(evt) => {
             setSettings({

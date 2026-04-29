@@ -1,4 +1,3 @@
-import { Tooltip } from '@heroui/tooltip'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoMove } from 'react-icons/io5'
@@ -11,13 +10,18 @@ import {
 } from 'react-icons/lu'
 import { useShallow } from 'zustand/shallow'
 
-import { newProject } from '@/services/actions'
-import { openFromFile, saveToFile } from '@/services/fileService'
-import { getLogger } from '@/services/loggerService'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { clearProject } from '@/lib/actions'
+import { openFileFromUserSelect, saveToFile } from '@/lib/file-handler'
+import { getLogger } from '@/lib/logger'
+import { getFormattedShortcutKeyString } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useHistoryStore } from '@/stores/historyStore'
-import { getFormattedShortcutKeyString } from '@/utils'
 
 import FloatingButton from './FloatingButton'
 import MobileDragHoldButton from './MobileDragHoldButton'
@@ -58,7 +62,7 @@ const LeftButtonPanel: FC = () => {
     })),
   )
   const { setOpenedDialog } = useDialogStore(
-    useShallow((state) => ({ setOpenedDialog: state.setOpenedDialog })),
+    useShallow((state) => ({ setOpenedDialog: state.openDialog })),
   )
   const { undoHistory, redoHistory } = useHistoryStore(
     useShallow((state) => ({
@@ -68,25 +72,30 @@ const LeftButtonPanel: FC = () => {
   )
 
   return (
-    <div className="absolute left-0 top-0 z-[5] ml-4 mt-4 flex flex-col items-start gap-2">
+    <div className="absolute top-0 left-0 z-5 mt-4 ml-4 flex flex-col items-start gap-2">
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <FloatingButton>
-            <LuMenu size={24} />
-          </FloatingButton>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <FloatingButton>
+              <LuMenu size={24} />
+            </FloatingButton>
+          }
+        />
         <DropdownMenuContent
           side="right"
           sideOffset={10}
           align="start"
-          className="origin-top-left data-[state=open]:slide-in-from-left-0 sm:min-w-52"
+          className="origin-top-left sm:min-w-52"
         >
-          <DropdownMenuItem className="w-full" onClick={newProject}>
+          <DropdownMenuItem
+            className="w-full"
+            onClick={() => void clearProject()}
+          >
             <div className="flex w-full flex-row items-center gap-2 text-sm">
               <span className="grow">{t(($) => $.menu.newProject)}</span>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem className="w-full" onClick={openFromFile}>
+          <DropdownMenuItem className="w-full" onClick={openFileFromUserSelect}>
             <div className="flex w-full flex-row items-center gap-2 text-sm">
               <span className="grow">{t(($) => $.menu.open)}</span>
               <span className="text-xs text-neutral-500">
@@ -160,104 +169,111 @@ const LeftButtonPanel: FC = () => {
       </DropdownMenu>
 
       <div className="flex flex-row gap-2">
-        <Tooltip
-          content={`${t(($) => $.editor.undo)} (${getFormattedShortcutKeyString(
-            shortcutSettings['general.undo'] ?? '',
-          )})`}
-          placement="bottom"
-          size="sm"
-          delay={300}
-          closeDelay={0}
-        >
-          <FloatingButton onClick={() => undoHistory()}>
-            <LuUndo size={24} />
-          </FloatingButton>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <FloatingButton onClick={() => undoHistory()}>
+                <LuUndo size={24} />
+              </FloatingButton>
+            }
+          />
+          <TooltipContent side="bottom">
+            {`${t(($) => $.editor.undo)} (${getFormattedShortcutKeyString(
+              shortcutSettings['general.undo'] ?? '',
+            )})`}
+          </TooltipContent>
         </Tooltip>
-        <Tooltip
-          content={`${t(($) => $.editor.redo)} (${getFormattedShortcutKeyString(
-            shortcutSettings['general.redo'] ?? '',
-          )})`}
-          placement="bottom"
-          size="sm"
-          delay={300}
-          closeDelay={0}
-        >
-          <FloatingButton onClick={() => redoHistory()}>
-            <LuRedo size={24} />
-          </FloatingButton>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <FloatingButton onClick={() => redoHistory()}>
+                <LuRedo size={24} />
+              </FloatingButton>
+            }
+          />
+          <TooltipContent side="bottom">
+            {`${t(($) => $.editor.redo)} (${getFormattedShortcutKeyString(
+              shortcutSettings['general.redo'] ?? '',
+            )})`}
+          </TooltipContent>
         </Tooltip>
       </div>
 
-      <Tooltip
-        content={`${t(($) => $.editor.modes.translate)} (${getFormattedShortcutKeyString(
-          shortcutSettings['editor.translateMode'] ?? '',
-        )})`}
-        placement="right"
-        size="sm"
-        delay={300}
-        closeDelay={0}
-      >
-        <FloatingButton
-          active={mode === 'translate'}
-          disabled={headPainterEnabled}
-          onClick={() => setMode('translate')}
-        >
-          <IoMove size={24} />
-        </FloatingButton>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <FloatingButton
+              active={mode === 'translate'}
+              disabled={headPainterEnabled}
+              onClick={() => setMode('translate')}
+            >
+              <IoMove size={24} />
+            </FloatingButton>
+          }
+        />
+        <TooltipContent side="right">
+          {`${t(($) => $.editor.modes.translate)} (${getFormattedShortcutKeyString(
+            shortcutSettings['editor.translateMode'] ?? '',
+          )})`}
+        </TooltipContent>
       </Tooltip>
 
-      <Tooltip
-        content={`${t(($) => $.editor.modes.rotate)} (${getFormattedShortcutKeyString(
-          shortcutSettings['editor.rotateMode'] ?? '',
-        )})`}
-        placement="right"
-        size="sm"
-        delay={300}
-        closeDelay={0}
-      >
-        <FloatingButton
-          active={mode === 'rotate'}
-          disabled={headPainterEnabled}
-          onClick={() => setMode('rotate')}
-        >
-          <LuRotate3D size={24} />
-        </FloatingButton>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <FloatingButton
+              active={mode === 'rotate'}
+              disabled={headPainterEnabled}
+              onClick={() => setMode('rotate')}
+            >
+              <LuRotate3D size={24} />
+            </FloatingButton>
+          }
+        />
+        <TooltipContent side="right">
+          {`${t(($) => $.editor.modes.rotate)} (${getFormattedShortcutKeyString(
+            shortcutSettings['editor.rotateMode'] ?? '',
+          )})`}
+        </TooltipContent>
       </Tooltip>
 
-      <Tooltip
-        content={`${t(($) => $.editor.modes.scale)} (${getFormattedShortcutKeyString(
-          shortcutSettings['editor.scaleMode'] ?? '',
-        )})`}
-        placement="right"
-        size="sm"
-        delay={300}
-        closeDelay={0}
-      >
-        <FloatingButton
-          active={mode === 'scale'}
-          disabled={headPainterEnabled}
-          onClick={() => setMode('scale')}
-        >
-          <LuMoveDiagonal size={24} />
-        </FloatingButton>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <FloatingButton
+              active={mode === 'scale'}
+              disabled={headPainterEnabled}
+              onClick={() => setMode('scale')}
+            >
+              <LuMoveDiagonal size={24} />
+            </FloatingButton>
+          }
+        />
+        <TooltipContent side="right">
+          {`${t(($) => $.editor.modes.scale)} (${getFormattedShortcutKeyString(
+            shortcutSettings['editor.scaleMode'] ?? '',
+          )})`}
+        </TooltipContent>
       </Tooltip>
 
-      <Tooltip
-        content={t(($) => $.editor.changeSpaceMode)}
-        placement="right"
-        size="sm"
-        delay={300}
-        closeDelay={0}
-      >
-        <FloatingButton
-          onClick={() => {
-            setRotationSpace(rotationSpace === 'world' ? 'local' : 'world')
-          }}
-        >
-          {rotationSpace === 'world' ? 'World' : 'Local'}
-        </FloatingButton>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <FloatingButton
+              onClick={() => {
+                setRotationSpace(rotationSpace === 'world' ? 'local' : 'world')
+              }}
+            >
+              {rotationSpace === 'world' ? 'World' : 'Local'}
+            </FloatingButton>
+          }
+        />
+        <TooltipContent side="right">
+          {t(($) => $.editor.changeSpaceMode)}
+        </TooltipContent>
       </Tooltip>
 
+      {/* dummy element just to make spacing */}
       <div />
 
       <MobileDragHoldButton />

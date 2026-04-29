@@ -5,8 +5,8 @@ import {
 } from 'react-icons/lu'
 import { useShallow } from 'zustand/shallow'
 
+import { cn } from '@/lib/utils'
 import { useEditorStore } from '@/stores/editorStore'
-import { cn } from '@/utils'
 
 import FloatingButton from './FloatingButton'
 

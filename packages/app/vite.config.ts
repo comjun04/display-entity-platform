@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react-swc'
 import { execSync } from 'child_process'
 import { resolve } from 'path'
@@ -10,7 +11,7 @@ const isDevelopmentMode = process.env.NODE_ENV === 'development'
 
 const commitHash = execSync('git rev-parse --short HEAD').toString()
 
-const plugins: PluginOption[] = [react()]
+const plugins: PluginOption[] = [react(), tailwindcss()]
 if (process.env.GENERATE_BUILD_STATS) {
   plugins.push(
     visualizer({

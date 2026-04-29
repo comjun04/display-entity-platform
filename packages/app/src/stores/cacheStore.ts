@@ -4,14 +4,14 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
 import { CDNBaseUrl } from '@/constants'
-import { getLogger } from '@/services/loggerService'
-import { loadModel } from '@/services/resources/model'
+import { getLogger } from '@/lib/logger'
+import { loadModel } from '@/lib/resources/model'
 import type {
   AssetFileInfos,
   BlockstatesData,
   FontProvider,
   ModelData,
-} from '@/types'
+} from '@/types/base'
 
 import { useProjectStore } from './projectStore'
 

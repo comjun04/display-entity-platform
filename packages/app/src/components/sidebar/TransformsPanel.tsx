@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { MathUtils } from 'three'
 import { useShallow } from 'zustand/shallow'
 
-import { getLogger } from '@/services/loggerService'
+import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
-import type { PartialNumber3Tuple } from '@/types'
+import type { PartialNumber3Tuple } from '@/types/base'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import XYZInput from './XYZInput'
@@ -223,7 +223,7 @@ const TransformsPanel: FC = () => {
       <SidePanelContent>
         {/* Translation */}
         <div>
-          <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+          <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
             Translation
           </div>
           <XYZInput
@@ -234,7 +234,7 @@ const TransformsPanel: FC = () => {
         </div>
 
         <div className="mt-2">
-          <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+          <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
             Rotation
           </div>
           {/* temp */}
@@ -246,7 +246,7 @@ const TransformsPanel: FC = () => {
         </div>
 
         <div className="mt-2">
-          <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+          <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
             Scale
           </div>
           {/* temp */}

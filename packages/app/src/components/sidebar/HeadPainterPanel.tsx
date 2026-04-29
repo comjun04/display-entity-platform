@@ -1,11 +1,11 @@
 import { type FC } from 'react'
 import { useShallow } from 'zustand/shallow'
 
+import { cn } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
-import { isItemDisplayPlayerHead } from '@/types'
-import { cn } from '@/utils'
+import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import { ColorPickerInput } from '../ui/ColorPicker'
@@ -38,7 +38,7 @@ const HeadPainterPanel: FC = () => {
       <SidePanelTitle>Head Painter</SidePanelTitle>
       <SidePanelContent>
         <div className="flex flex-col gap-2">
-          <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+          <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
             Paint
           </div>
           <div className="flex flex-row items-center gap-2">
@@ -56,10 +56,10 @@ const HeadPainterPanel: FC = () => {
           <div className="flex flex-row items-center gap-2">
             <label className="flex-1 text-end">Layer</label>
             <div className="flex-1">
-              <div className="flex w-fit flex-row gap-1 rounded bg-neutral-700 p-1">
+              <div className="flex w-fit flex-row gap-1 rounded-sm bg-neutral-700 p-1">
                 <button
                   className={cn(
-                    'rounded px-3 py-1',
+                    'rounded-sm px-3 py-1',
                     layer === 'base' && 'bg-blue-500',
                   )}
                   onClick={() => {
@@ -70,7 +70,7 @@ const HeadPainterPanel: FC = () => {
                 </button>
                 <button
                   className={cn(
-                    'rounded px-3 py-1',
+                    'rounded-sm px-3 py-1',
                     layer === 'second' && 'bg-blue-500',
                   )}
                   onClick={() => {
@@ -83,7 +83,7 @@ const HeadPainterPanel: FC = () => {
             </div>
           </div>
 
-          <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+          <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
             Bake textures
           </div>
           <div className="flex flex-col gap-2">
@@ -107,14 +107,12 @@ const HeadPainterPanel: FC = () => {
                 )}
                 <button
                   className={cn(
-                    'rounded bg-stone-700 p-1',
+                    'rounded-sm bg-stone-700 p-1',
                     !mineskinApiKeyFilled && 'bg-stone-700/50 text-gray-500',
                   )}
                   disabled={!mineskinApiKeyFilled}
                   onClick={() => {
-                    useDialogStore
-                      .getState()
-                      .setOpenedDialog('bakingPlayerHeads')
+                    useDialogStore.getState().openDialog('bakingPlayerHeads')
                   }}
                 >
                   Bake textures

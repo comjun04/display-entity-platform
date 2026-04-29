@@ -1,14 +1,10 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
-import AutosaveService from '@/services/autosave'
-import { getLogger } from '@/services/loggerService'
-import {
-  type History,
-  type Number3Tuple,
-  type PlayerHeadProperties,
-  isItemDisplayPlayerHead,
-} from '@/types'
+import { getLogger } from '@/lib/logger'
+import AutosaveService from '@/lib/services/autosave.service'
+import type { History, Number3Tuple, PlayerHeadProperties } from '@/types/base'
+import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { useEditorStore } from './editorStore'
 

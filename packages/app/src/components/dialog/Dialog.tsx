@@ -1,89 +1,98 @@
-import {
-  DialogBackdrop,
-  DialogPanel,
-  DialogTitle,
-  Dialog as OriginalDialog,
-} from '@headlessui/react'
 import type { FC, ReactNode } from 'react'
-import { LuX } from 'react-icons/lu'
 
-import { cn } from '@/utils'
+import { cn } from '@/lib/utils'
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog'
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Dialog as DialogUIRoot,
+} from '../ui/dialog'
 
 type DialogProps = {
+  // specifies the type of dialog. `alert` uses AlertDialog to render.
+  // Changing this when mounted causes dialog to unmount and remount! (uses different component to render)
+  type?: 'default' | 'alert'
   open: boolean
   onClose?: () => void
   className?: string
   backdropClassName?: string
-  innerPanelClassName?: string
   // whether to use large static size for dialog.
   // dialog will be fullscreen on mobile when this is set to true
   useLargeStaticSize?: boolean
-  // whether to enable modal mode.
-  // modal mode disables closing dialog by clicking backdrop and removes close button
-  modal?: boolean
+  // whether to prevent user from closing the dialog.
+  // disables closing dialog by clicking backdrop and removes close button
+  // this option is useless when using `alert` type dialog, as alert dialogs passively has this feature
+  disableUserClose?: boolean
   title?: string
   children?: ReactNode
 }
 
 const Dialog: FC<DialogProps> = ({
+  type = 'default',
   open,
   onClose,
   className,
   backdropClassName,
-  innerPanelClassName,
   useLargeStaticSize = true,
-  modal = false,
+  disableUserClose = false,
   title,
   children,
 }) => {
-  return (
-    <OriginalDialog
+  return type === 'alert' ? (
+    <AlertDialog
       open={open}
-      onClose={() => {
-        if (!modal) {
+      onOpenChange={(value) => {
+        if (!value) {
           onClose?.()
         }
       }}
-      className={cn('relative z-50', className)}
     >
-      <DialogBackdrop
-        transition
+      <AlertDialogContent
         className={cn(
-          'fixed inset-0 bg-black/30 duration-200 ease-out data-[closed]:opacity-0',
-          useLargeStaticSize ? 'sm:backdrop-blur-sm' : 'backdrop-blur-sm',
-          backdropClassName,
+          useLargeStaticSize && 'h-[calc(100%-2rem)] sm:h-[75vh]',
+          className,
         )}
-      />
-
-      <div
-        className={cn(
-          'fixed inset-0 flex w-screen items-center justify-center',
-          useLargeStaticSize ? 'sm:p-4' : 'p-4',
-        )}
+        backdropClassName={backdropClassName}
       >
-        <DialogPanel
-          transition
-          className={cn(
-            'flex w-full max-w-screen-md select-none flex-col gap-2 bg-neutral-800 p-4 duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0',
-            useLargeStaticSize
-              ? 'h-full sm:h-[75vh] sm:rounded-xl'
-              : 'rounded-xl',
-            innerPanelClassName,
-          )}
-        >
-          <DialogTitle className="flex flex-row items-center">
-            <span className="grow text-2xl font-bold">{title}</span>
-            {!modal && (
-              <button onClick={onClose}>
-                <LuX size={24} />
-              </button>
-            )}
-          </DialogTitle>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+        </AlertDialogHeader>
 
-          {children}
-        </DialogPanel>
-      </div>
-    </OriginalDialog>
+        {children}
+      </AlertDialogContent>
+    </AlertDialog>
+  ) : (
+    <DialogUIRoot
+      open={open}
+      onOpenChange={(value) => {
+        if (!value) {
+          onClose?.()
+        }
+      }}
+      disablePointerDismissal={disableUserClose}
+    >
+      <DialogContent
+        className={cn(
+          useLargeStaticSize && 'h-[calc(100%-2rem)] sm:h-[75vh]',
+          className,
+        )}
+        backdropClassName={backdropClassName}
+        showCloseButton={!disableUserClose}
+      >
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+
+        {children}
+      </DialogContent>
+    </DialogUIRoot>
   )
 }
 

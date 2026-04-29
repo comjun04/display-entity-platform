@@ -5,10 +5,10 @@ import { type FC, useEffect, useRef } from 'react'
 import { Group, Vector2, Vector3 } from 'three'
 import { shallow } from 'zustand/shallow'
 
+import { cn } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
-import { cn } from '@/utils'
 
 import { SelectionBox } from './SelectionBox'
 

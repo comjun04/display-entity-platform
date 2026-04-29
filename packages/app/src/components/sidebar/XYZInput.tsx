@@ -1,6 +1,6 @@
 import { type FC, useCallback, useEffect, useState } from 'react'
 
-import type { PartialNumber3Tuple } from '@/types'
+import type { PartialNumber3Tuple } from '@/types/base'
 
 type NumberInputProps = {
   value?: number
@@ -93,7 +93,7 @@ const XYZInput: FC<XYZInputProps> = ({
           value={x}
           allowNegative={allowNegative}
           onChange={xUpdateFn}
-          className="w-full rounded border-l-4 border-red-500 bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="w-full rounded-sm border-l-4 border-red-500 bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
         />
       </div>
       <div className="flex flex-row items-center gap-2">
@@ -102,7 +102,7 @@ const XYZInput: FC<XYZInputProps> = ({
           value={y}
           allowNegative={allowNegative}
           onChange={yUpdateFn}
-          className="w-full rounded border-l-4 border-green-500 bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="w-full rounded-sm border-l-4 border-green-500 bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
         />
       </div>
       <div className="flex flex-row items-center gap-2">
@@ -111,7 +111,7 @@ const XYZInput: FC<XYZInputProps> = ({
           value={z}
           allowNegative={allowNegative}
           onChange={zUpdateFn}
-          className="w-full rounded border-l-4 border-blue-500 bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="w-full rounded-sm border-l-4 border-blue-500 bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
         />
       </div>
     </div>

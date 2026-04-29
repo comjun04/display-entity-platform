@@ -1,10 +1,11 @@
+import { reloadResources } from 'i18next'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
 import { useEditorStore } from '@/stores/editorStore'
-import type { LogLevel } from '@/types'
+import type { LogLevel } from '@/types/base'
 
 const DebugOptionsPage: FC = () => {
   const { t } = useTranslation()
@@ -47,7 +48,7 @@ const DebugOptionsPage: FC = () => {
         </label>
         <select
           id="settings_debug_minloglevel"
-          className="flex-none rounded bg-neutral-900 px-2 py-1"
+          className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
           value={settings.debug.minLogLevel}
           onChange={(evt) => {
             setSettings({
@@ -102,12 +103,26 @@ const DebugOptionsPage: FC = () => {
 
       <hr />
 
-      <button
-        className="rounded bg-neutral-700 p-2"
-        onClick={() => toast.info('This is a test toast')}
-      >
-        Show Toast
-      </button>
+      <div>
+        <button
+          className="rounded-sm bg-neutral-700 p-2"
+          onClick={() => toast.info('This is a test toast')}
+        >
+          Show Toast
+        </button>
+      </div>
+      <div>
+        <button
+          className="rounded-sm bg-neutral-700 p-2"
+          onClick={() => {
+            reloadResources()
+              .then(() => toast.success('Reloaded translations'))
+              .catch(console.error)
+          }}
+        >
+          Reload translations
+        </button>
+      </div>
     </>
   )
 }

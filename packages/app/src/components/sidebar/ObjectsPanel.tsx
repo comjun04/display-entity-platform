@@ -5,9 +5,8 @@ import { LuChevronRight, LuSmile, LuType } from 'react-icons/lu'
 import { TbDiamondFilled } from 'react-icons/tb'
 import { useShallow } from 'zustand/shallow'
 
+import { cn } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
-import { isItemDisplayPlayerHead } from '@/types'
-import { cn } from '@/utils'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 
@@ -42,9 +41,8 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
 
         groupName: entity.kind === 'group' ? entity.name : undefined,
 
-        playerHeadProperties: isItemDisplayPlayerHead(entity)
-          ? entity.playerHeadProperties
-          : undefined,
+        playerHeadProperties:
+          entity.kind === 'item' ? entity.playerHeadProperties : undefined,
       }
     }),
   )
@@ -123,7 +121,7 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
         </span>
 
         {playerHeadProperties?.texture?.baked === false && (
-          <div className="rounded bg-neutral-700 px-1 py-0.5 text-xs text-gray-400">
+          <div className="rounded-sm bg-neutral-700 px-1 py-0.5 text-xs text-gray-400">
             Painted
           </div>
         )}

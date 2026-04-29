@@ -1,7 +1,7 @@
-import * as ProgressPrimitive from '@radix-ui/react-progress'
+import { Progress as ProgressPrimitive } from '@base-ui/react/progress'
 import * as React from 'react'
 
-import { cn } from '@/utils'
+import { cn } from '@/lib/utils'
 
 const REMAINING_AREA_NAME = '__remaining_area__'
 
@@ -44,9 +44,10 @@ const MultiSegmentProgress = React.forwardRef<
 
   return (
     <ProgressPrimitive.Root
+      value={null}
       ref={ref}
       className={cn(
-        'relative h-2 w-full overflow-hidden rounded-full bg-primary/20',
+        'bg-primary/20 relative h-2 w-full overflow-hidden rounded-full',
         className,
       )}
       {...props}

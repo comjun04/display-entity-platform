@@ -1,5 +1,5 @@
 import enTranslation from '@/../public/locales/en/translation.json'
-import { defaultNS } from '@/i18n/config'
+import { defaultNS } from '@/lib/i18n/config'
 
 declare module 'i18next' {
   interface CustomTypeOptions {

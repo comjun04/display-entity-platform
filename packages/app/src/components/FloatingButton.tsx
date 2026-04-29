@@ -1,6 +1,6 @@
 import { type ButtonHTMLAttributes, forwardRef } from 'react'
 
-import { cn } from '@/utils'
+import { cn } from '@/lib/utils'
 
 interface FloatingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean
@@ -11,7 +11,7 @@ const FloatingButton = forwardRef<HTMLButtonElement, FloatingButtonProps>(
     return (
       <button
         className={cn(
-          'rounded-lg p-2 outline-none',
+          'rounded-lg p-2 outline-hidden',
           disabled
             ? 'bg-black text-neutral-600'
             : active

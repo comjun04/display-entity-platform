@@ -5,18 +5,17 @@ import { LuCopy, LuCopyCheck } from 'react-icons/lu'
 import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
 import { useShallow } from 'zustand/shallow'
 
-import { getLogger } from '@/services/loggerService'
+import { getLogger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
 import { useProjectStore } from '@/stores/projectStore'
-import {
-  type MinimalTextureValue,
-  type TextEffects,
-  isItemDisplayPlayerHead,
-} from '@/types'
-import { cn } from '@/utils'
+import type { MinimalTextureValue, TextEffects } from '@/types/base'
+import { isItemDisplayPlayerHead } from '@/types/guards'
 
+import { Input } from '../ui/input'
+import { Textarea } from '../ui/textarea'
 import Dialog from './Dialog'
 
 const logger = getLogger('ExportToMinecraftDialog')
@@ -91,9 +90,10 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <span>{t(($) => $.dialog.exportToMinecraft.baseTag.title)}</span>
-      <input
-        className="rounded p-1 text-sm outline-none"
+      <span className="flex-none">
+        {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
+      </span>
+      <Input
         value={input}
         onChange={(evt) => {
           const text = evt.target.value
@@ -114,10 +114,11 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
             ns="translation"
           >
             Tag must contain only alphabets, numbers,{' '}
-            <code className="rounded bg-neutral-800 p-1 font-mono">_</code>,{' '}
-            <code className="rounded bg-neutral-800 p-1 font-mono">-</code>,{' '}
-            <code className="rounded bg-neutral-800 p-1 font-mono">.</code>, and{' '}
-            <code className="rounded bg-neutral-800 p-1 font-mono">+</code>{' '}
+            <code className="rounded-sm bg-neutral-800 p-1 font-mono">_</code>,{' '}
+            <code className="rounded-sm bg-neutral-800 p-1 font-mono">-</code>,{' '}
+            <code className="rounded-sm bg-neutral-800 p-1 font-mono">.</code>,
+            and{' '}
+            <code className="rounded-sm bg-neutral-800 p-1 font-mono">+</code>{' '}
             characters.
           </Trans>
         </span>
@@ -129,10 +130,10 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
 const ExportToMinecraftDialog: FC = () => {
   const { t } = useTranslation()
 
-  const { isOpen, setOpenedDialog } = useDialogStore(
+  const { isOpen, closeActiveDialog } = useDialogStore(
     useShallow((state) => ({
-      isOpen: state.openedDialog === 'exportToMinecraft',
-      setOpenedDialog: state.setOpenedDialog,
+      isOpen: state.activeDialog === 'exportToMinecraft',
+      closeActiveDialog: state.closeActiveDialog,
     })),
   )
   const { entities } = useDisplayEntityStore(
@@ -309,8 +310,7 @@ const ExportToMinecraftDialog: FC = () => {
     <Dialog
       title={t(($) => $.dialog.exportToMinecraft.title)}
       open={isOpen}
-      onClose={() => setOpenedDialog(null)}
-      className="relative z-50"
+      onClose={closeActiveDialog}
     >
       <div className="mt-2 rounded-lg bg-neutral-700 p-2">
         <TagValidatorInput onChange={setBaseTag} />
@@ -331,8 +331,8 @@ const ExportToMinecraftDialog: FC = () => {
                 </span>
                 <CopyButton valueToCopy={summonCommand} />
               </div>
-              <textarea
-                className="h-24 w-full resize-none break-all rounded-lg p-2 outline-none"
+              <Textarea
+                className="resize-none"
                 readOnly
                 value={summonCommand}
                 onFocus={(evt) => {
@@ -350,8 +350,8 @@ const ExportToMinecraftDialog: FC = () => {
             </span>
             <CopyButton valueToCopy={removeCommand} />
           </div>
-          <textarea
-            className="h-10 w-full resize-none break-all rounded-lg p-2 outline-none"
+          <Textarea
+            className="resize-none"
             readOnly
             value={removeCommand}
             onFocus={(evt) => {

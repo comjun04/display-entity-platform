@@ -11,21 +11,21 @@ import { useShallow } from 'zustand/shallow'
 
 import { BackendHost, GameVersions } from '@/constants'
 import useBlockStates from '@/hooks/useBlockStates'
+import { cn, isValidTextureUrl } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { useProjectStore } from '@/stores/projectStore'
-import {
-  type BackendAPIV1GetPlayerSkinResponse,
-  type ModelDisplayPositionKey,
-  type TextDisplayAlignment,
-  isItemDisplayPlayerHead,
-} from '@/types'
-import { cn, isValidTextureUrl } from '@/utils'
+import type {
+  BackendAPIV1GetPlayerSkinResponse,
+  ModelDisplayPositionKey,
+  TextDisplayAlignment,
+} from '@/types/base'
+import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import { ColorPickerInput } from '../ui/ColorPicker'
-import Switch from '../ui/Switch'
+import { Switch } from '../ui/switch'
 
 const displayValue: (ModelDisplayPositionKey | null)[] = [
   null,
@@ -60,7 +60,7 @@ const BlockDisplayProperties: FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
         Blockstates
       </div>
       {[...blockstatesData.blockstates.entries()].map(([key, values]) => {
@@ -68,7 +68,7 @@ const BlockDisplayProperties: FC = () => {
           <div key={key} className="flex flex-row items-center gap-2">
             <label className="flex-1 text-end">{key}</label>
             <select
-              className="flex-[1] rounded bg-neutral-800 px-2 py-1"
+              className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
               value={singleSelectedEntity.blockstates[key]}
               onChange={(evt) => {
                 const { setBDEntityBlockstates } =
@@ -113,14 +113,14 @@ const ItemDisplayProperties: FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
         {t(($) => $.sidebar.propertiesPanel.sections.display)}
       </div>
 
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">display</label>
         <select
-          className="flex-1 rounded bg-neutral-800 px-2 py-1"
+          className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={singleSelectedEntity.display ?? 'none'}
           onChange={(evt) => {
             const { setEntityDisplayType } = useDisplayEntityStore.getState()
@@ -142,7 +142,7 @@ const ItemDisplayProperties: FC = () => {
 
       {isItemDisplayPlayerHead(singleSelectedEntity) && (
         <>
-          <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+          <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
             {t(($) => $.sidebar.propertiesPanel.sections.textures.title)}
           </div>
           <div className="flex flex-row items-center gap-2">
@@ -154,7 +154,7 @@ const ItemDisplayProperties: FC = () => {
               )}
             </label>
             <input
-              className="min-w-0 shrink rounded bg-neutral-800 py-1 pl-1 text-xs outline-none"
+              className="min-w-0 shrink rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
               value={tempPlayerHeadTextureUrl}
               onChange={(evt) => {
                 setTempPlayerHeadTextureUrl(evt.target.value)
@@ -162,7 +162,7 @@ const ItemDisplayProperties: FC = () => {
             />
 
             <button
-              className="rounded bg-neutral-800 p-1 text-xs"
+              className="rounded-sm bg-neutral-800 p-1 text-xs"
               onClick={() => {
                 if (tempPlayerHeadTextureUrl == null) {
                   return
@@ -200,7 +200,7 @@ const ItemDisplayProperties: FC = () => {
               )}
             </label>
             <input
-              className="min-w-0 shrink rounded bg-neutral-800 py-1 pl-1 text-xs outline-none"
+              className="min-w-0 shrink rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
               maxLength={16}
               onChange={(evt) => {
                 const str = evt.target.value
@@ -211,7 +211,7 @@ const ItemDisplayProperties: FC = () => {
             />
 
             <button
-              className="rounded bg-neutral-800 p-1 text-xs"
+              className="rounded-sm bg-neutral-800 p-1 text-xs"
               onClick={() => {
                 if (tempPlayerName.length < 3 || tempPlayerName.length > 16) {
                   return
@@ -284,14 +284,14 @@ const TextDisplayProperties: FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
         {t(($) => $.sidebar.propertiesPanel.sections.text)}
       </div>
 
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">text</label>
         <textarea
-          className="min-h-24 min-w-0 flex-1 rounded bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="min-h-24 min-w-0 flex-1 rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.text}
           onChange={(evt) => {
             useDisplayEntityStore
@@ -322,7 +322,7 @@ const TextDisplayProperties: FC = () => {
         <input
           type="number"
           min={0}
-          className="min-w-0 flex-1 rounded bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="min-w-0 flex-1 rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.lineWidth}
           onChange={(evt) => {
             const value = parseInt(evt.target.value)
@@ -339,7 +339,7 @@ const TextDisplayProperties: FC = () => {
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">alignment</label>
         <select
-          className="flex-1 rounded bg-neutral-800 px-2 py-1"
+          className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={singleSelectedEntity.alignment}
           onChange={(evt) => {
             useDisplayEntityStore
@@ -372,10 +372,10 @@ const TextDisplayProperties: FC = () => {
       </div>
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">default_background</label>
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col justify-center">
           <Switch
             checked={singleSelectedEntity.defaultBackground}
-            onChange={(value) => {
+            onCheckedChange={(value) => {
               useDisplayEntityStore
                 .getState()
                 .setTextDisplayProperties(singleSelectedEntity.id, {
@@ -387,10 +387,10 @@ const TextDisplayProperties: FC = () => {
       </div>
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">see_through</label>
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col justify-center">
           <Switch
             checked={singleSelectedEntity.seeThrough}
-            onChange={(value) => {
+            onCheckedChange={(value) => {
               useDisplayEntityStore
                 .getState()
                 .setTextDisplayProperties(singleSelectedEntity.id, {
@@ -402,10 +402,10 @@ const TextDisplayProperties: FC = () => {
       </div>
       <div className="flex flex-row items-center gap-2">
         <label className="flex-1 text-end">shadow</label>
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col justify-center">
           <Switch
             checked={singleSelectedEntity.shadow}
-            onChange={(value) => {
+            onCheckedChange={(value) => {
               useDisplayEntityStore
                 .getState()
                 .setTextDisplayProperties(singleSelectedEntity.id, {
@@ -421,7 +421,7 @@ const TextDisplayProperties: FC = () => {
           type="number"
           min={0}
           max={255}
-          className="min-w-0 flex-1 rounded bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="min-w-0 flex-1 rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.textOpacity}
           onChange={(evt) => {
             const value = parseInt(evt.target.value)
@@ -436,13 +436,13 @@ const TextDisplayProperties: FC = () => {
         />
       </div>
 
-      <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
         {t(($) => $.sidebar.propertiesPanel.sections.textEffects)}
       </div>
-      <div className="flex w-full flex-row gap-1 rounded bg-neutral-800 p-1">
+      <div className="flex w-full flex-row gap-1 rounded-sm bg-neutral-800 p-1">
         <button
           className={cn(
-            'flex grow flex-row justify-center rounded p-1 transition duration-150',
+            'flex grow flex-row justify-center rounded-sm p-1 transition duration-150',
             textEffects.bold && 'bg-white/30',
           )}
           onClick={() =>
@@ -459,7 +459,7 @@ const TextDisplayProperties: FC = () => {
         </button>
         <button
           className={cn(
-            'flex grow flex-row justify-center rounded p-1 transition duration-150',
+            'flex grow flex-row justify-center rounded-sm p-1 transition duration-150',
             textEffects.italic && 'bg-white/30',
           )}
           onClick={() =>
@@ -476,7 +476,7 @@ const TextDisplayProperties: FC = () => {
         </button>
         <button
           className={cn(
-            'flex grow flex-row justify-center rounded p-1 transition duration-150',
+            'flex grow flex-row justify-center rounded-sm p-1 transition duration-150',
             textEffects.underlined && 'bg-white/30',
           )}
           onClick={() =>
@@ -493,7 +493,7 @@ const TextDisplayProperties: FC = () => {
         </button>
         <button
           className={cn(
-            'flex grow flex-row justify-center rounded p-1 transition duration-150',
+            'flex grow flex-row justify-center rounded-sm p-1 transition duration-150',
             textEffects.strikethrough && 'bg-white/30',
           )}
           onClick={() =>
@@ -510,7 +510,7 @@ const TextDisplayProperties: FC = () => {
         </button>
         <button
           className={cn(
-            'flex grow flex-row justify-center rounded p-1 transition duration-150',
+            'flex grow flex-row justify-center rounded-sm p-1 transition duration-150',
             textEffects.obfuscated && 'bg-white/30',
           )}
           onClick={() =>
@@ -545,7 +545,7 @@ const GroupProperties: FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
         {t(($) => $.sidebar.propertiesPanel.sections.group.title)}
       </div>
 
@@ -558,7 +558,7 @@ const GroupProperties: FC = () => {
           )}
         </label>
         <input
-          className="min-w-0 flex-1 shrink rounded bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="min-w-0 flex-1 shrink rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.name}
           onChange={(evt) => {
             useDisplayEntityStore
@@ -584,7 +584,7 @@ const ProjectProperties: FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
         {t(($) => $.sidebar.propertiesPanel.sections.project.title)}
       </div>
 
@@ -597,7 +597,7 @@ const ProjectProperties: FC = () => {
           )}
         </label>
         <input
-          className="min-w-0 flex-1 shrink rounded bg-neutral-800 py-1 pl-1 text-xs outline-none"
+          className="min-w-0 flex-1 shrink rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={projectName}
           onChange={(evt) => {
             setProjectName(evt.target.value)
@@ -614,33 +614,37 @@ const ProjectProperties: FC = () => {
           )}
         </label>
         <select
-          className="flex-1 rounded bg-neutral-800 px-2 py-1"
+          className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={targetGameVersion}
           onChange={(evt) => {
             const gameVersionData = GameVersions.find(
               (v) => v.id === evt.target.value,
             )!
 
-            useDialogStore.getState().openPromptDialog({
-              title: t(
-                ($) => $.dialog.prompt.changeTargetMinecraftVersion.title,
-              ),
-              content: t(
-                ($) => $.dialog.prompt.changeTargetMinecraftVersion.content,
-                {
-                  newVersionLabel: gameVersionData.label,
+            useDialogStore
+              .getState()
+              .confirmModal({
+                title: t(
+                  ($) => $.dialog.prompt.changeTargetMinecraftVersion.title,
+                ),
+                content: t(
+                  ($) => $.dialog.prompt.changeTargetMinecraftVersion.content,
+                  {
+                    newVersionLabel: gameVersionData.label,
+                  },
+                ),
+                buttonText: {
+                  positive: t(
+                    ($) =>
+                      $.dialog.prompt.changeTargetMinecraftVersion.button.yes,
+                  ),
+                  negative: t(
+                    ($) =>
+                      $.dialog.prompt.changeTargetMinecraftVersion.button.no,
+                  ),
                 },
-              ),
-              buttonText: {
-                positive: t(
-                  ($) =>
-                    $.dialog.prompt.changeTargetMinecraftVersion.button.yes,
-                ),
-                negative: t(
-                  ($) => $.dialog.prompt.changeTargetMinecraftVersion.button.no,
-                ),
-              },
-              onChoice: (choice) => {
+              })
+              .then((choice) => {
                 if (choice) {
                   useProjectStore
                     .getState()
@@ -651,8 +655,8 @@ const ProjectProperties: FC = () => {
                     .catch(console.error)
                   useHistoryStore.getState().clearHistory()
                 }
-              },
-            })
+              })
+              .catch(console.error)
           }}
         >
           {GameVersions.map((version) => (

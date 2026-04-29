@@ -1,6 +1,11 @@
 import type { FC } from 'react'
 
-import { Disclaimer, SpecialThanks, Title } from '@/components/brandings'
+import {
+  Disclaimer,
+  OpenSourceNotice,
+  SpecialThanks,
+  Title,
+} from '@/components/brandings'
 
 const AboutPage: FC = () => {
   return (
@@ -14,6 +19,7 @@ const AboutPage: FC = () => {
 
       <Disclaimer />
       <SpecialThanks />
+      <OpenSourceNotice />
     </>
   )
 }

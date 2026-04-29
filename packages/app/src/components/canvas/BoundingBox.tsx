@@ -1,16 +1,44 @@
+import type { ModelDisplayPositionKey, Number3Tuple } from '@depl/shared'
 import { useFrame } from '@react-three/fiber'
-import { type FC, useRef } from 'react'
-import { BoxHelper, type ColorRepresentation, Matrix4, Object3D } from 'three'
+import { type FC, useEffect, useMemo, useRef } from 'react'
+import {
+  Box3,
+  BoxHelper,
+  type ColorRepresentation,
+  Euler,
+  MathUtils,
+  Matrix4,
+  Object3D,
+  Quaternion,
+  Vector3,
+} from 'three'
+import { useShallow } from 'zustand/shallow'
+
+import {
+  InstancedMeshManager,
+  useInstancedMeshStore,
+} from '@/stores/instancedMeshStore'
 
 const dummyObject = new Object3D()
+const infinityVector = new Vector3(Infinity, Infinity, Infinity)
+const negativeInfinityVector = new Vector3(-Infinity, -Infinity, -Infinity)
+const HalfBlockTranslatedXZVector = new Vector3(0.5, 0, 0.5)
+const ReverseHalfBlockTranslatedXZVector = new Vector3(-0.5, 0, -0.5)
 
-type BoundingBoxProps = {
+const OriginVec = new Vector3()
+const DisplayTranslationMinVec = new Vector3(-80, -80, -80)
+const DisplayTranslationMaxVec = new Vector3(80, 80, 80)
+
+interface BoundingBoxProps {
   object?: Object3D
   visible: boolean
   color?: ColorRepresentation
 }
-
-const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
+export const BoundingBox: FC<BoundingBoxProps> = ({
+  object,
+  visible,
+  color,
+}) => {
   const boxHelperRef = useRef<BoxHelper>(null)
 
   useFrame(() => {
@@ -46,6 +74,8 @@ const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
     if (parent != null) {
       parent.add(object)
     }
+
+    object.updateMatrixWorld() // needed to correctly calculate world matrix after all jobs
   })
 
   return (
@@ -59,4 +89,130 @@ const BoundingBox: FC<BoundingBoxProps> = ({ object, visible, color }) => {
   )
 }
 
-export default BoundingBox
+interface BoundingBoxForInstancedProps {
+  modelList: {
+    resourceLocation: string
+    xRotation?: number
+    yRotation?: number
+  }[]
+  visible?: boolean
+  color?: ColorRepresentation
+  displayType?: ModelDisplayPositionKey
+}
+export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
+  modelList,
+  visible = true,
+  color,
+  displayType,
+}) => {
+  // TODO: directly search batch by modelResourceLocation,
+  // find batch mesh geometry boundingbox and expandByBox() it
+
+  const box = useMemo(() => new Box3(), [])
+
+  const batchGeometries = useInstancedMeshStore(
+    useShallow((state) =>
+      modelList.map((modelData) => {
+        const minimalBatchInfo = state.batches.get(modelData.resourceLocation)
+        if (minimalBatchInfo?.status !== 'ready') {
+          return
+        }
+
+        const batches = InstancedMeshManager.instance.getBatch(
+          modelData.resourceLocation,
+        )
+        if (batches?.status !== 'ready') {
+          // this should not happen
+          return
+        }
+
+        return batches.geometry
+      }),
+    ),
+  )
+  const batchDisplayInfos = useInstancedMeshStore(
+    useShallow((state) =>
+      modelList.map((modelData) => {
+        const minimalBatchInfo = state.batches.get(modelData.resourceLocation)
+        if (minimalBatchInfo?.status !== 'ready') {
+          return
+        }
+
+        const batch = InstancedMeshManager.instance.getBatch(
+          modelData.resourceLocation,
+        )
+        if (batch?.status !== 'ready') {
+          // this should not happen
+          return
+        }
+
+        return batch.display
+      }),
+    ),
+  )
+
+  useEffect(() => {
+    box.set(infinityVector, negativeInfinityVector)
+
+    const _matrix = new Matrix4()
+    const _euler = new Euler()
+    const _displayTranslation = new Vector3()
+    const _displayScale = new Vector3()
+
+    for (let i = 0; i < modelList.length; i++) {
+      const modelData = modelList[i]
+      const geometry = batchGeometries[i]
+      const displayInfos = batchDisplayInfos[i]
+      if (geometry == null || displayInfos == null) continue
+
+      if (geometry.boundingBox == null) {
+        geometry.computeBoundingBox()
+      }
+
+      const displayInfo =
+        displayType != null ? (displayInfos[displayType] ?? {}) : {}
+      _displayTranslation
+        .set(...(displayInfo.translation ?? [0, 0, 0]))
+        .max(DisplayTranslationMinVec)
+        .min(DisplayTranslationMaxVec)
+        .divideScalar(16)
+      _displayScale.set(...(displayInfo.scale ?? [1, 1, 1]))
+      const displayRotation = (displayInfo.rotation ?? [0, 0, 0]).map((d) =>
+        MathUtils.degToRad(d),
+      ) as Number3Tuple
+
+      // grab geometry bounding box connected to batch, and use that to calculate entity's bounding box
+      const boundingBox = geometry.boundingBox!.clone()
+      boundingBox
+        .applyMatrix4(
+          _matrix
+            .makeTranslation(_displayTranslation) // set display translation first
+            .premultiply(
+              // set display rotation and scale
+              new Matrix4().compose(
+                OriginVec,
+                new Quaternion().setFromEuler(new Euler(...displayRotation)),
+                _displayScale,
+              ),
+            ),
+        )
+        .translate(ReverseHalfBlockTranslatedXZVector)
+        .applyMatrix4(
+          _matrix.makeRotationFromEuler(
+            _euler.set(
+              MathUtils.degToRad(-1 * (modelData.xRotation ?? 0)),
+              MathUtils.degToRad(-1 * (modelData.yRotation ?? 0)),
+              0,
+            ),
+          ),
+        )
+        .translate(HalfBlockTranslatedXZVector)
+
+      box.union(boundingBox)
+    }
+  }, [box, modelList, batchGeometries, batchDisplayInfos, displayType])
+
+  return (
+    <box3Helper args={[box, color]} visible={visible} raycast={() => null} />
+  )
+}

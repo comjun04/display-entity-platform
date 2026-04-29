@@ -42,7 +42,7 @@ const HeadPainterPage: FC = () => {
                 $.dialog.settings.page.headPainter.options.mineskinApiKey.title,
             )}
           </label>
-          <div className="flex flex-row items-center gap-2 rounded bg-neutral-700 p-1">
+          <div className="flex flex-row items-center gap-2 rounded-sm bg-neutral-700 p-1">
             <input
               type={hideApiKeyInputValue ? 'password' : 'text'}
               id="settings_headPainter_mineskinApiKey"
@@ -63,7 +63,7 @@ const HeadPainterPage: FC = () => {
         </div>
         <div className="flex flex-row gap-2">
           <button
-            className="rounded bg-blue-500 px-3 py-1"
+            className="rounded-sm bg-blue-500 px-3 py-1"
             onClick={() => {
               setSettings({
                 headPainter: { mineskinApiKey: tempApiKeyInput },

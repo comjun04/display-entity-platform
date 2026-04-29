@@ -1,9 +1,9 @@
-import { type ThreeEvent } from '@react-three/fiber'
+import { type ThreeEvent, invalidate } from '@react-three/fiber'
 import { type FC, useCallback, useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 
 import useEntityRefObject from '@/hooks/useEntityRefObject'
-import { getLogger } from '@/services/loggerService'
+import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
@@ -85,6 +85,9 @@ const DisplayEntity: FC<DisplayEntityProps> = ({ id }) => {
     thisEntityRefObj.scale.set(...thisEntity.size)
 
     thisEntityRefObj.updateMatrix() // need to update transformation properly when modifying outside render loop
+    thisEntityRefObj.updateMatrixWorld() // makes updated world matrix always available on next frame
+
+    invalidate()
   }, [
     thisEntity?.position,
     thisEntity?.rotation,
