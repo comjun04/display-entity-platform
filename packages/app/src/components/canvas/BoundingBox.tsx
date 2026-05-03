@@ -22,12 +22,17 @@ import {
 const dummyObject = new Object3D()
 const infinityVector = new Vector3(Infinity, Infinity, Infinity)
 const negativeInfinityVector = new Vector3(-Infinity, -Infinity, -Infinity)
-const HalfBlockTranslatedXZVector = new Vector3(0.5, 0, 0.5)
-const ReverseHalfBlockTranslatedXZVector = new Vector3(-0.5, 0, -0.5)
 
 const OriginVec = new Vector3()
 const DisplayTranslationMinVec = new Vector3(-80, -80, -80)
 const DisplayTranslationMaxVec = new Vector3(80, 80, 80)
+
+const HalfBlockTranslatedMatrix = new Matrix4().makeTranslation(0.5, 0.5, 0.5)
+const ReverseHalfBlockTranslatedMatrix = new Matrix4().makeTranslation(
+  -0.5,
+  -0.5,
+  -0.5,
+)
 
 interface BoundingBoxProps {
   object?: Object3D
@@ -155,6 +160,7 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
     box.set(infinityVector, negativeInfinityVector)
 
     const _matrix = new Matrix4()
+    const _matrix2 = new Matrix4()
     const _euler = new Euler()
     const _displayTranslation = new Vector3()
     const _displayScale = new Vector3()
@@ -183,22 +189,20 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
 
       // grab geometry bounding box connected to batch, and use that to calculate entity's bounding box
       const boundingBox = geometry.boundingBox!.clone()
-      boundingBox
-        .applyMatrix4(
-          _matrix
-            .makeTranslation(_displayTranslation) // set display translation first
-            .premultiply(
-              // set display rotation and scale
-              new Matrix4().compose(
-                OriginVec,
-                new Quaternion().setFromEuler(new Euler(...displayRotation)),
-                _displayScale,
-              ),
-            ),
+
+      _matrix
+        .makeTranslation(_displayTranslation) // set display translation first
+        .premultiply(
+          // set display rotation and scale
+          _matrix2.compose(
+            OriginVec,
+            new Quaternion().setFromEuler(new Euler(...displayRotation)),
+            _displayScale,
+          ),
         )
-        .translate(ReverseHalfBlockTranslatedXZVector)
-        .applyMatrix4(
-          _matrix.makeRotationFromEuler(
+        .premultiply(ReverseHalfBlockTranslatedMatrix)
+        .premultiply(
+          _matrix2.makeRotationFromEuler(
             _euler.set(
               MathUtils.degToRad(-1 * (modelData.xRotation ?? 0)),
               MathUtils.degToRad(-1 * (modelData.yRotation ?? 0)),
@@ -206,7 +210,8 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
             ),
           ),
         )
-        .translate(HalfBlockTranslatedXZVector)
+        .premultiply(HalfBlockTranslatedMatrix)
+      boundingBox.applyMatrix4(_matrix)
 
       box.union(boundingBox)
     }
