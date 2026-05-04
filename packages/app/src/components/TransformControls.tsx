@@ -1,4 +1,5 @@
 import { TransformControls as TransformControlsImpl } from '@react-three/drei'
+import { invalidate } from '@react-three/fiber'
 import {
   type FC,
   useCallback,
@@ -10,9 +11,12 @@ import {
 import {
   Box3,
   Box3Helper,
+  BoxGeometry,
   Euler,
   type Event,
   Group,
+  Mesh,
+  MeshStandardMaterial,
   Object3D,
   Quaternion,
   Vector3,
@@ -72,6 +76,7 @@ const TransformControls: FC = () => {
     setUsingTransformControl,
     setSelectionBaseTransformation,
     needsSelectedEntitiesInitialTransformationsUpdate,
+    showPivotIndicator,
   } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
@@ -80,6 +85,7 @@ const TransformControls: FC = () => {
       setSelectionBaseTransformation: state.setSelectionBaseTransformation,
       needsSelectedEntitiesInitialTransformationsUpdate:
         state.transformControl.needsSelectedEntitiesTransformationUpdate,
+      showPivotIndicator: state.settings.debug.showPivotIndicator,
     })),
   )
 
@@ -89,6 +95,12 @@ const TransformControls: FC = () => {
     const group = new Group()
     group.name = 'Pivot'
     return group
+  }, [])
+  const pivotDebugIndicator = useMemo(() => {
+    const geo = new BoxGeometry(0.2, 0.2, 0.2)
+    const mat = new MeshStandardMaterial()
+    const mesh = new Mesh(geo, mat)
+    return mesh
   }, [])
   const boundingBoxHelperRef = useRef<Box3Helper>(null)
 
@@ -104,6 +116,18 @@ const TransformControls: FC = () => {
       scale: Vector3
     }[]
   >([])
+
+  // add pivotDebugIndicator to pivot on mount
+  useEffect(() => {
+    pivot.add(pivotDebugIndicator)
+    return () => {
+      pivot.remove(pivotDebugIndicator)
+    }
+  }, [pivot, pivotDebugIndicator])
+  useEffect(() => {
+    pivotDebugIndicator.visible = showPivotIndicator
+    invalidate()
+  }, [pivotDebugIndicator, showPivotIndicator])
 
   const updateBoundingBox = useCallback(() => {
     if (boundingBoxHelperRef.current == null) return

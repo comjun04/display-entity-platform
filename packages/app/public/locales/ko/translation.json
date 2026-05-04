@@ -168,6 +168,9 @@
             },
             "alertUncaughtError": {
               "title": "Notify uncaught errors with window.alert()"
+            },
+            "showPivotIndicator": {
+              "title": "기준점 위치 표시"
             }
           }
         }

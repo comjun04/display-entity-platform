@@ -168,6 +168,9 @@
             },
             "alertUncaughtError": {
               "title": "Notify uncaught errors with window.alert()"
+            },
+            "showPivotIndicator": {
+              "title": "Show Pivot Location"
             }
           }
         }
