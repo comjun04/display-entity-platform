@@ -46,6 +46,21 @@ const FileDropzone: FC = () => {
     }
   }, [isAnyDialogOpen])
 
+  // hide overlay when escape key pressed
+  // this rescues user from file drop indicator showed by bug
+  useEffect(() => {
+    const listener = (evt: KeyboardEvent) => {
+      if (evt.key.toLowerCase() === 'escape') {
+        setShowOverlay(false)
+      }
+    }
+
+    document.addEventListener('keydown', listener)
+    return () => {
+      document.removeEventListener('keydown', listener)
+    }
+  }, [])
+
   return (
     <div
       {...getRootProps()}
