@@ -33,8 +33,10 @@ const FileDropzone: FC = () => {
   })
 
   useEffect(() => {
-    const enableShowingOverlay = () => {
-      if (!isAnyDialogOpen) {
+    const enableShowingOverlay = (evt: DragEvent) => {
+      // ensure that dialogs are not open
+      // and the item user is dragging is actually a file (not a string)
+      if (!isAnyDialogOpen && evt.dataTransfer?.items[0]?.kind === 'file') {
         setShowOverlay(true)
       }
     }
