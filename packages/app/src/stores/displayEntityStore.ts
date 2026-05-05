@@ -133,8 +133,7 @@ export type DisplayEntityState = {
         'id' | 'kind' | 'position' | 'rotation' | 'size' | 'parent'
       >
     >,
-    skipHistoryAdd?: boolean,
-  ) => void
+  ) => boolean
   setItemDisplayPlayerHeadProperties: (
     entityId: string,
     data: PlayerHeadProperties,
@@ -605,73 +604,35 @@ export const useDisplayEntityStore = create(
         entity.blockstates = { ...entity.blockstates, ...blockstates }
       })
     },
-    setTextDisplayProperties: (id, properties, skipHistoryAdd) =>
+    setTextDisplayProperties: (id, properties) => {
+      if (
+        properties.lineWidth != null &&
+        // TODO: specific type check (int)
+        (!isFinite(properties.lineWidth) || properties.lineWidth < 0)
+      ) {
+        logger.error(
+          `Text Display \`lineWidth\` must be positive integer or zero, but tried to set ${properties.lineWidth} to entity ${id}`,
+        )
+        return false
+      }
+
       set((state) => {
         const entity = state.entities.get(id)
         if (entity == null) {
-          logger.error(
-            `Attempted to set properties for unknown text displau entity: ${id}`,
-          )
+          logger.error(`Invalid entity id ${id}`)
           return
         } else if (entity.kind !== 'text') {
           logger.error(
-            `Attempted to set properties for non-text display entity: ${id}`,
+            `Cannot set properties for non-text display entity: ${id}`,
           )
           return
-        }
-
-        if (
-          properties.lineWidth != null &&
-          // TODO: specific type check (int)
-          (!isFinite(properties.lineWidth) || properties.lineWidth < 0)
-        ) {
-          logger.error(
-            `Text Display \`lineWidth\` must be positive integer or zero, but tried to set ${properties.lineWidth} to entity ${id}`,
-          )
-          return
-        }
-
-        // TODO: clean up this mess
-        if (!skipHistoryAdd) {
-          const nonProxiedEntity = cloneDeep(entity)
-          const beforeState: typeof properties = {}
-          for (const key of Object.keys(properties) as Array<
-            keyof typeof properties
-          >) {
-            if (key === 'textEffects') {
-              if (properties.textEffects != null) {
-                beforeState.textEffects = Object.assign(
-                  {},
-                  nonProxiedEntity.textEffects,
-                )
-                for (const key of Object.keys(beforeState.textEffects) as Array<
-                  keyof (typeof properties)['textEffects']
-                >) {
-                  if (!(key in properties.textEffects)) {
-                    delete beforeState.textEffects[key]
-                  }
-                }
-              }
-            } else {
-              // copy original state values to beforeState
-              // @ts-expect-error beforeState[key] keeps accepting undefined only, type mismatch
-              beforeState[key] = nonProxiedEntity[key]
-            }
-          }
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: [
-              {
-                id,
-                beforeState: { kind: entity.kind, ...beforeState },
-                afterState: { kind: entity.kind, ...properties },
-              },
-            ],
-          })
         }
 
         merge(entity, properties)
-      }),
+      })
+
+      return true
+    },
     setItemDisplayPlayerHeadProperties: (entityId, data, skipHistoryAdd) =>
       set((state) => {
         const entity = state.entities.get(entityId)

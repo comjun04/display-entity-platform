@@ -323,7 +323,7 @@ function applyHistoryPropertyChange(
     // apply text_display properties
     if (stateToUse.kind === 'text') {
       const { kind: _, ...rest } = stateToUse
-      setTextDisplayProperties(record.id, rest, true)
+      setTextDisplayProperties(record.id, rest)
     }
   }
 

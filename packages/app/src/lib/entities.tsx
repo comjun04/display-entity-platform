@@ -2,6 +2,7 @@ import type { ModelDisplayPositionKey } from '@depl/shared'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useHistoryStore } from '@/stores/historyStore'
+import type { DeepPartial, TextDisplayEntity } from '@/types/base'
 
 import { getLogger } from './logger'
 
@@ -77,6 +78,69 @@ export function setBDEntityBlockstates(
           id: entityId,
           beforeState: { kind: entity.kind, blockstates: oldState },
           afterState: { kind: entity.kind, blockstates },
+        },
+      ],
+    })
+  }
+}
+
+export function setTDEntityProperties(
+  entityId: string,
+  properties: DeepPartial<
+    Omit<
+      TextDisplayEntity,
+      'id' | 'kind' | 'position' | 'rotation' | 'size' | 'parent'
+    >
+  >,
+  skipHistoryAdd = false,
+) {
+  const { entities, setTextDisplayProperties } =
+    useDisplayEntityStore.getState()
+
+  const entity = entities.get(entityId)
+  if (entity == null) {
+    logger.error(`Invalid entity id ${entityId}`)
+    return
+  } else if (entity.kind !== 'text') {
+    logger.error(
+      `Cannot set properties for non-text display entity: ${entityId}`,
+    )
+    return
+  }
+
+  const success = setTextDisplayProperties(entityId, properties)
+  if (!success) return
+
+  if (!skipHistoryAdd) {
+    const oldState: typeof properties = {}
+    for (const key of Object.keys(properties) as Array<
+      keyof typeof properties
+    >) {
+      if (key === 'textEffects') {
+        if (properties.textEffects != null) {
+          oldState.textEffects = entity.textEffects
+          for (const key of Object.keys(oldState.textEffects) as Array<
+            keyof (typeof properties)['textEffects']
+          >) {
+            if (!(key in properties.textEffects)) {
+              delete oldState.textEffects[key]
+            }
+          }
+        }
+      } else {
+        // copy original state values to beforeState
+        // @ts-expect-error beforeState[key] keeps accepting undefined only, type mismatch
+        oldState[key] = entity[key]
+      }
+    }
+
+    useHistoryStore.getState().addHistory({
+      type: 'changeProperties',
+      entities: [
+        {
+          id: entityId,
+          beforeState: { kind: entity.kind, ...oldState },
+          afterState: { kind: entity.kind, ...properties },
         },
       ],
     })
