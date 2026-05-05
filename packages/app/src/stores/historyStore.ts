@@ -317,7 +317,7 @@ function applyHistoryPropertyChange(
 
     // apply block_display blockstates
     if (stateToUse.kind === 'block' && stateToUse.blockstates != null) {
-      setBDEntityBlockstates(record.id, stateToUse.blockstates, true)
+      setBDEntityBlockstates(record.id, stateToUse.blockstates)
     }
 
     // apply text_display properties

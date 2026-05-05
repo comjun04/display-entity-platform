@@ -124,7 +124,6 @@ export type DisplayEntityState = {
   setBDEntityBlockstates: (
     id: string,
     blockstates: Record<string, string>,
-    skipHistoryAdd?: boolean,
   ) => void
   setTextDisplayProperties: (
     id: string,
@@ -590,38 +589,17 @@ export const useDisplayEntityStore = create(
 
         entity.display = display
       }),
-    setBDEntityBlockstates: (id, blockstates, skipHistoryAdd) => {
-      // 변경할 게 없으면 그냥 종료
-      if (Object.keys(blockstates).length < 1) {
-        return
-      }
-
+    setBDEntityBlockstates: (id, blockstates) => {
       set((state) => {
         const entity = state.entities.get(id)
         if (entity == null) {
-          logger.error(
-            `Attempted to set blockstates for unknown block display entity: ${id}`,
-          )
+          logger.error(`Invalid entity id ${id}`)
           return
         } else if (entity.kind !== 'block') {
           logger.error(
-            `Attempted to set blockstates for non-block display entity: ${id}, kind: ${entity.kind}`,
+            `Cannot set blockstates for non-block display entity: ${id}, kind: ${entity.kind}`,
           )
           return
-        }
-
-        if (!skipHistoryAdd) {
-          const oldBlockstates = cloneDeep(entity.blockstates)
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: [
-              {
-                id,
-                beforeState: { kind: entity.kind, blockstates: oldBlockstates },
-                afterState: { kind: entity.kind, blockstates },
-              },
-            ],
-          })
         }
 
         entity.blockstates = { ...entity.blockstates, ...blockstates }
