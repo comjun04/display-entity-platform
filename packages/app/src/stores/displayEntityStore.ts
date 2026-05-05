@@ -120,7 +120,6 @@ export type DisplayEntityState = {
   setEntityDisplayType: (
     id: string,
     display: ModelDisplayPositionKey | null,
-    skipHistoryAdd?: boolean,
   ) => void
   setBDEntityBlockstates: (
     id: string,
@@ -576,32 +575,17 @@ export const useDisplayEntityStore = create(
           })
         }
       }),
-    setEntityDisplayType: (id, display, skipHistoryAdd) =>
+    setEntityDisplayType: (id, display) =>
       set((state) => {
         const entity = state.entities.get(id)
         if (entity == null) {
-          logger.error(
-            `Attempted to set display type for unknown display entity: ${id}`,
-          )
+          logger.error(`Invalid entity id ${id}`)
           return
         } else if (entity.kind !== 'item') {
           logger.error(
-            `Attempted to set display type for non-item display entity: ${id}, kind: ${entity.kind}`,
+            `Cannot set display type for non-item display entity: ${id}, kind: ${entity.kind}`,
           )
           return
-        }
-
-        if (!skipHistoryAdd) {
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: [
-              {
-                id,
-                beforeState: { kind: entity.kind, display: entity.display },
-                afterState: { kind: entity.kind, display },
-              },
-            ],
-          })
         }
 
         entity.display = display

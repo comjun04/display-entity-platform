@@ -11,6 +11,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { BackendHost, GameVersions } from '@/constants'
 import useBlockStates from '@/hooks/useBlockStates'
+import { setIDEntityDisplayType } from '@/lib/entities'
 import { cn, isValidTextureUrl } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -123,8 +124,7 @@ const ItemDisplayProperties: FC = () => {
           className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={singleSelectedEntity.display ?? 'none'}
           onChange={(evt) => {
-            const { setEntityDisplayType } = useDisplayEntityStore.getState()
-            setEntityDisplayType(
+            setIDEntityDisplayType(
               singleSelectedEntity.id,
               evt.target.value === 'none'
                 ? null

@@ -302,7 +302,7 @@ function applyHistoryPropertyChange(
     if (stateToUse.kind === 'item') {
       // apply item_display display property
       if (stateToUse.display !== undefined) {
-        setEntityDisplayType(record.id, stateToUse.display, true)
+        setEntityDisplayType(record.id, stateToUse.display)
       }
 
       // apply item_display player_head properties
