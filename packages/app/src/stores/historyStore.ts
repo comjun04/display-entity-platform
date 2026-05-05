@@ -310,7 +310,6 @@ function applyHistoryPropertyChange(
         setItemDisplayPlayerHeadProperties(
           record.id,
           stateToUse.playerHeadProperties,
-          true,
         )
       }
     }

@@ -14,6 +14,7 @@ import useBlockStates from '@/hooks/useBlockStates'
 import {
   setBDEntityBlockstates,
   setIDEntityDisplayType,
+  setIDEntityPlayerHeadProperties,
   setTDEntityProperties,
 } from '@/lib/entities'
 import { cn, isValidTextureUrl } from '@/lib/utils'
@@ -176,14 +177,12 @@ const ItemDisplayProperties: FC = () => {
                   return
                 }
 
-                useDisplayEntityStore
-                  .getState()
-                  .setItemDisplayPlayerHeadProperties(singleSelectedEntity.id, {
-                    texture: {
-                      baked: true,
-                      url: tempPlayerHeadTextureUrl,
-                    },
-                  })
+                setIDEntityPlayerHeadProperties(singleSelectedEntity.id, {
+                  texture: {
+                    baked: true,
+                    url: tempPlayerHeadTextureUrl,
+                  },
+                })
               }}
             >
               {t(
@@ -240,17 +239,12 @@ const ItemDisplayProperties: FC = () => {
                   }
 
                   setTempPlayerHeadTextureUrl(textureUrl)
-                  useDisplayEntityStore
-                    .getState()
-                    .setItemDisplayPlayerHeadProperties(
-                      singleSelectedEntity.id,
-                      {
-                        texture: {
-                          baked: true,
-                          url: textureUrl,
-                        },
-                      },
-                    )
+                  setIDEntityPlayerHeadProperties(singleSelectedEntity.id, {
+                    texture: {
+                      baked: true,
+                      url: textureUrl,
+                    },
+                  })
                 }
 
                 asyncFn().catch(console.error)

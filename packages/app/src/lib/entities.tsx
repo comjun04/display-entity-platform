@@ -2,7 +2,12 @@ import type { ModelDisplayPositionKey } from '@depl/shared'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useHistoryStore } from '@/stores/historyStore'
-import type { DeepPartial, TextDisplayEntity } from '@/types/base'
+import type {
+  DeepPartial,
+  PlayerHeadProperties,
+  TextDisplayEntity,
+} from '@/types/base'
+import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { getLogger } from './logger'
 
@@ -141,6 +146,46 @@ export function setTDEntityProperties(
           id: entityId,
           beforeState: { kind: entity.kind, ...oldState },
           afterState: { kind: entity.kind, ...properties },
+        },
+      ],
+    })
+  }
+}
+
+export function setIDEntityPlayerHeadProperties(
+  entityId: string,
+  data: PlayerHeadProperties,
+  skipHistoryAdd = false,
+) {
+  const { entities, setItemDisplayPlayerHeadProperties } =
+    useDisplayEntityStore.getState()
+
+  const entity = entities.get(entityId)
+  if (entity == null) {
+    console.error(`Invalid entity id ${entityId}`)
+    return
+  } else if (!isItemDisplayPlayerHead(entity)) {
+    console.error(
+      `Cannot set player_head properties on non player_head display`,
+    )
+    return
+  }
+
+  const oldState = entity.playerHeadProperties
+
+  setItemDisplayPlayerHeadProperties(entityId, data)
+
+  if (!skipHistoryAdd) {
+    useHistoryStore.getState().addHistory({
+      type: 'changeProperties',
+      entities: [
+        {
+          id: entityId,
+          beforeState: {
+            kind: entity.kind,
+            playerHeadProperties: oldState,
+          },
+          afterState: { kind: entity.kind, playerHeadProperties: data },
         },
       ],
     })
