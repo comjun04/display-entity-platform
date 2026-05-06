@@ -1,9 +1,11 @@
-import type { ModelDisplayPositionKey } from '@depl/shared'
+import type { ModelDisplayPositionKey, Number3Tuple } from '@depl/shared'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import type {
   DeepPartial,
+  PartialNumber3Tuple,
   PlayerHeadProperties,
   TextDisplayEntity,
 } from '@/types/base'
@@ -12,6 +14,92 @@ import { isItemDisplayPlayerHead } from '@/types/guards'
 import { getLogger } from './logger'
 
 const logger = getLogger('entities')
+
+export function batchSetEntityTransformation(
+  data: {
+    id: string
+    translation?: PartialNumber3Tuple
+    rotation?: PartialNumber3Tuple
+    scale?: PartialNumber3Tuple
+  }[],
+  skipHistoryAdd = false,
+) {
+  const { entities, selectedEntityIds, batchSetEntityTransformation } =
+    useDisplayEntityStore.getState()
+
+  batchSetEntityTransformation(data)
+
+  const selectedEntityChanged = data.some((item) => {
+    if (!selectedEntityIds.includes(item.id)) return false
+
+    const entity = entities.get(item.id)
+    if (entity == null) return false
+
+    return (
+      item.translation != null || item.rotation != null || item.scale != null
+    )
+  })
+  if (selectedEntityChanged) {
+    useEditorStore
+      .getState()
+      .transformControl.setSelectedEntitiesTransformationUpdateFlag(true)
+  }
+
+  if (!skipHistoryAdd) {
+    const historyData = data
+      .map((item) => {
+        const entity = entities.get(item.id)
+        if (entity == null) return
+
+        const afterStatePosition =
+          item.translation != null
+            ? ([
+                item.translation[0] ?? entity.position[0],
+                item.translation[1] ?? entity.position[1],
+                item.translation[2] ?? entity.position[2],
+              ] satisfies Number3Tuple)
+            : undefined
+        const afterStateRotation =
+          item.rotation != null
+            ? ([
+                item.rotation[0] ?? entity.rotation[0],
+                item.rotation[1] ?? entity.rotation[1],
+                item.rotation[2] ?? entity.rotation[2],
+              ] satisfies Number3Tuple)
+            : undefined
+        const afterStateScale =
+          item.scale != null
+            ? ([
+                item.scale[0] ?? entity.size[0],
+                item.scale[1] ?? entity.size[1],
+                item.scale[2] ?? entity.size[2],
+              ] satisfies Number3Tuple)
+            : undefined
+
+        return {
+          id: item.id,
+          beforeState: {
+            kind: entity.kind,
+            position: entity.position,
+            rotation: entity.rotation,
+            size: entity.size,
+          },
+          afterState: {
+            kind: entity.kind,
+            position: afterStatePosition,
+            rotation: afterStateRotation,
+            size: afterStateScale,
+          },
+        }
+      })
+      .filter((item) => item != null)
+
+    useHistoryStore.getState().addHistory({
+      type: 'changeProperties',
+      entities: historyData,
+    })
+  }
+}
 
 export function setIDEntityDisplayType(
   entityId: string,

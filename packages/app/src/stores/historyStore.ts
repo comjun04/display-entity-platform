@@ -319,7 +319,7 @@ function applyHistoryPropertyChange(
 
   // apply transformation change
   if (transformationChanges.size > 0) {
-    batchSetEntityTransformation([...transformationChanges.values()], true)
+    batchSetEntityTransformation([...transformationChanges.values()])
 
     const { entities, selectedEntityIds } = displayEntityStore.getState()
     if (selectedEntityIds.length > 0) {

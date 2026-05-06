@@ -115,7 +115,6 @@ export type DisplayEntityState = {
       rotation?: PartialNumber3Tuple
       scale?: PartialNumber3Tuple
     }[],
-    skipHistoryAdd?: boolean,
   ) => void
   setEntityDisplayType: (
     id: string,
@@ -441,7 +440,7 @@ export const useDisplayEntityStore = create(
           afterState: { entities: clonedEntities },
         })
       }),
-    batchSetEntityTransformation: (data, skipHistoryAdd) =>
+    batchSetEntityTransformation: (data) =>
       set((state) => {
         logger.debug('batchSetEntityTransformation', data)
 
@@ -457,11 +456,6 @@ export const useDisplayEntityStore = create(
           string,
           { beforeState: Number3Tuple; afterState: Number3Tuple }
         >()
-
-        const { selectedEntityIds } = state
-        let shouldUpdateTransformControlSelectedEntitiesData = false
-
-        let hasChanges = false
 
         data.forEach((item) => {
           const entity = state.entities.get(item.id)
@@ -481,7 +475,6 @@ export const useDisplayEntityStore = create(
             })
 
             entity.position = positionDraft
-            hasChanges = true
           }
           if (item.rotation != null) {
             const rotationDraft = entity.rotation.slice() as Number3Tuple
@@ -497,7 +490,6 @@ export const useDisplayEntityStore = create(
             })
 
             entity.rotation = rotationDraft
-            hasChanges = true
           }
           if (item.scale != null) {
             const scaleDraft = entity.size.slice() as Number3Tuple
@@ -513,63 +505,8 @@ export const useDisplayEntityStore = create(
             })
 
             entity.size = scaleDraft
-            hasChanges = true
-          }
-
-          if (
-            !shouldUpdateTransformControlSelectedEntitiesData &&
-            hasChanges &&
-            selectedEntityIds.includes(item.id)
-          ) {
-            // set update flag when this entity is selected and has entity transformation changes
-            shouldUpdateTransformControlSelectedEntitiesData = true
           }
         })
-
-        if (shouldUpdateTransformControlSelectedEntitiesData) {
-          useEditorStore
-            .getState()
-            .transformControl.setSelectedEntitiesTransformationUpdateFlag(true)
-        }
-
-        if (!skipHistoryAdd) {
-          const { entities } = get()
-          const records = data.map(({ id }) => {
-            const positionChange = positionChanges.get(id)
-            const rotationChange = rotationChanges.get(id)
-            const scaleChange = scaleChanges.get(id)
-
-            const { kind } = entities.get(id)!
-            const beforeState: Pick<DisplayEntity, 'kind'> &
-              Partial<Pick<DisplayEntity, 'position' | 'rotation' | 'size'>> = {
-              kind,
-            }
-            const afterState: Pick<DisplayEntity, 'kind'> &
-              Partial<Pick<DisplayEntity, 'position' | 'rotation' | 'size'>> = {
-              kind,
-            }
-
-            if (positionChange != null) {
-              beforeState.position = positionChange.beforeState
-              afterState.position = positionChange.afterState
-            }
-            if (rotationChange != null) {
-              beforeState.rotation = rotationChange.beforeState
-              afterState.rotation = rotationChange.afterState
-            }
-            if (scaleChange != null) {
-              beforeState.size = scaleChange.beforeState
-              afterState.size = scaleChange.afterState
-            }
-
-            return { id, beforeState, afterState }
-          })
-
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: records,
-          })
-        }
       }),
     setEntityDisplayType: (id, display) =>
       set((state) => {
