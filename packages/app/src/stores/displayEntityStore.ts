@@ -270,7 +270,7 @@ export const useDisplayEntityStore = create(
                 id,
                 parent: param.parent,
                 children: param.children,
-                name: 'Group',
+                name: param.name ?? 'Group',
                 size: param.size ?? [1, 1, 1],
                 position: param.position ?? [0, 0, 0],
                 rotation: param.rotation ?? [1, 1, 1],
