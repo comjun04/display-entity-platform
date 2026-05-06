@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { toggleGroup } from '@/lib/actions'
+import { deleteEntities } from '@/lib/entities'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -41,11 +42,10 @@ const QuickActionPanel: FC = () => {
       setOpenedDialog: state.openDialog,
     })),
   )
-  const { selectedEntityIds, deleteEntities, singleSelectedEntityIsGrouped } =
+  const { selectedEntityIds, singleSelectedEntityIsGrouped } =
     useDisplayEntityStore(
       useShallow((state) => ({
         selectedEntityIds: state.selectedEntityIds,
-        deleteEntities: state.deleteEntities,
         singleSelectedEntityIsGrouped:
           state.selectedEntityIds.length === 1 &&
           state.entities.get(state.selectedEntityIds[0])?.kind === 'group',

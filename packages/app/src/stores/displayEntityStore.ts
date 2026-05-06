@@ -145,7 +145,7 @@ export type DisplayEntityState = {
     y: number,
   ) => void
   setGroupName: (entityId: string, name: string) => void
-  deleteEntities: (entityIds: string[], skipHistoryAdd?: boolean) => void
+  deleteEntities: (entityIds: string[]) => DisplayEntity[]
 
   bulkImport: (items: DisplayEntitySaveDataItem[]) => Promise<void>
   bulkImportFromBDE: (saveData: BDEngineSaveData) => Promise<void>
@@ -701,80 +701,85 @@ export const useDisplayEntityStore = create(
 
         entity.name = name
       }),
-    deleteEntities: (entityIds, skipHistoryAdd) =>
-      set((state) => {
-        const deletePendingEntityIds = new Set<string>()
+    deleteEntities: (entityIds) => {
+      const { entities } = get()
+      const flaggedEntityIds = new Set<string>()
 
-        const recursivelyFlagForDeletion = (
-          ids: string[],
-          excludeChildren?: boolean,
-        ) => {
-          for (const id of ids) {
-            // 이미 삭제 대상인 entity일 경우 스킵
-            // 이 entity의 parent entity가 삭제 대상이라 이미 처리한 경우임
-            if (deletePendingEntityIds.has(id)) continue
+      const recursivelyFlagForDeletion = (
+        ids: string[],
+        excludeChildren?: boolean,
+      ) => {
+        for (const id of ids) {
+          // 이미 삭제 대상인 entity일 경우 스킵
+          // 이 entity의 parent entity가 삭제 대상이라 이미 처리한 경우임
+          if (flaggedEntityIds.has(id)) continue
 
-            const entity = state.entities.get(id)
-            if (entity == null) {
-              logger.error(
-                `deleteEntities(): Attempt to remove unknown entity with id ${id}`,
-              )
-              continue
-            }
+          const entity = entities.get(id)
+          if (entity == null) {
+            logger.error(
+              `deleteEntities(): Cannot remove unknown entity with id ${id}`,
+            )
+            continue
+          }
 
-            // parent가 있을 경우 parent entity에서 children으로 등록된 걸 삭제
-            if (entity.parent != null) {
-              const parentElement = state.entities.get(entity.parent)
-              if (parentElement != null && parentElement.kind === 'group') {
-                const idx = parentElement.children.findIndex((d) => d === id)
-                if (idx >= 0) {
-                  parentElement.children.splice(idx, 1)
-                }
-                // parent entity의 children이 더 이상 없을 경우 같이 삭제
-                if (parentElement.children.length < 1) {
-                  recursivelyFlagForDeletion([parentElement.id], true)
-                }
+          // parent가 있을 경우 parent entity에서 children으로 등록된 걸 삭제
+          if (entity.parent != null) {
+            const parentElement = entities.get(entity.parent)
+            if (parentElement != null && parentElement.kind === 'group') {
+              // parent entity의 children이 더 이상 없을 경우 삭제 대상에 포함
+              if (parentElement.children.length < 1) {
+                recursivelyFlagForDeletion([parentElement.id], true)
               }
             }
-
-            // children으로 등록된 entity들이 있다면 같이 삭제
-            if (entity.kind === 'group' && !excludeChildren) {
-              // children entity에서 parent entity의 children id 배열을 건드릴 경우 for ... of 배열 순환에 문제가 생김
-              // index가 하나씩 앞으로 당겨지면서 일부 엔티티가 삭제 처리가 안됨
-              recursivelyFlagForDeletion(entity.children.slice())
-            }
-
-            deletePendingEntityIds.add(id)
           }
+
+          // children으로 등록된 entity들이 있다면 삭제 대상에 포함
+          if (entity.kind === 'group' && !excludeChildren) {
+            // children entity에서 parent entity의 children id 배열을 건드릴 경우 for ... of 배열 순환에 문제가 생김
+            // index가 하나씩 앞으로 당겨지면서 일부 엔티티가 삭제 처리가 안됨
+            // 따라서 배열을 복사해서 넘김
+            recursivelyFlagForDeletion(entity.children.slice())
+          }
+
+          flaggedEntityIds.add(id)
         }
+      }
 
-        recursivelyFlagForDeletion(entityIds)
+      recursivelyFlagForDeletion(entityIds)
 
+      const deletedEntities = [...flaggedEntityIds.values()].map(
+        (entityId) => entities.get(entityId)!,
+      )
+
+      set((state) => {
         useEntityRefStore
           .getState()
-          .deleteEntityRefs([...deletePendingEntityIds.values()])
+          .deleteEntityRefs([...flaggedEntityIds.values()])
 
-        // add history
-        if (!skipHistoryAdd) {
-          // get the non-proxied entities
-          const { entities } = get()
-          const deletedEntities = [...deletePendingEntityIds].map(
-            (id) => entities.get(id)!,
-          )
-          useHistoryStore.getState().addHistory({
-            type: 'deleteEntities',
-            beforeState: { entities: deletedEntities },
-            afterState: {},
-          })
-        }
+        for (const entityIdToDelete of flaggedEntityIds) {
+          const entity = state.entities.get(entityIdToDelete)!
+          if (entity.parent != null && !flaggedEntityIds.has(entity.parent)) {
+            const parentGroup = state.entities.get(entity.parent)
+            if (parentGroup?.kind === 'group') {
+              const idx = parentGroup.children.findIndex(
+                (id) => id === entityIdToDelete,
+              )
+              if (idx >= 0) {
+                parentGroup.children.splice(idx, 1)
+              }
+            }
+          }
 
-        for (const entityIdToDelete of deletePendingEntityIds) {
           state.entities.delete(entityIdToDelete)
         }
+
         state.selectedEntityIds = state.selectedEntityIds.filter(
-          (entityId) => !deletePendingEntityIds.has(entityId),
+          (entityId) => !flaggedEntityIds.has(entityId),
         )
-      }),
+      })
+
+      return deletedEntities
+    },
 
     bulkImport: async (items) => {
       const { createEntityRefs } = useEntityRefStore.getState()
@@ -1201,7 +1206,7 @@ export const useDisplayEntityStore = create(
         }
       }
 
-      deleteEntities(invalidEntityIds, true)
+      deleteEntities(invalidEntityIds)
     },
 
     groupEntities: (entityIds, groupIdToSet) => {

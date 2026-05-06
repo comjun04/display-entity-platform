@@ -132,7 +132,6 @@ export const useHistoryStore = create(
               case 'deleteEntities': {
                 deleteEntities(
                   history.beforeState.entities.map((entity) => entity.id),
-                  true,
                 )
                 break
               }

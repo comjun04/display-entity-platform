@@ -192,6 +192,20 @@ export function setIDEntityPlayerHeadProperties(
   }
 }
 
+export function deleteEntities(entityIds: string[], skipHistoryAdd = false) {
+  const { deleteEntities } = useDisplayEntityStore.getState()
+
+  const deletedEntities = deleteEntities(entityIds)
+
+  if (!skipHistoryAdd) {
+    useHistoryStore.getState().addHistory({
+      type: 'deleteEntities',
+      beforeState: { entities: deletedEntities },
+      afterState: {},
+    })
+  }
+}
+
 export function groupEntities(
   targetEntityIds: string[],
   skipHistoryAdd = false,

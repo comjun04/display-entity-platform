@@ -1,6 +1,7 @@
 import { type FC, useEffect, useMemo } from 'react'
 
 import { toggleGroup } from '@/lib/actions'
+import { deleteEntities } from '@/lib/entities'
 import { openFileFromUserSelect, saveToFile } from '@/lib/file-handler'
 import { getLogger } from '@/lib/logger'
 import type { ShortcutActionsEnum } from '@/lib/settings'
@@ -63,7 +64,7 @@ const ShortcutHandler: FC = () => {
         return true
       }
 
-      const { selectedEntityIds, deleteEntities, duplicateSelected } =
+      const { selectedEntityIds, duplicateSelected } =
         useDisplayEntityStore.getState()
       const { setMode } = useEditorStore.getState()
 
