@@ -191,3 +191,29 @@ export function setIDEntityPlayerHeadProperties(
     })
   }
 }
+
+export function groupEntities(
+  targetEntityIds: string[],
+  skipHistoryAdd = false,
+) {
+  const { entities, groupEntities } = useDisplayEntityStore.getState()
+
+  const targetEntities = targetEntityIds.map((id) => entities.get(id)!)
+
+  const firstEntityParentId = targetEntities[0].parent
+  if (!targetEntities.every((e) => e.parent === firstEntityParentId)) {
+    logger.error('Cannot group entities with different parent')
+    return
+  }
+
+  const result = groupEntities(targetEntityIds)
+  if (result == null) return
+
+  if (!skipHistoryAdd) {
+    useHistoryStore.getState().addHistory({
+      type: 'group',
+      parentGroupId: result.groupId,
+      childrenEntityIds: targetEntityIds,
+    })
+  }
+}

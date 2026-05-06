@@ -157,8 +157,7 @@ export type DisplayEntityState = {
   groupEntities: (
     entityIds: string[],
     groupIdToSet?: string,
-    skipHistoryAdd?: boolean,
-  ) => void
+  ) => { groupId: string }
   ungroupEntityGroup: (entityGroupId: string, skipHistoryAdd?: boolean) => void
 }
 
@@ -1205,17 +1204,15 @@ export const useDisplayEntityStore = create(
       deleteEntities(invalidEntityIds, true)
     },
 
-    groupEntities: (entityIds, groupIdToSet, skipHistoryAdd) =>
-      set((state) => {
-        const groupId = groupIdToSet ?? nanoid(16)
+    groupEntities: (entityIds, groupIdToSet) => {
+      const groupId = groupIdToSet ?? nanoid(16)
 
+      set((state) => {
         const entities = entityIds.map((id) => state.entities.get(id)!)
 
         const firstEntityParentId = entities[0].parent
         if (!entities.every((e) => e.parent === firstEntityParentId)) {
-          logger.error(
-            'groupEntities(): cannot group entities with different parent',
-          )
+          logger.error('Cannot group entities with different parent')
           return
         }
 
@@ -1281,15 +1278,10 @@ export const useDisplayEntityStore = create(
         }
         state.selectedEntityIdsIncludingParent.clear()
         f(groupId)
+      })
 
-        if (!skipHistoryAdd) {
-          useHistoryStore.getState().addHistory({
-            type: 'group',
-            parentGroupId: groupId,
-            childrenEntityIds: entityIds,
-          })
-        }
-      }),
+      return { groupId }
+    },
     ungroupEntityGroup: (entityGroupId, skipHistoryAdd) =>
       set((state) => {
         const selectedEntityGroup = state.entities.get(entityGroupId)
