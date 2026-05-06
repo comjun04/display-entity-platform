@@ -18,6 +18,7 @@ import type {
   BDEngineSaveDataItem,
   BlockDisplayEntity,
   BlockStateApplyModelInfo,
+  BlockstatesData,
   DeepPartial,
   DisplayEntity,
   DisplayEntityGroup,
@@ -59,7 +60,7 @@ const generateId = (
   return id
 }
 
-type CreateNewEntityActionParam =
+export type CreateNewEntityActionParam =
   | (Pick<BlockDisplayEntity, 'kind' | 'type'> &
       Partial<Omit<BlockDisplayEntity, 'kind' | 'type'>>)
   | (Pick<ItemDisplayEntity, 'kind' | 'type'> &
@@ -99,10 +100,7 @@ export type DisplayEntityState = {
    * @param typeOrText `kind`가 `block` 또는 `item`일 경우 블록/아이템 id, `text`일 경우 입력할 텍스트 (JSON Format)
    * @returns 생성된 디스플레이 엔티티 데이터 id
    */
-  createNew: (
-    params: CreateNewEntityActionParam[],
-    skipHistoryAdd?: boolean,
-  ) => Promise<void>
+  createNew: (params: CreateNewEntityActionParam[]) => Promise<DisplayEntity[]>
 
   setSelected: (ids: string[]) => void
   addToSelected: (id: string) => void
@@ -168,15 +166,50 @@ export const useDisplayEntityStore = create(
 
     instancedMeshGroup: new Map(),
 
-    createNew: async (params, skipHistoryAdd) => {
+    createNew: async (params) => {
       const entityIds: string[] = []
 
-      const batchJobs = await Promise.allSettled(
-        params.map(async (param) => {
+      const uniqueBlockTypes = params.reduce((acc, cur) => {
+        if (cur.kind === 'block') {
+          acc.add(cur.type)
+        }
+        return acc
+      }, new Set<string>())
+      const uniqueBlockTypesArr = [...uniqueBlockTypes.values()]
+      const blockstatesDataLoadResults = await Promise.allSettled(
+        uniqueBlockTypesArr.map((type) => loadBlockstates(type)),
+      )
+      const blockstatesDatas = blockstatesDataLoadResults.reduce(
+        (acc, cur, idx) => {
+          if (cur.status === 'rejected') {
+            logger.error(
+              `Failed to load blockstates data of type ${uniqueBlockTypesArr[idx]}`,
+            )
+          } else {
+            const type = uniqueBlockTypesArr[idx]
+            acc.set(type, cur.value)
+          }
+
+          return acc
+        },
+        new Map<string, BlockstatesData>(),
+      )
+
+      const entityCreationJobs = params
+        .map<
+          | {
+              entity: DisplayEntity
+              models: BlockStateApplyModelInfo[]
+            }
+          | undefined
+        >((param) => {
           const id = param.id ?? generateId(ENTITY_ID_LENGTH)
 
           if (param.kind === 'block') {
-            const blockstatesData = await loadBlockstates(param.type)
+            const blockstatesData = blockstatesDatas.get(param.type)
+            if (blockstatesData == null) {
+              return
+            }
             const blockstates = calculateDefaultBlockstates(
               blockstatesData,
               param.blockstates,
@@ -197,7 +230,7 @@ export const useDisplayEntityStore = create(
                 rotation: param.rotation ?? [0, 0, 0],
                 display: param.display ?? null,
                 blockstates,
-              } as const,
+              },
               models: matchingModels,
             }
           } else if (param.kind === 'item') {
@@ -221,7 +254,7 @@ export const useDisplayEntityStore = create(
                           texture: null,
                         }
                     : undefined,
-              } as const,
+              },
               models: [
                 {
                   model: `item/${param.type}`,
@@ -255,7 +288,7 @@ export const useDisplayEntityStore = create(
                 seeThrough: param.seeThrough ?? false,
                 shadow: param.shadow ?? false,
                 textOpacity: param.textOpacity ?? 255,
-              } as const,
+              },
               models: [],
             }
           } else if (param.kind === 'group') {
@@ -273,26 +306,21 @@ export const useDisplayEntityStore = create(
                 size: param.size ?? [1, 1, 1],
                 position: param.position ?? [0, 0, 0],
                 rotation: param.rotation ?? [1, 1, 1],
-              } as const,
+              },
               models: [],
             }
           }
-        }),
-      )
-      set((state) => {
-        for (const job of batchJobs) {
-          if (job.status === 'rejected') {
-            logger.error('Error while creating entity:', job.reason)
-            continue
-          }
-          if (job.value == null) continue
+        })
+        .filter((data) => data != null)
 
-          const newEntityCreationObj = job.value.entity
+      set((state) => {
+        for (const job of entityCreationJobs) {
+          const newEntityCreationObj = job.entity
           state.entities.set(newEntityCreationObj.id, newEntityCreationObj)
 
           entityIds.push(newEntityCreationObj.id)
 
-          for (const model of job.value.models) {
+          for (const model of job.models) {
             const modelResourceLocation = model.model
             const item = state.instancedMeshGroup.get(modelResourceLocation)
             if (item != null) {
@@ -319,16 +347,9 @@ export const useDisplayEntityStore = create(
         }
 
         useEntityRefStore.getState().createEntityRefs(entityIds)
-
-        if (!skipHistoryAdd) {
-          const createdEntities = entityIds.map((id) => state.entities.get(id)!)
-          useHistoryStore.getState().addHistory({
-            type: 'createEntities',
-            beforeState: {},
-            afterState: { entities: createdEntities },
-          })
-        }
       })
+
+      return entityCreationJobs.map((job) => job.entity)
     },
     setSelected: (ids) =>
       set((state) => {

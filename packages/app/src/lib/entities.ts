@@ -1,6 +1,9 @@
 import type { ModelDisplayPositionKey, Number3Tuple } from '@depl/shared'
 
-import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import {
+  type CreateNewEntityActionParam,
+  useDisplayEntityStore,
+} from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import type {
@@ -14,6 +17,22 @@ import { isItemDisplayPlayerHead } from '@/types/guards'
 import { getLogger } from './logger'
 
 const logger = getLogger('entities')
+
+export async function createNewEntities(
+  params: CreateNewEntityActionParam[],
+  skipHistoryAdd = false,
+) {
+  const { createNew } = useDisplayEntityStore.getState()
+  const createdEntities = await createNew(params)
+
+  if (!skipHistoryAdd) {
+    useHistoryStore.getState().addHistory({
+      type: 'createEntities',
+      beforeState: {},
+      afterState: { entities: createdEntities },
+    })
+  }
+}
 
 export function batchSetEntityTransformation(
   data: {

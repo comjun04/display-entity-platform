@@ -4,9 +4,9 @@ import { type FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
+import { createNewEntities } from '@/lib/entities'
 import { getBlockListQueryFn } from '@/lib/queries/getBlockList'
 import { useDialogStore } from '@/stores/dialogStore'
-import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useProjectStore } from '@/stores/projectStore'
 
 import { Input } from '../ui/input'
@@ -20,7 +20,6 @@ const VirtualList: FC<VirtualListProps> = ({
   items: virtualItemList,
   isLoading,
 }) => {
-  const createNewEntity = useDisplayEntityStore((state) => state.createNew)
   const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
 
   // virtualizing
@@ -55,7 +54,9 @@ const VirtualList: FC<VirtualListProps> = ({
                 transform: `translateY(${virtualItem.start}px)`,
               }}
               onClick={() => {
-                createNewEntity([{ kind: 'block', type: block }])
+                createNewEntities([{ kind: 'block', type: block }]).catch(
+                  console.error,
+                )
                 closeActiveDialog()
               }}
             >

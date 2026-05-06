@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { toggleGroup } from '@/lib/actions'
-import { deleteEntities } from '@/lib/entities'
+import { createNewEntities, deleteEntities } from '@/lib/entities'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -113,9 +113,9 @@ const QuickActionPanel: FC = () => {
               render={
                 <FloatingButton
                   onClick={() => {
-                    useDisplayEntityStore
-                      .getState()
-                      .createNew([{ kind: 'text', text: 'Enter Text' }])
+                    createNewEntities([
+                      { kind: 'text', text: 'Enter Text' },
+                    ]).catch(console.error)
                   }}
                 >
                   <LuType size={24} />
@@ -165,9 +165,9 @@ const QuickActionPanel: FC = () => {
             <DropdownMenuItem
               className="flex flex-row items-center gap-2"
               onClick={() => {
-                useDisplayEntityStore
-                  .getState()
-                  .createNew([{ kind: 'text', text: 'Enter Text' }])
+                createNewEntities([{ kind: 'text', text: 'Enter Text' }]).catch(
+                  console.error,
+                )
               }}
             >
               <LuType />
@@ -184,9 +184,9 @@ const QuickActionPanel: FC = () => {
             render={
               <FloatingButton
                 onClick={() => {
-                  useDisplayEntityStore
-                    .getState()
-                    .createNew([{ kind: 'item', type: 'player_head' }])
+                  createNewEntities([
+                    { kind: 'item', type: 'player_head' },
+                  ]).catch(console.error)
                 }}
               >
                 <LuSmile size={24} />

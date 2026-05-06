@@ -74,7 +74,7 @@ export const useHistoryStore = create(
                 break
               }
               case 'deleteEntities': {
-                createNew(history.beforeState.entities, true)
+                createNew(history.beforeState.entities)
                 break
               }
               case 'group': {
@@ -126,7 +126,7 @@ export const useHistoryStore = create(
             // TODO: apply afterState
             switch (history.type) {
               case 'createEntities': {
-                createNew(history.afterState.entities, true)
+                createNew(history.afterState.entities)
                 break
               }
               case 'deleteEntities': {
