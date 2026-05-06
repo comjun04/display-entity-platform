@@ -158,7 +158,7 @@ export type DisplayEntityState = {
     entityIds: string[],
     groupIdToSet?: string,
   ) => { groupId: string }
-  ungroupEntityGroup: (entityGroupId: string, skipHistoryAdd?: boolean) => void
+  ungroupEntityGroup: (entityGroupId: string) => void
 }
 
 export const useDisplayEntityStore = create(
@@ -1282,12 +1282,12 @@ export const useDisplayEntityStore = create(
 
       return { groupId }
     },
-    ungroupEntityGroup: (entityGroupId, skipHistoryAdd) =>
+    ungroupEntityGroup: (entityGroupId) =>
       set((state) => {
         const selectedEntityGroup = state.entities.get(entityGroupId)
         if (selectedEntityGroup?.kind !== 'group') {
           logger.error(
-            `ungroupEntityGroup(): selected entity ${entityGroupId} is not a group but ${selectedEntityGroup?.kind}`,
+            `Selected entity ${entityGroupId} is not a group but ${selectedEntityGroup?.kind}`,
           )
           return
         }
@@ -1339,14 +1339,6 @@ export const useDisplayEntityStore = create(
             e.rotation = [newRotation.x, newRotation.y, newRotation.z]
             e.size = newScale.toArray()
           })
-
-        if (!skipHistoryAdd) {
-          useHistoryStore.getState().addHistory({
-            type: 'ungroup',
-            parentGroupId: entityGroupId,
-            childrenEntityIds: selectedEntityGroup.children.slice(), // get the non-proxied array
-          })
-        }
 
         // 그룹의 children을 비우기
         // 그룹 삭제는 DisplayEntity.tsx의 useEffect()에서 수행 (그룹에 children이 비어있을 경우 삭제)

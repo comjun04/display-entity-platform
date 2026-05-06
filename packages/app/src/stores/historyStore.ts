@@ -78,7 +78,7 @@ export const useHistoryStore = create(
                 break
               }
               case 'group': {
-                ungroupEntityGroup(history.parentGroupId, true)
+                ungroupEntityGroup(history.parentGroupId)
                 break
               }
               case 'ungroup': {
@@ -141,7 +141,7 @@ export const useHistoryStore = create(
                 break
               }
               case 'ungroup': {
-                ungroupEntityGroup(history.parentGroupId, true)
+                ungroupEntityGroup(history.parentGroupId)
                 break
               }
               case 'changeProperties': {

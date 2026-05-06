@@ -4,7 +4,7 @@ import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useHistoryStore } from '@/stores/historyStore'
 
-import { groupEntities } from './entities'
+import { groupEntities, ungroupEntityGroup } from './entities'
 
 const { t } = i18n
 
@@ -13,8 +13,7 @@ const { t } = i18n
  * 선택한 엔티티가 그룹되어 있지 않다면 그룹하고, 이미 그룹되어 있다면 그룹을 하제
  */
 export function toggleGroup() {
-  const { entities, selectedEntityIds, ungroupEntityGroup } =
-    useDisplayEntityStore.getState()
+  const { entities, selectedEntityIds } = useDisplayEntityStore.getState()
 
   const alreadyGrouped =
     selectedEntityIds.length === 1 &&

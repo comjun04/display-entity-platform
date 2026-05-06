@@ -217,3 +217,25 @@ export function groupEntities(
     })
   }
 }
+
+export function ungroupEntityGroup(groupId: string, skipHistoryAdd = false) {
+  const { entities, ungroupEntityGroup } = useDisplayEntityStore.getState()
+
+  const selectedEntityGroup = entities.get(groupId)
+  if (selectedEntityGroup?.kind !== 'group') {
+    logger.error(
+      `Selected entity ${groupId} is not a group but ${selectedEntityGroup?.kind}`,
+    )
+    return
+  }
+
+  ungroupEntityGroup(groupId)
+
+  if (!skipHistoryAdd) {
+    useHistoryStore.getState().addHistory({
+      type: 'ungroup',
+      parentGroupId: groupId,
+      childrenEntityIds: selectedEntityGroup.children,
+    })
+  }
+}
