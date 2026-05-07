@@ -5,11 +5,15 @@ import { LatestGameVersion, LegacyHardcodedGameVersion } from '@/constants'
 import { decodeBase64ToBinary, gunzip, gzip } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
+import { useHistoryStore } from '@/stores/historyStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type { BDEngineSaveData, DisplayEntitySaveDataItem } from '@/types/base'
 
 import { clearProject } from './actions'
+import { importBDEngineProjectFrom } from './formats/bdengine'
+import { importDeplProjectFrom } from './formats/depl'
 import { getLogger } from './logger'
+import { preloadResources } from './resources/preload'
 import AutosaveService from './services/autosave.service'
 
 // circular import, but not a problem because AutosaveService is a Singleton class
@@ -128,8 +132,11 @@ async function openProjectFile(file: Blob): Promise<boolean> {
       : ''
   setProjectName(projectName)
 
+  const entities = importDeplProjectFrom(saveData.entities)
+
   // load entities
-  bulkImport(saveData.entities).catch(logger.error)
+  bulkImport(entities)
+  useHistoryStore.getState().clearHistory()
 
   return true
 }
@@ -186,7 +193,7 @@ async function importFromBDE(file: Blob): Promise<boolean> {
 
   toast(t(($) => $.toast.importingBDEProject))
 
-  const { bulkImportFromBDE, clearEntities } = useDisplayEntityStore.getState()
+  const { bulkImport, clearEntities } = useDisplayEntityStore.getState()
   const { setTargetGameVersion, setProjectName } = useProjectStore.getState()
 
   // reset project and load data
@@ -201,7 +208,11 @@ async function importFromBDE(file: Blob): Promise<boolean> {
   // load projectName
   setProjectName(saveData[0].name)
 
-  bulkImportFromBDE(saveData).catch(logger.error)
+  const entities = await importBDEngineProjectFrom(saveData)
+  await preloadResources([...entities.values()])
+
+  bulkImport(entities)
+  useHistoryStore.getState().clearHistory()
 
   return true
 }
