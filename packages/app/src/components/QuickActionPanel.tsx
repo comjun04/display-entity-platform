@@ -21,7 +21,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { toggleGroup } from '@/lib/actions'
-import { createNewEntities, deleteEntities } from '@/lib/entities'
+import {
+  cloneSelectedEntities,
+  createNewEntities,
+  deleteEntities,
+} from '@/lib/entities'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -228,9 +232,7 @@ const QuickActionPanel: FC = () => {
             render={
               <FloatingButton
                 disabled={selectedEntityIds.length < 1}
-                onClick={() =>
-                  useDisplayEntityStore.getState().duplicateSelected()
-                }
+                onClick={() => cloneSelectedEntities()}
               >
                 <LuCopyPlus size={24} />
               </FloatingButton>

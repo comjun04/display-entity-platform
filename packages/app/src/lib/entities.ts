@@ -34,6 +34,17 @@ export async function createNewEntities(
   }
 }
 
+export function cloneSelectedEntities() {
+  const { cloneSelected } = useDisplayEntityStore.getState()
+  const clonedEntities = cloneSelected()
+
+  useHistoryStore.getState().addHistory({
+    type: 'createEntities',
+    beforeState: {},
+    afterState: { entities: clonedEntities },
+  })
+}
+
 export function batchSetEntityTransformation(
   data: {
     id: string
