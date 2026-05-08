@@ -6,6 +6,7 @@ import AutosaveService from '@/lib/services/autosave.service'
 import type { History, Number3Tuple, PlayerHeadProperties } from '@/types/base'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
+import { useDisplayEntityStore } from './displayEntityStore'
 import { useEditorStore } from './editorStore'
 
 const logger = getLogger('historyStore')
@@ -47,119 +48,95 @@ export const useHistoryStore = create(
       useEditorStore.getState().setProjectDirty(true)
     },
     undoHistory: () => {
-      import('./displayEntityStore')
-        .then(({ useDisplayEntityStore }) => {
-          set((state) => {
-            // get the last non-proxied history
-            const history = get().undoStack.slice(-1)[0]
-            if (history == null) return
+      set((state) => {
+        // get the last non-proxied history
+        const history = get().undoStack.slice(-1)[0]
+        if (history == null) return
 
-            logger.debug('undoHistory():', history)
+        logger.debug('undoHistory():', history)
 
-            state.undoStack.pop()
+        state.undoStack.pop()
 
-            const {
-              createNew,
-              deleteEntities,
-              groupEntities,
-              ungroupEntityGroup,
-            } = useDisplayEntityStore.getState()
+        const { createNew, deleteEntities, groupEntities, ungroupEntityGroup } =
+          useDisplayEntityStore.getState()
 
-            // TODO: apply beforeState
-            switch (history.type) {
-              case 'createEntities': {
-                deleteEntities(
-                  history.afterState.entities.map((entity) => entity.id),
-                )
-                break
-              }
-              case 'deleteEntities': {
-                createNew(history.beforeState.entities)
-                break
-              }
-              case 'group': {
-                ungroupEntityGroup(history.parentGroupId)
-                break
-              }
-              case 'ungroup': {
-                groupEntities(history.childrenEntityIds, history.parentGroupId)
-                break
-              }
-              case 'changeProperties': {
-                applyHistoryPropertyChange(
-                  history,
-                  'undo',
-                  useDisplayEntityStore,
-                )
-              }
-            }
+        // TODO: apply beforeState
+        switch (history.type) {
+          case 'createEntities': {
+            deleteEntities(
+              history.afterState.entities.map((entity) => entity.id),
+            )
+            break
+          }
+          case 'deleteEntities': {
+            createNew(history.beforeState.entities).catch(console.error)
+            break
+          }
+          case 'group': {
+            ungroupEntityGroup(history.parentGroupId)
+            break
+          }
+          case 'ungroup': {
+            groupEntities(history.childrenEntityIds, history.parentGroupId)
+            break
+          }
+          case 'changeProperties': {
+            applyHistoryPropertyChange(history, 'undo')
+          }
+        }
 
-            // push non-proxied history to prevent errors
-            // from proxy revocation
-            state.redoStack.push(history)
-          })
+        // push non-proxied history to prevent errors
+        // from proxy revocation
+        state.redoStack.push(history)
+      })
 
-          AutosaveService.instance.markOperationPerformed()
-          useEditorStore.getState().setProjectDirty(true)
-        })
-        .catch(console.error)
+      AutosaveService.instance.markOperationPerformed()
+      useEditorStore.getState().setProjectDirty(true)
     },
     redoHistory: () => {
-      import('./displayEntityStore')
-        .then(({ useDisplayEntityStore }) => {
-          set((state) => {
-            // get the last non-proxied history
-            const history = get().redoStack.slice(-1)[0]
-            if (history == null) return
+      set((state) => {
+        // get the last non-proxied history
+        const history = get().redoStack.slice(-1)[0]
+        if (history == null) return
 
-            logger.debug('redoHistory():', history)
+        logger.debug('redoHistory():', history)
 
-            state.redoStack.pop()
+        state.redoStack.pop()
 
-            const {
-              createNew,
-              deleteEntities,
-              groupEntities,
-              ungroupEntityGroup,
-            } = useDisplayEntityStore.getState()
+        const { createNew, deleteEntities, groupEntities, ungroupEntityGroup } =
+          useDisplayEntityStore.getState()
 
-            // TODO: apply afterState
-            switch (history.type) {
-              case 'createEntities': {
-                createNew(history.afterState.entities)
-                break
-              }
-              case 'deleteEntities': {
-                deleteEntities(
-                  history.beforeState.entities.map((entity) => entity.id),
-                )
-                break
-              }
-              case 'group': {
-                groupEntities(history.childrenEntityIds, history.parentGroupId)
-                break
-              }
-              case 'ungroup': {
-                ungroupEntityGroup(history.parentGroupId)
-                break
-              }
-              case 'changeProperties': {
-                applyHistoryPropertyChange(
-                  history,
-                  'redo',
-                  useDisplayEntityStore,
-                )
-              }
-            }
-            // push non-proxied history to prevent errors
-            // from proxy revocation
-            state.undoStack.push(history)
-          })
+        // TODO: apply afterState
+        switch (history.type) {
+          case 'createEntities': {
+            createNew(history.afterState.entities).catch(console.error)
+            break
+          }
+          case 'deleteEntities': {
+            deleteEntities(
+              history.beforeState.entities.map((entity) => entity.id),
+            )
+            break
+          }
+          case 'group': {
+            groupEntities(history.childrenEntityIds, history.parentGroupId)
+            break
+          }
+          case 'ungroup': {
+            ungroupEntityGroup(history.parentGroupId)
+            break
+          }
+          case 'changeProperties': {
+            applyHistoryPropertyChange(history, 'redo')
+          }
+        }
+        // push non-proxied history to prevent errors
+        // from proxy revocation
+        state.undoStack.push(history)
+      })
 
-          AutosaveService.instance.markOperationPerformed()
-          useEditorStore.getState().setProjectDirty(true)
-        })
-        .catch(console.error)
+      AutosaveService.instance.markOperationPerformed()
+      useEditorStore.getState().setProjectDirty(true)
     },
     clearHistory: () =>
       set((state) => {
@@ -181,64 +158,55 @@ export const useHistoryStore = create(
           )
           state.playerHead.textureDataListBeforePaint.set(entityId, data)
         }),
-      flushToHistory: () =>
-        import('./displayEntityStore')
-          .then(({ useDisplayEntityStore }) => {
-            const { entities } = useDisplayEntityStore.getState()
-            const { textureDataListBeforePaint } = get().playerHead
+      flushToHistory: () => {
+        const { entities } = useDisplayEntityStore.getState()
+        const { textureDataListBeforePaint } = get().playerHead
 
-            const historyEntitiesData = [
-              ...textureDataListBeforePaint.entries(),
-            ]
-              .map(([entityId, data]) => {
-                const entity = entities.get(entityId)!
-                if (!isItemDisplayPlayerHead(entity)) {
-                  // this should not happen
-                  logger.error(
-                    `playerHead.flushToHistory(): entity ${entityId} is not an item display player_head but ${entity.kind}. This should happen, ignoring.`,
-                  )
-                  return null
-                }
+        const historyEntitiesData = [...textureDataListBeforePaint.entries()]
+          .map(([entityId, data]) => {
+            const entity = entities.get(entityId)!
+            if (!isItemDisplayPlayerHead(entity)) {
+              // this should not happen
+              logger.error(
+                `playerHead.flushToHistory(): entity ${entityId} is not an item display player_head but ${entity.kind}. This should happen, ignoring.`,
+              )
+              return null
+            }
 
-                return {
-                  id: entityId,
-                  beforeState: {
-                    kind: 'item' as const,
-                    playerHeadProperties: {
-                      texture: data,
-                    },
-                  },
-                  afterState: {
-                    kind: 'item' as const,
-                    playerHeadProperties: entity.playerHeadProperties,
-                  },
-                }
-              })
-              .filter((d) => d != null)
-
-            set((state) => {
-              state.undoStack.push({
-                type: 'changeProperties',
-                entities: historyEntitiesData,
-              })
-              state.redoStack.length = 0
-
-              state.playerHead.textureDataListBeforePaint.clear()
-            })
-
-            AutosaveService.instance.markOperationPerformed()
-            useEditorStore.getState().setProjectDirty(true)
+            return {
+              id: entityId,
+              beforeState: {
+                kind: 'item' as const,
+                playerHeadProperties: {
+                  texture: data,
+                },
+              },
+              afterState: {
+                kind: 'item' as const,
+                playerHeadProperties: entity.playerHeadProperties,
+              },
+            }
           })
-          .catch(console.error),
+          .filter((d) => d != null)
+
+        set((state) => {
+          state.undoStack.push({
+            type: 'changeProperties',
+            entities: historyEntitiesData,
+          })
+          state.redoStack.length = 0
+
+          state.playerHead.textureDataListBeforePaint.clear()
+        })
+
+        AutosaveService.instance.markOperationPerformed()
+        useEditorStore.getState().setProjectDirty(true)
+      },
     },
   })),
 )
 
-function applyHistoryPropertyChange(
-  history: History,
-  type: 'undo' | 'redo',
-  displayEntityStore: (typeof import('./displayEntityStore'))['useDisplayEntityStore'],
-) {
+function applyHistoryPropertyChange(history: History, type: 'undo' | 'redo') {
   if (history.type !== 'changeProperties') {
     logger.warn(
       `applyHistoryPropertyChange(): Expected history type 'changeProperties' but got ${history.type}. Skipping.`,
@@ -252,7 +220,7 @@ function applyHistoryPropertyChange(
     setBDEntityBlockstates,
     setTextDisplayProperties,
     setItemDisplayPlayerHeadProperties,
-  } = displayEntityStore.getState()
+  } = useDisplayEntityStore.getState()
 
   const transformationChanges = new Map<
     string,
@@ -321,7 +289,7 @@ function applyHistoryPropertyChange(
   if (transformationChanges.size > 0) {
     batchSetEntityTransformation([...transformationChanges.values()])
 
-    const { entities, selectedEntityIds } = displayEntityStore.getState()
+    const { entities, selectedEntityIds } = useDisplayEntityStore.getState()
     if (selectedEntityIds.length > 0) {
       const firstSelectedEntity = entities.get(selectedEntityIds[0])
       if (firstSelectedEntity != null) {
