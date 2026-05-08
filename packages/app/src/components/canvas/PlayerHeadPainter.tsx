@@ -2,6 +2,7 @@ import { Grid } from '@react-three/drei'
 import { type FC, useMemo } from 'react'
 import { MathUtils } from 'three'
 
+import { setIDEntityPlayerHeadProperties } from '@/lib/entities'
 import { loadTextureImage } from '@/lib/resources/material'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { type HeadPainterLayer, useEditorStore } from '@/stores/editorStore'
@@ -258,14 +259,12 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
 
         const finalImageData = ctx.getImageData(0, 0, 64, 64)
 
-        useDisplayEntityStore
-          .getState()
-          .setItemDisplayPlayerHeadProperties(entityId, {
-            texture: {
-              baked: false,
-              paintTexturePixels: Array.from(finalImageData.data),
-            },
-          })
+        setIDEntityPlayerHeadProperties(entityId, {
+          texture: {
+            baked: false,
+            paintTexturePixels: Array.from(finalImageData.data),
+          },
+        })
       }
     }
     f().catch(console.error)

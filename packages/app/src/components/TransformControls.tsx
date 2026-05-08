@@ -24,6 +24,7 @@ import {
 import { TransformControls as OriginalTransformControls } from 'three/examples/jsm/Addons.js'
 import { useShallow } from 'zustand/shallow'
 
+import { batchSetEntityTransformation } from '@/lib/entities'
 import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -39,13 +40,11 @@ const dummyBox = new Box3(infinityVector.clone(), minusInfinityVector.clone())
 const logger = getLogger('TransformControls')
 
 const TransformControls: FC = () => {
-  const { selectedEntityIds, batchSetEntityTransformation } =
-    useDisplayEntityStore(
-      useShallow((state) => ({
-        selectedEntityIds: state.selectedEntityIds,
-        batchSetEntityTransformation: state.batchSetEntityTransformation,
-      })),
-    )
+  const { selectedEntityIds } = useDisplayEntityStore(
+    useShallow((state) => ({
+      selectedEntityIds: state.selectedEntityIds,
+    })),
+  )
   const firstSelectedEntityTransformation = useDisplayEntityStore(
     useShallow((state) => {
       const firstSelectedEntityId = state.selectedEntityIds[0]

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { MathUtils } from 'three'
 import { useShallow } from 'zustand/shallow'
 
+import { batchSetEntityTransformation } from '@/lib/entities'
 import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -19,13 +20,11 @@ const TransformsPanel: FC = () => {
 
   const {
     selectedEntityIds,
-    batchSetEntityTransformation,
 
     firstSelectedEntity,
   } = useDisplayEntityStore(
     useShallow((state) => ({
       selectedEntityIds: state.selectedEntityIds,
-      batchSetEntityTransformation: state.batchSetEntityTransformation,
 
       firstSelectedEntity:
         state.selectedEntityIds.length > 0
@@ -132,11 +131,7 @@ const TransformsPanel: FC = () => {
       })
       batchSetEntityTransformation(d)
     },
-    [
-      batchSetEntityTransformation,
-      selectedEntityIds,
-      setSelectionBaseTransformation,
-    ],
+    [selectedEntityIds, setSelectionBaseTransformation],
   )
   const rotationUpdateFn = useCallback(
     (xyz: PartialNumber3Tuple) => {
@@ -170,11 +165,7 @@ const TransformsPanel: FC = () => {
       })
       batchSetEntityTransformation(d)
     },
-    [
-      batchSetEntityTransformation,
-      selectedEntityIds,
-      setSelectionBaseTransformation,
-    ],
+    [selectedEntityIds, setSelectionBaseTransformation],
   )
   const scaleUpdateFn = useCallback(
     (xyz: PartialNumber3Tuple) => {
@@ -206,11 +197,7 @@ const TransformsPanel: FC = () => {
       })
       batchSetEntityTransformation(d)
     },
-    [
-      batchSetEntityTransformation,
-      selectedEntityIds,
-      setSelectionBaseTransformation,
-    ],
+    [selectedEntityIds, setSelectionBaseTransformation],
   )
 
   if (firstSelectedEntity == null) return null

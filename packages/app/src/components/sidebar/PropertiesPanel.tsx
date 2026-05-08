@@ -11,6 +11,12 @@ import { useShallow } from 'zustand/shallow'
 
 import { BackendHost, GameVersions } from '@/constants'
 import useBlockStates from '@/hooks/useBlockStates'
+import {
+  setBDEntityBlockstates,
+  setIDEntityDisplayType,
+  setIDEntityPlayerHeadProperties,
+  setTDEntityProperties,
+} from '@/lib/entities'
 import { cn, isValidTextureUrl } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -71,8 +77,6 @@ const BlockDisplayProperties: FC = () => {
               className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
               value={singleSelectedEntity.blockstates[key]}
               onChange={(evt) => {
-                const { setBDEntityBlockstates } =
-                  useDisplayEntityStore.getState()
                 setBDEntityBlockstates(singleSelectedEntity.id, {
                   [key]: evt.target.value,
                 })
@@ -123,8 +127,7 @@ const ItemDisplayProperties: FC = () => {
           className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={singleSelectedEntity.display ?? 'none'}
           onChange={(evt) => {
-            const { setEntityDisplayType } = useDisplayEntityStore.getState()
-            setEntityDisplayType(
+            setIDEntityDisplayType(
               singleSelectedEntity.id,
               evt.target.value === 'none'
                 ? null
@@ -174,14 +177,12 @@ const ItemDisplayProperties: FC = () => {
                   return
                 }
 
-                useDisplayEntityStore
-                  .getState()
-                  .setItemDisplayPlayerHeadProperties(singleSelectedEntity.id, {
-                    texture: {
-                      baked: true,
-                      url: tempPlayerHeadTextureUrl,
-                    },
-                  })
+                setIDEntityPlayerHeadProperties(singleSelectedEntity.id, {
+                  texture: {
+                    baked: true,
+                    url: tempPlayerHeadTextureUrl,
+                  },
+                })
               }}
             >
               {t(
@@ -238,17 +239,12 @@ const ItemDisplayProperties: FC = () => {
                   }
 
                   setTempPlayerHeadTextureUrl(textureUrl)
-                  useDisplayEntityStore
-                    .getState()
-                    .setItemDisplayPlayerHeadProperties(
-                      singleSelectedEntity.id,
-                      {
-                        texture: {
-                          baked: true,
-                          url: textureUrl,
-                        },
-                      },
-                    )
+                  setIDEntityPlayerHeadProperties(singleSelectedEntity.id, {
+                    texture: {
+                      baked: true,
+                      url: textureUrl,
+                    },
+                  })
                 }
 
                 asyncFn().catch(console.error)
@@ -294,11 +290,9 @@ const TextDisplayProperties: FC = () => {
           className="min-h-24 min-w-0 flex-1 rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.text}
           onChange={(evt) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                text: evt.target.value,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              text: evt.target.value,
+            })
           }}
         />
       </div>
@@ -309,11 +303,9 @@ const TextDisplayProperties: FC = () => {
           mode="rgb"
           value={singleSelectedEntity.textColor}
           onValueChange={(num) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textColor: num,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textColor: num,
+            })
           }}
         />
       </div>
@@ -328,11 +320,9 @@ const TextDisplayProperties: FC = () => {
             const value = parseInt(evt.target.value)
             if (!isFinite(value) || value < 0) return
 
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                lineWidth: value,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              lineWidth: value,
+            })
           }}
         />
       </div>
@@ -342,11 +332,9 @@ const TextDisplayProperties: FC = () => {
           className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={singleSelectedEntity.alignment}
           onChange={(evt) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                alignment: evt.target.value as TextDisplayAlignment,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              alignment: evt.target.value as TextDisplayAlignment,
+            })
           }}
         >
           <option>left</option>
@@ -362,11 +350,9 @@ const TextDisplayProperties: FC = () => {
           mode="argb"
           value={singleSelectedEntity.backgroundColor}
           onValueChange={(num) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                backgroundColor: num,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              backgroundColor: num,
+            })
           }}
         />
       </div>
@@ -376,11 +362,9 @@ const TextDisplayProperties: FC = () => {
           <Switch
             checked={singleSelectedEntity.defaultBackground}
             onCheckedChange={(value) => {
-              useDisplayEntityStore
-                .getState()
-                .setTextDisplayProperties(singleSelectedEntity.id, {
-                  defaultBackground: value,
-                })
+              setTDEntityProperties(singleSelectedEntity.id, {
+                defaultBackground: value,
+              })
             }}
           />
         </div>
@@ -391,11 +375,9 @@ const TextDisplayProperties: FC = () => {
           <Switch
             checked={singleSelectedEntity.seeThrough}
             onCheckedChange={(value) => {
-              useDisplayEntityStore
-                .getState()
-                .setTextDisplayProperties(singleSelectedEntity.id, {
-                  seeThrough: value,
-                })
+              setTDEntityProperties(singleSelectedEntity.id, {
+                seeThrough: value,
+              })
             }}
           />
         </div>
@@ -406,11 +388,9 @@ const TextDisplayProperties: FC = () => {
           <Switch
             checked={singleSelectedEntity.shadow}
             onCheckedChange={(value) => {
-              useDisplayEntityStore
-                .getState()
-                .setTextDisplayProperties(singleSelectedEntity.id, {
-                  shadow: value,
-                })
+              setTDEntityProperties(singleSelectedEntity.id, {
+                shadow: value,
+              })
             }}
           />
         </div>
@@ -427,11 +407,9 @@ const TextDisplayProperties: FC = () => {
             const value = parseInt(evt.target.value)
             if (!isFinite(value) || value < 0 || value > 255) return
 
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textOpacity: value,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textOpacity: value,
+            })
           }}
         />
       </div>
@@ -446,13 +424,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.bold && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  bold: !textEffects.bold,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                bold: !textEffects.bold,
+              },
+            })
           }
         >
           <LuBold size={24} />
@@ -463,13 +439,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.italic && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  italic: !textEffects.italic,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                italic: !textEffects.italic,
+              },
+            })
           }
         >
           <LuItalic size={24} />
@@ -480,13 +454,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.underlined && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  underlined: !textEffects.underlined,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                underlined: !textEffects.underlined,
+              },
+            })
           }
         >
           <LuUnderline size={24} />
@@ -497,13 +469,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.strikethrough && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  strikethrough: !textEffects.strikethrough,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                strikethrough: !textEffects.strikethrough,
+              },
+            })
           }
         >
           <LuStrikethrough size={24} />
@@ -514,13 +484,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.obfuscated && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  obfuscated: !textEffects.obfuscated,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                obfuscated: !textEffects.obfuscated,
+              },
+            })
           }
         >
           <LuShuffle size={24} />
