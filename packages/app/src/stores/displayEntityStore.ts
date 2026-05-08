@@ -314,6 +314,19 @@ export const useDisplayEntityStore = create(
 
           entityIds.push(newEntityCreationObj.id)
 
+          // insert children entity id if parent group `children` array does not include one
+          // this is required when undoing deletion of multi-grouped entities
+          // to recover original location of topmost entities (find the right parent)
+          if (newEntityCreationObj.parent != null) {
+            const parentEntity = state.entities.get(newEntityCreationObj.parent)
+            if (
+              parentEntity?.kind === 'group' &&
+              !parentEntity.children.includes(newEntityCreationObj.id)
+            ) {
+              parentEntity.children.push(newEntityCreationObj.id)
+            }
+          }
+
           for (const model of job.models) {
             const modelResourceLocation = model.model
             const item = state.instancedMeshGroup.get(modelResourceLocation)
