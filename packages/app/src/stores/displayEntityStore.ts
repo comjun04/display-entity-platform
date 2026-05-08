@@ -407,6 +407,8 @@ export const useDisplayEntityStore = create(
         return []
       }
 
+      const topmostEntityIds: string[] = []
+
       const f = (entityId: string, newParentEntityId?: string) => {
         const entity = entities.get(entityId)!
         const clonedEntity = cloneDeep(entity)
@@ -415,6 +417,9 @@ export const useDisplayEntityStore = create(
 
         // put new id to cloned entity
         clonedEntity.id = generateId(ENTITY_ID_LENGTH)
+        if (newParentEntityId == null) {
+          topmostEntityIds.push(clonedEntity.id)
+        }
 
         if (newParentEntityId != null) {
           clonedEntity.parent = newParentEntityId
@@ -447,6 +452,16 @@ export const useDisplayEntityStore = create(
         clonedEntities.forEach((newEntity) => {
           state.entities.set(newEntity.id, newEntity)
         })
+
+        const firstSelectedEntity = state.entities.get(selectedEntityIds[0])!
+        if (firstSelectedEntity.parent != null) {
+          const parentEntity = state.entities.get(firstSelectedEntity.parent)!
+          if (parentEntity.kind === 'group') {
+            // add topmost cloned entities as children to parent group
+            parentEntity.children.push(...topmostEntityIds)
+          }
+        }
+
         useEntityRefStore
           .getState()
           .createEntityRefs(clonedEntities.map((e) => e.id))
