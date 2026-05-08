@@ -280,12 +280,10 @@ export function setIDEntityPlayerHeadProperties(
 
   const entity = entities.get(entityId)
   if (entity == null) {
-    console.error(`Invalid entity id ${entityId}`)
+    logger.error(`Invalid entity id ${entityId}`)
     return
   } else if (!isItemDisplayPlayerHead(entity)) {
-    console.error(
-      `Cannot set player_head properties on non player_head display`,
-    )
+    logger.error(`Cannot set player_head properties on non player_head display`)
     return
   }
 
