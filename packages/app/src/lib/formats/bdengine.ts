@@ -210,10 +210,27 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
       .transpose()
       .toArray()
 
+    const extraData: Record<string, string> = {}
+    if (entity.kind === 'block') {
+      Object.assign(extraData, entity.blockstates)
+    }
+    if (entity.kind === 'item' && entity.display != null) {
+      // may overwrite `display` blockstates if exist, but this takes priority
+      extraData['display'] = entity.display
+    }
+    const extraDataStr =
+      Object.keys(extraData).length > 0
+        ? '[' +
+          Object.entries(extraData)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(',') +
+          ']'
+        : ''
+
     if (entity.kind === 'block') {
       return {
         isBlockDisplay: true,
-        name: entity.type,
+        name: entity.type + extraDataStr,
         transforms,
         brightness: { sky: 15, block: 15 },
         nbt: '',
@@ -221,7 +238,7 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
     } else if (entity.kind === 'item') {
       return {
         isItemDisplay: true,
-        name: entity.type,
+        name: entity.type + extraDataStr,
         transforms,
         brightness: { sky: 15, block: 15 },
         nbt: '',
