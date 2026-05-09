@@ -1,5 +1,6 @@
 import { t } from 'i18next'
 import { toast } from 'sonner'
+import { Matrix4 } from 'three'
 
 import { LatestGameVersion, LegacyHardcodedGameVersion } from '@/constants'
 import { decodeBase64ToBinary, gunzip, gzip } from '@/lib/utils'
@@ -10,7 +11,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import type { BDEngineSaveData, DisplayEntitySaveDataItem } from '@/types/base'
 
 import { clearProject } from './actions'
-import { importBDEngineProjectFrom } from './formats/bdengine'
+import { exportBDEProject, importBDEngineProjectFrom } from './formats/bdengine'
 import { importDeplProjectFrom } from './formats/depl'
 import { getLogger } from './logger'
 import { preloadResources } from './resources/preload'
@@ -215,6 +216,69 @@ async function importFromBDE(file: Blob): Promise<boolean> {
   useHistoryStore.getState().clearHistory()
 
   return true
+}
+
+const BDEngineProjectVersion = 1
+const BDEngineProjectVersionArr = new Uint8Array([BDEngineProjectVersion])
+
+let _dv: DataView
+
+const BDEnginePRJ2ContainerFileCount = 1
+const BDEnginePRJ2ContainerFileCountArr = new ArrayBuffer(4)
+_dv = new DataView(BDEnginePRJ2ContainerFileCountArr)
+_dv.setUint32(0, BDEnginePRJ2ContainerFileCount, true)
+const BDEnginePRJ2ContainerInnerPath = 'scene.json'
+const BDEnginePRJ2ContainerInnerPathArr = new ArrayBuffer(2)
+_dv = new DataView(BDEnginePRJ2ContainerInnerPathArr)
+_dv.setUint16(0, BDEnginePRJ2ContainerInnerPath.length, true)
+
+export async function saveAsBDEngineFile() {
+  const textEncoder = new TextEncoder()
+
+  const { entities } = useDisplayEntityStore.getState()
+  const rootEntities = exportBDEProject(entities)
+
+  const { projectName } = useProjectStore.getState()
+
+  const finalSaveObject: BDEngineSaveData = [
+    {
+      isCollection: true,
+      name: projectName,
+      children: rootEntities,
+      transforms: new Matrix4().toArray(),
+      mainNBT: '',
+      settings: { defaultBrightness: true },
+    },
+  ]
+
+  const finalSaveObjectString = JSON.stringify(finalSaveObject)
+  const encodedFinalSaveObject = textEncoder.encode(finalSaveObjectString)
+  const finalSaveObjectStringLengthArr = new ArrayBuffer(4)
+  const dv = new DataView(finalSaveObjectStringLengthArr)
+  dv.setUint32(0, encodedFinalSaveObject.length, true)
+
+  // Using PRJ2 container file format
+  const combinedBlob = new Blob([
+    // file header
+    'PRJ2',
+    BDEngineProjectVersionArr,
+    // inner data
+    BDEnginePRJ2ContainerFileCountArr,
+    BDEnginePRJ2ContainerInnerPathArr,
+    BDEnginePRJ2ContainerInnerPath,
+    finalSaveObjectStringLengthArr,
+    encodedFinalSaveObject, // actual data
+  ])
+  const saveDataBlob = await gzip(combinedBlob)
+
+  // download
+  const objectUrl = URL.createObjectURL(saveDataBlob)
+  const tempElement = document.createElement('a')
+  tempElement.href = objectUrl
+  tempElement.download = `${projectName}.bdengine`
+  tempElement.click() // trigger download
+
+  URL.revokeObjectURL(objectUrl)
 }
 
 async function decodeBDEngineProjectData(raw: Blob): Promise<BDEngineSaveData> {

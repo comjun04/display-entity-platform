@@ -1,9 +1,14 @@
 import { nanoid } from 'nanoid'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
+import { useEntityRefStore } from '@/stores/entityRefStore'
 import type {
+  BDEngineBlockDisplay,
+  BDEngineCollection,
+  BDEngineItemDisplay,
   BDEngineSaveData,
   BDEngineSaveDataItem,
+  BDEngineTextDisplay,
   DisplayEntity,
   ModelDisplayPositionKey,
   Number3Tuple,
@@ -190,4 +195,86 @@ export async function importBDEngineProjectFrom(saveData: BDEngineSaveData) {
   await f(saveData[0].children)
 
   return entities
+}
+
+export function exportBDEProject(entities: Map<string, DisplayEntity>) {
+  const { entityRefs } = useEntityRefStore.getState()
+
+  // TODO: we need to touch like `type BDEngineSaveData = BDEngineSaveDataBlockDisplay | BDEngineSaveDataItemDisplay | ...`
+  const generateSaveData: (entity: DisplayEntity) => BDEngineSaveDataItem = (
+    entity,
+  ) => {
+    const refData = entityRefs.get(entity.id)!
+    const transforms = refData.objectRef.current.matrix
+      .clone()
+      .transpose()
+      .toArray()
+
+    if (entity.kind === 'block') {
+      return {
+        isBlockDisplay: true,
+        name: entity.type,
+        transforms,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+      } satisfies BDEngineBlockDisplay
+    } else if (entity.kind === 'item') {
+      return {
+        isItemDisplay: true,
+        name: entity.type,
+        transforms,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+      } satisfies BDEngineItemDisplay
+    } else if (entity.kind === 'text') {
+      const textColorHex = '#' + entity.textColor.toString(16).padStart(6, '0')
+      const backgroundColorHex =
+        '#' + (entity.backgroundColor << 8).toString(16).padStart(6, '0')
+      const backgroundColorAlpha = entity.backgroundColor >>> 24
+
+      return {
+        isTextDisplay: true,
+        name: entity.text,
+        transforms,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+        options: {
+          bold: entity.textEffects.bold,
+          italic: entity.textEffects.italic,
+          underline: entity.textEffects.underlined,
+          strikeThrough: entity.textEffects.strikethrough,
+          obfuscated: entity.textEffects.obfuscated,
+
+          align: entity.alignment,
+          lineLength: entity.lineWidth,
+          color: textColorHex,
+          backgroundColor: backgroundColorHex,
+          alpha: entity.textOpacity / 255,
+          backgroundColorAlpha,
+        },
+      } satisfies BDEngineTextDisplay
+    } else if (entity.kind === 'group') {
+      const children = entity.children.map((childrenEntityId) => {
+        const e = entities.get(childrenEntityId)!
+        return generateSaveData(e)
+      })
+
+      return {
+        isCollection: true,
+        name: entity.name,
+        transforms,
+        children,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+      } satisfies BDEngineCollection
+    }
+
+    throw new Error(`Invalid entity kind ${(entity as DisplayEntity).kind}`)
+  }
+
+  const rootItems = [...entities.values()]
+    .filter((e) => e.parent == null)
+    .map((e) => generateSaveData(e))
+
+  return rootItems
 }
