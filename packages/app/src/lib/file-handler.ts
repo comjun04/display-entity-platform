@@ -247,7 +247,7 @@ async function decodeBDEngineProjectData(raw: Blob): Promise<BDEngineSaveData> {
   const dv = new DataView(unzippedRawByteArr.buffer)
 
   const magic = String.fromCharCode(...unzippedRawByteArr.slice(0, 4))
-  const version = unzippedRawByteArr[5]
+  const version = unzippedRawByteArr[4]
 
   if (magic === 'PRJ1' || magic === 'PRJ2') {
     if (version !== 1) {
