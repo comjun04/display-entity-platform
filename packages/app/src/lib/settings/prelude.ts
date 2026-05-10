@@ -20,7 +20,7 @@ export const ShortcutActions = [
 const ShortcutActionsZodEnum = z.enum(ShortcutActions)
 export type ShortcutActionsEnum = z.infer<typeof ShortcutActionsZodEnum>
 
-const settingsSchema = z.object({
+export const settingsSchema = z.object({
   general: z
     .object({
       language: z.enum(['en', 'ko']).default('en'),

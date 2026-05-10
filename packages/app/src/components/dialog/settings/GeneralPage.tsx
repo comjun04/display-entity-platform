@@ -1,8 +1,11 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
-import type { Settings } from '@/lib/settings'
+import { Button } from '@/components/ui/button'
+import { exportSettings, importSettings } from '@/lib/settings/actions'
+import { type Settings } from '@/lib/settings/prelude'
 import { useEditorStore } from '@/stores/editorStore'
 
 const GeneralPage: FC = () => {
@@ -74,6 +77,39 @@ const GeneralPage: FC = () => {
         <label htmlFor="settings_general_forceUnifont">
           {t(($) => $.dialog.settings.page.general.options.forceUnifont)}
         </label>
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        <Button
+          onClick={() => {
+            const inputElement = document.createElement('input')
+            inputElement.type = 'file'
+            inputElement.accept = 'application/json'
+            inputElement.click()
+            inputElement.onchange = (evt) => {
+              const file = (evt.target as HTMLInputElement).files?.[0]
+              if (file == null) return
+
+              file
+                .text()
+                .then((text) => {
+                  importSettings(text)
+                  toast.success('Successfully imported settings from file')
+                })
+                .catch(console.error)
+            }
+          }}
+        >
+          Import Settings from file
+        </Button>
+        <Button
+          onClick={() => {
+            exportSettings()
+            toast.success('Successfully exported settings to file')
+          }}
+        >
+          Export Settings to file
+        </Button>
       </div>
     </>
   )
