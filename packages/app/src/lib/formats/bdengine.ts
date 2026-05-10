@@ -10,6 +10,7 @@ import type {
   BDEngineSaveDataItem,
   BDEngineTextDisplay,
   DisplayEntity,
+  MinimalTextureValue,
   ModelDisplayPositionKey,
   Number3Tuple,
   TextureValue,
@@ -236,12 +237,57 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
         nbt: '',
       } satisfies BDEngineBlockDisplay
     } else if (entity.kind === 'item') {
+      let playerHeadDefaultTextureValue: string | undefined = undefined
+      let playerHeadPaintTexture: string | undefined = undefined
+
+      if (isItemDisplayPlayerHead(entity)) {
+        // TODO: handle player head textures
+        const textureData = entity.playerHeadProperties.texture
+        if (textureData?.baked === true) {
+          const textureValue: MinimalTextureValue = {
+            textures: {
+              SKIN: {
+                url: textureData.url,
+              },
+            },
+          }
+          playerHeadDefaultTextureValue = btoa(JSON.stringify(textureValue))
+        } else if (textureData?.baked === false) {
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')!
+          canvas.width = 64
+          canvas.height = 64
+          ctx.putImageData(
+            new ImageData(
+              new Uint8ClampedArray(textureData.paintTexturePixels),
+              64,
+              64,
+            ),
+            0,
+            0,
+          )
+
+          playerHeadPaintTexture = canvas.toDataURL()
+        }
+      }
+
       return {
         isItemDisplay: true,
         name: entity.type + extraDataStr,
         transforms,
         brightness: { sky: 15, block: 15 },
         nbt: '',
+
+        // player_head specific
+        defaultTextureValue: playerHeadDefaultTextureValue,
+        tagHead:
+          playerHeadDefaultTextureValue != null
+            ? {
+                Value: playerHeadDefaultTextureValue,
+              }
+            : undefined,
+
+        paintTexture: playerHeadPaintTexture,
       } satisfies BDEngineItemDisplay
     } else if (entity.kind === 'text') {
       const textColorHex = '#' + entity.textColor.toString(16).padStart(6, '0')
