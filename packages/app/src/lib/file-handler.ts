@@ -279,6 +279,8 @@ export async function saveAsBDEngineFile() {
   tempElement.click() // trigger download
 
   URL.revokeObjectURL(objectUrl)
+
+  toast.success(t(($) => $.toast.exportedToBDEngineFile))
 }
 
 async function decodeBDEngineProjectData(raw: Blob): Promise<BDEngineSaveData> {

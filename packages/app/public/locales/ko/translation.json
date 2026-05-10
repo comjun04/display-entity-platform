@@ -291,7 +291,8 @@
     "loadingProject": "프로젝트를 로드하는 중...",
     "importingBDEProject": "BDEngine 프로젝트를 가져오는 중...",
     "unsupportedFile": "지원되지 않는 파일입니다",
-    "projectSaved": "프로젝트를 저장했습니다"
+    "projectSaved": "프로젝트를 저장했습니다",
+    "exportedToBDEngineFile": "프로젝트를 bdengine 파일로 내보냈습니다"
   },
   "dropzone": {
     "text": "여기에 프로젝트 파일을 드롭하여 열기"
