@@ -217,7 +217,13 @@ export type BDEngineSaveData = {
   mainNBT: string
 }[]
 
-export type BDEngineSaveDataItem = {
+export type BDEngineSaveDataItem =
+  | BDEngineBlockDisplay
+  | BDEngineItemDisplay
+  | BDEngineTextDisplay
+  | BDEngineCollection
+
+export type BDEngineDisplayEntityBase = {
   name: string
   nbt: string
   transforms: Matrix4Tuple
@@ -225,43 +231,46 @@ export type BDEngineSaveDataItem = {
     sky: number
     block: number
   }
-} & (
-  | {
-      isBlockDisplay: true
-    }
-  | {
-      isTextDisplay: true
-      name: string // text
-      options: {
-        color: string // text color, #abcdef
-        alpha: number // text color alpha, 0 ~ 1
-        backgroundColor: string // #abcdef
-        backgroundColorAlpha: number // 0 ~ 1
-        bold: boolean
-        italic: boolean
-        underline: boolean
-        strikeThrough: boolean
-        obfuscated: boolean
-        lineLength: number
-        align: TextDisplayAlignment
-      }
-    }
-  | {
-      isItemDisplay: true
+}
 
-      // below fields exist if type is player_head
-      tagHead?: {
-        Value: string
-      }
-      textureValueList?: string[] // maybe?
-      paintTexture?: string // unbaked texture data url
-      defaultTextureValue?: string // baked texture url
-    }
-  | {
-      isCollection: true
-      children: BDEngineSaveDataItem[]
-    }
-)
+export type BDEngineBlockDisplay = BDEngineDisplayEntityBase & {
+  isBlockDisplay: true
+}
+
+export type BDEngineItemDisplay = BDEngineDisplayEntityBase & {
+  isItemDisplay: true
+
+  // below fields exist if type is player_head
+  tagHead?: {
+    Value: string
+  }
+  textureValueList?: string[] // maybe?
+  paintTexture?: string // unbaked texture data url
+  defaultTextureValue?: string // baked texture url
+}
+
+export type BDEngineTextDisplay = BDEngineDisplayEntityBase & {
+  isTextDisplay: true
+  name: string // text
+  options: {
+    color: string // text color, #abcdef
+    alpha: number // text color alpha, 0 ~ 1
+    backgroundColor: string // #abcdef
+    backgroundColorAlpha: number // 0 ~ 1
+    bold: boolean
+    italic: boolean
+    underline: boolean
+    strikeThrough: boolean
+    obfuscated: boolean
+    lineLength: number
+    align: TextDisplayAlignment
+  }
+}
+
+export type BDEngineCollection = BDEngineDisplayEntityBase & {
+  isCollection: true
+  children: BDEngineSaveDataItem[]
+}
 
 export interface MinimalTextureValue {
   textures: {

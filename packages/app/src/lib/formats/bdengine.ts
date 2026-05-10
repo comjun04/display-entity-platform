@@ -1,10 +1,16 @@
 import { nanoid } from 'nanoid'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
+import { useEntityRefStore } from '@/stores/entityRefStore'
 import type {
+  BDEngineBlockDisplay,
+  BDEngineCollection,
+  BDEngineItemDisplay,
   BDEngineSaveData,
   BDEngineSaveDataItem,
+  BDEngineTextDisplay,
   DisplayEntity,
+  MinimalTextureValue,
   ModelDisplayPositionKey,
   Number3Tuple,
   TextureValue,
@@ -190,4 +196,148 @@ export async function importBDEngineProjectFrom(saveData: BDEngineSaveData) {
   await f(saveData[0].children)
 
   return entities
+}
+
+export function exportBDEProject(entities: Map<string, DisplayEntity>) {
+  const { entityRefs } = useEntityRefStore.getState()
+
+  // TODO: we need to touch like `type BDEngineSaveData = BDEngineSaveDataBlockDisplay | BDEngineSaveDataItemDisplay | ...`
+  const generateSaveData: (entity: DisplayEntity) => BDEngineSaveDataItem = (
+    entity,
+  ) => {
+    const refData = entityRefs.get(entity.id)!
+    const transforms = refData.objectRef.current.matrix
+      .clone()
+      .transpose()
+      .toArray()
+
+    const extraData: Record<string, string> = {}
+    if (entity.kind === 'block') {
+      Object.assign(extraData, entity.blockstates)
+    }
+    if (entity.kind === 'item' && entity.display != null) {
+      // may overwrite `display` blockstates if exist, but this takes priority
+      extraData['display'] = entity.display
+    }
+    const extraDataStr =
+      Object.keys(extraData).length > 0
+        ? '[' +
+          Object.entries(extraData)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(',') +
+          ']'
+        : ''
+
+    if (entity.kind === 'block') {
+      return {
+        isBlockDisplay: true,
+        name: entity.type + extraDataStr,
+        transforms,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+      } satisfies BDEngineBlockDisplay
+    } else if (entity.kind === 'item') {
+      let playerHeadDefaultTextureValue: string | undefined = undefined
+      let playerHeadPaintTexture: string | undefined = undefined
+
+      if (isItemDisplayPlayerHead(entity)) {
+        // TODO: handle player head textures
+        const textureData = entity.playerHeadProperties.texture
+        if (textureData?.baked === true) {
+          const textureValue: MinimalTextureValue = {
+            textures: {
+              SKIN: {
+                url: textureData.url,
+              },
+            },
+          }
+          playerHeadDefaultTextureValue = btoa(JSON.stringify(textureValue))
+        } else if (textureData?.baked === false) {
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')!
+          canvas.width = 64
+          canvas.height = 64
+          ctx.putImageData(
+            new ImageData(
+              new Uint8ClampedArray(textureData.paintTexturePixels),
+              64,
+              64,
+            ),
+            0,
+            0,
+          )
+
+          playerHeadPaintTexture = canvas.toDataURL()
+        }
+      }
+
+      return {
+        isItemDisplay: true,
+        name: entity.type + extraDataStr,
+        transforms,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+
+        // player_head specific
+        defaultTextureValue: playerHeadDefaultTextureValue,
+        tagHead:
+          playerHeadDefaultTextureValue != null
+            ? {
+                Value: playerHeadDefaultTextureValue,
+              }
+            : undefined,
+
+        paintTexture: playerHeadPaintTexture,
+      } satisfies BDEngineItemDisplay
+    } else if (entity.kind === 'text') {
+      const textColorHex = '#' + entity.textColor.toString(16).padStart(6, '0')
+      const backgroundColorHex =
+        '#' + (entity.backgroundColor << 8).toString(16).padStart(6, '0')
+      const backgroundColorAlpha = entity.backgroundColor >>> 24
+
+      return {
+        isTextDisplay: true,
+        name: entity.text,
+        transforms,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+        options: {
+          bold: entity.textEffects.bold,
+          italic: entity.textEffects.italic,
+          underline: entity.textEffects.underlined,
+          strikeThrough: entity.textEffects.strikethrough,
+          obfuscated: entity.textEffects.obfuscated,
+
+          align: entity.alignment,
+          lineLength: entity.lineWidth,
+          color: textColorHex,
+          backgroundColor: backgroundColorHex,
+          alpha: entity.textOpacity / 255,
+          backgroundColorAlpha,
+        },
+      } satisfies BDEngineTextDisplay
+    } else if (entity.kind === 'group') {
+      const children = entity.children.map((childrenEntityId) => {
+        const e = entities.get(childrenEntityId)!
+        return generateSaveData(e)
+      })
+
+      return {
+        isCollection: true,
+        name: entity.name,
+        transforms,
+        children,
+        brightness: { sky: 15, block: 15 },
+        nbt: '',
+      } satisfies BDEngineCollection
+    }
+
+    throw new Error(`Invalid entity kind ${(entity as DisplayEntity).kind}`)
+  }
+
+  const rootItems = [...entities.values()]
+    .filter((e) => e.parent == null)
+    .map((e) => generateSaveData(e))
+
+  return rootItems
 }

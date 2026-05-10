@@ -29,7 +29,7 @@ export function decodeBase64ToBinary(encodedString: string) {
   return byteArr
 }
 
-export async function gzip(data: string, blobType?: string) {
+export async function gzip(data: string | Blob, blobType?: string) {
   const gzipCompressionStream = new Blob([data])
     .stream()
     .pipeThrough(new CompressionStream('gzip'))
