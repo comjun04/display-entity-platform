@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { Matrix4 } from 'three'
 
 import { LatestGameVersion, LegacyHardcodedGameVersion } from '@/constants'
-import { decodeBase64ToBinary, gunzip, gzip } from '@/lib/utils'
+import { decodeBase64ToBinary, downloadFile, gunzip, gzip } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useHistoryStore } from '@/stores/historyStore'
@@ -146,14 +146,7 @@ export async function saveToFile() {
   const { projectName } = useProjectStore.getState()
   const saveDataBlob = await createSaveData()
 
-  const objectUrl = URL.createObjectURL(saveDataBlob)
-  const tempElement = document.createElement('a')
-  tempElement.href = objectUrl
-  tempElement.download = `${projectName}.depl`
-  tempElement.click() // trigger download
-
-  URL.revokeObjectURL(objectUrl)
-
+  downloadFile(saveDataBlob, `${projectName}.depl`)
   toast.success(t(($) => $.toast.projectSaved))
 
   useEditorStore.getState().setProjectDirty(false)
@@ -272,14 +265,7 @@ export async function saveAsBDEngineFile() {
   const saveDataBlob = await gzip(combinedBlob)
 
   // download
-  const objectUrl = URL.createObjectURL(saveDataBlob)
-  const tempElement = document.createElement('a')
-  tempElement.href = objectUrl
-  tempElement.download = `${projectName}.bdengine`
-  tempElement.click() // trigger download
-
-  URL.revokeObjectURL(objectUrl)
-
+  downloadFile(saveDataBlob, `${projectName}.bdengine`)
   toast.success(t(($) => $.toast.exportedToBDEngineFile))
 }
 

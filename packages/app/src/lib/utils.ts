@@ -64,6 +64,16 @@ export async function gunzip(
   }
 }
 
+export function downloadFile(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob)
+  const tempElement = document.createElement('a')
+  tempElement.href = objectUrl
+  tempElement.download = filename
+  tempElement.click() // trigger download
+
+  URL.revokeObjectURL(objectUrl)
+}
+
 export function stripMinecraftPrefix(input: string) {
   return input.startsWith('minecraft:') ? input.slice(10) : input
 }
