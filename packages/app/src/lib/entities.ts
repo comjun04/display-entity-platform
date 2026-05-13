@@ -308,6 +308,35 @@ export function setIDEntityPlayerHeadProperties(
   }
 }
 
+export function setGroupName(
+  entityId: string,
+  name: string,
+  skipHistoryAdd = false,
+) {
+  const { entities, setGroupName } = useDisplayEntityStore.getState()
+
+  const entity = entities.get(entityId)
+  if (entity == null || entity.kind !== 'group') {
+    logger.error(`setGroupName(): Entity ${entityId} is not a group`)
+    return
+  }
+
+  setGroupName(entityId, name)
+
+  if (!skipHistoryAdd) {
+    useHistoryStore.getState().addHistory({
+      type: 'changeProperties',
+      entities: [
+        {
+          id: entityId,
+          beforeState: { kind: 'group', name: entity.name },
+          afterState: { kind: 'group', name },
+        },
+      ],
+    })
+  }
+}
+
 export function deleteEntities(entityIds: string[], skipHistoryAdd = false) {
   const { deleteEntities } = useDisplayEntityStore.getState()
 

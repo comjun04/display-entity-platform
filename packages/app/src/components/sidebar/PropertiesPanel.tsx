@@ -13,6 +13,7 @@ import { BackendHost, GameVersions } from '@/constants'
 import useBlockStates from '@/hooks/useBlockStates'
 import {
   setBDEntityBlockstates,
+  setGroupName,
   setIDEntityDisplayType,
   setIDEntityPlayerHeadProperties,
   setTDEntityProperties,
@@ -529,9 +530,7 @@ const GroupProperties: FC = () => {
           className="min-w-0 flex-1 shrink rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.name}
           onChange={(evt) => {
-            useDisplayEntityStore
-              .getState()
-              .setGroupName(singleSelectedEntity.id, evt.target.value)
+            setGroupName(singleSelectedEntity.id, evt.target.value)
           }}
         />
       </div>

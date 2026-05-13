@@ -220,6 +220,7 @@ function applyHistoryPropertyChange(history: History, type: 'undo' | 'redo') {
     setBDEntityBlockstates,
     setTextDisplayProperties,
     setItemDisplayPlayerHeadProperties,
+    setGroupName,
   } = useDisplayEntityStore.getState()
 
   const transformationChanges = new Map<
@@ -282,6 +283,13 @@ function applyHistoryPropertyChange(history: History, type: 'undo' | 'redo') {
     if (stateToUse.kind === 'text') {
       const { kind: _, ...rest } = stateToUse
       setTextDisplayProperties(record.id, rest)
+    }
+
+    // apply group properties
+    if (stateToUse.kind === 'group') {
+      if (stateToUse.name != null) {
+        setGroupName(record.id, stateToUse.name)
+      }
     }
   }
 
