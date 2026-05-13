@@ -16,7 +16,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { clearProject } from '@/lib/actions'
-import { openFileFromUserSelect, saveToFile } from '@/lib/file-handler'
+import {
+  openFileFromUserSelect,
+  saveAsBDEngineFile,
+  saveToFile,
+} from '@/lib/file-handler'
 import { getLogger } from '@/lib/logger'
 import { getFormattedShortcutKeyString } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
@@ -138,6 +142,14 @@ const LeftButtonPanel: FC = () => {
                 <div className="text-xs text-neutral-500">
                   {t(($) => $.menu.exportTo.submenu.minecraft.desc)}
                 </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="block"
+                onClick={() => {
+                  saveAsBDEngineFile().catch(console.error)
+                }}
+              >
+                <div className="text-sm">BDEngine</div>
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>

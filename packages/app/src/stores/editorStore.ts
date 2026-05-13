@@ -4,7 +4,7 @@ import { immer } from 'zustand/middleware/immer'
 
 import i18n from '@/lib/i18n/config'
 import { getLogger } from '@/lib/logger'
-import { type Settings, getStoredSettings } from '@/lib/settings'
+import { type Settings, getStoredSettings } from '@/lib/settings/prelude'
 import type {
   DeepPartial,
   Number3Tuple,

@@ -1,4 +1,5 @@
 import { TransformControls as TransformControlsImpl } from '@react-three/drei'
+import { invalidate } from '@react-three/fiber'
 import {
   type FC,
   useCallback,
@@ -10,9 +11,12 @@ import {
 import {
   Box3,
   Box3Helper,
+  BoxGeometry,
   Euler,
   type Event,
   Group,
+  Mesh,
+  MeshStandardMaterial,
   Object3D,
   Quaternion,
   Vector3,
@@ -20,6 +24,7 @@ import {
 import { TransformControls as OriginalTransformControls } from 'three/examples/jsm/Addons.js'
 import { useShallow } from 'zustand/shallow'
 
+import { batchSetEntityTransformation } from '@/lib/entities'
 import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -35,13 +40,11 @@ const dummyBox = new Box3(infinityVector.clone(), minusInfinityVector.clone())
 const logger = getLogger('TransformControls')
 
 const TransformControls: FC = () => {
-  const { selectedEntityIds, batchSetEntityTransformation } =
-    useDisplayEntityStore(
-      useShallow((state) => ({
-        selectedEntityIds: state.selectedEntityIds,
-        batchSetEntityTransformation: state.batchSetEntityTransformation,
-      })),
-    )
+  const { selectedEntityIds } = useDisplayEntityStore(
+    useShallow((state) => ({
+      selectedEntityIds: state.selectedEntityIds,
+    })),
+  )
   const firstSelectedEntityTransformation = useDisplayEntityStore(
     useShallow((state) => {
       const firstSelectedEntityId = state.selectedEntityIds[0]
@@ -72,6 +75,7 @@ const TransformControls: FC = () => {
     setUsingTransformControl,
     setSelectionBaseTransformation,
     needsSelectedEntitiesInitialTransformationsUpdate,
+    showPivotIndicator,
   } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
@@ -80,6 +84,7 @@ const TransformControls: FC = () => {
       setSelectionBaseTransformation: state.setSelectionBaseTransformation,
       needsSelectedEntitiesInitialTransformationsUpdate:
         state.transformControl.needsSelectedEntitiesTransformationUpdate,
+      showPivotIndicator: state.settings.debug.showPivotIndicator,
     })),
   )
 
@@ -89,6 +94,12 @@ const TransformControls: FC = () => {
     const group = new Group()
     group.name = 'Pivot'
     return group
+  }, [])
+  const pivotDebugIndicator = useMemo(() => {
+    const geo = new BoxGeometry(0.2, 0.2, 0.2)
+    const mat = new MeshStandardMaterial()
+    const mesh = new Mesh(geo, mat)
+    return mesh
   }, [])
   const boundingBoxHelperRef = useRef<Box3Helper>(null)
 
@@ -104,6 +115,18 @@ const TransformControls: FC = () => {
       scale: Vector3
     }[]
   >([])
+
+  // add pivotDebugIndicator to pivot on mount
+  useEffect(() => {
+    pivot.add(pivotDebugIndicator)
+    return () => {
+      pivot.remove(pivotDebugIndicator)
+    }
+  }, [pivot, pivotDebugIndicator])
+  useEffect(() => {
+    pivotDebugIndicator.visible = showPivotIndicator
+    invalidate()
+  }, [pivotDebugIndicator, showPivotIndicator])
 
   const updateBoundingBox = useCallback(() => {
     if (boundingBoxHelperRef.current == null) return

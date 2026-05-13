@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
-import type { Settings } from '@/lib/settings'
+import type { Settings } from '@/lib/settings/prelude'
 import { useEditorStore } from '@/stores/editorStore'
 
 const AppearancePage: FC = () => {

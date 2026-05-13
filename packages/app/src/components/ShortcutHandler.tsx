@@ -1,9 +1,10 @@
 import { type FC, useEffect, useMemo } from 'react'
 
 import { toggleGroup } from '@/lib/actions'
+import { cloneSelectedEntities, deleteEntities } from '@/lib/entities'
 import { openFileFromUserSelect, saveToFile } from '@/lib/file-handler'
 import { getLogger } from '@/lib/logger'
-import type { ShortcutActionsEnum } from '@/lib/settings'
+import type { ShortcutActionsEnum } from '@/lib/settings/prelude'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -63,8 +64,7 @@ const ShortcutHandler: FC = () => {
         return true
       }
 
-      const { selectedEntityIds, deleteEntities, duplicateSelected } =
-        useDisplayEntityStore.getState()
+      const { selectedEntityIds } = useDisplayEntityStore.getState()
       const { setMode } = useEditorStore.getState()
 
       const keyArr: string[] = []
@@ -126,7 +126,7 @@ const ShortcutHandler: FC = () => {
             setMode('scale')
             break
           case 'editor.duplicate':
-            duplicateSelected()
+            cloneSelectedEntities()
             break
           case 'editor.groupOrUngroup':
             toggleGroup()

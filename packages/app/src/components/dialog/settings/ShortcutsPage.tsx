@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import type { Settings } from '@/lib/settings'
+import type { Settings } from '@/lib/settings/prelude'
 import { cn, getFormattedShortcutKeyString } from '@/lib/utils'
 import { useEditorStore } from '@/stores/editorStore'
 

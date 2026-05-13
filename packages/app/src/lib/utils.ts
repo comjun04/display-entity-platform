@@ -29,7 +29,7 @@ export function decodeBase64ToBinary(encodedString: string) {
   return byteArr
 }
 
-export async function gzip(data: string, blobType?: string) {
+export async function gzip(data: string | Blob, blobType?: string) {
   const gzipCompressionStream = new Blob([data])
     .stream()
     .pipeThrough(new CompressionStream('gzip'))
@@ -40,13 +40,38 @@ export async function gzip(data: string, blobType?: string) {
 
   return typedBlob
 }
-export async function gunzip(blob: Blob) {
+export async function gunzip(
+  blob: Blob,
+  outputType: 'arraybuffer',
+): Promise<ArrayBuffer>
+export async function gunzip(blob: Blob, outputType: 'blob'): Promise<Blob>
+export async function gunzip(blob: Blob, outputType: 'text'): Promise<string>
+export async function gunzip(
+  blob: Blob,
+  outputType: 'arraybuffer' | 'blob' | 'text',
+) {
   const gzipDecompressionStream = blob
     .stream()
     .pipeThrough(new DecompressionStream('gzip'))
-  const decompressedData = await new Response(gzipDecompressionStream).text()
+  const decompressedResponse = new Response(gzipDecompressionStream)
 
-  return decompressedData
+  if (outputType === 'arraybuffer') {
+    return await decompressedResponse.arrayBuffer()
+  } else if (outputType === 'blob') {
+    return await decompressedResponse.blob()
+  } else if (outputType === 'text') {
+    return await decompressedResponse.text()
+  }
+}
+
+export function downloadFile(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob)
+  const tempElement = document.createElement('a')
+  tempElement.href = objectUrl
+  tempElement.download = filename
+  tempElement.click() // trigger download
+
+  URL.revokeObjectURL(objectUrl)
 }
 
 export function stripMinecraftPrefix(input: string) {

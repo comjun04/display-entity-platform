@@ -17,10 +17,14 @@
       },
       "showWelcomeOnStartup": "Show Welcome on Startup",
       "changeLogs": [
-        "Block Display and Item Display are now use instanced rendering, makes rendering much faster on large projects.",
-        "Now you can drag-and-drop a project file to open!",
-        "Changed some ui and designs, also reduced app bundle size to reduce first load times.",
-        "...and several fixes to improve the app!"
+        "Fixed an issue where the app cannot open .bdengine files saved with newer format.",
+        "Added a feature to export project to .bdengine file!",
+        "Now you can press Esc key to cancel when dragging and dropping to open file.",
+        "Fixed a bug where drag-and-drop ui shows and never get hidden when dragging text instead of file.",
+        "Fixed some unintended bugs when clone entity group and undo/redo it.",
+        "Added group name changes to history for undo/redoing.",
+        "Now you can export and import settings via file.",
+        "...and improved internal structure and fixed some bugs."
       ]
     },
     "blockDisplaySelect": {
@@ -168,6 +172,9 @@
             },
             "alertUncaughtError": {
               "title": "Notify uncaught errors with window.alert()"
+            },
+            "showPivotIndicator": {
+              "title": "Show Pivot Location"
             }
           }
         }
@@ -280,7 +287,8 @@
     "loadingProject": "Loading project file...",
     "importingBDEProject": "Importing BDEngine project...",
     "unsupportedFile": "Unsupported file",
-    "projectSaved": "Saved project"
+    "projectSaved": "Saved project",
+    "exportedToBDEngineFile": "Exported project to bdengine file"
   },
   "dropzone": {
     "text": "Drop project file to open"

@@ -3,6 +3,7 @@ import { type FC, useCallback, useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 
 import useEntityRefObject from '@/hooks/useEntityRefObject'
+import { deleteEntities } from '@/lib/entities'
 import { getLogger } from '@/lib/logger'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -66,7 +67,7 @@ const DisplayEntity: FC<DisplayEntityProps> = ({ id }) => {
   useEffect(() => {
     if (thisEntity?.kind === 'group' && thisEntity.children.length < 1) {
       logger.debug('detected no children in group, deleting itself')
-      useDisplayEntityStore.getState().deleteEntities([id], true)
+      deleteEntities([id], true)
     }
   }, [id, thisEntity])
 
