@@ -8,7 +8,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { GameVersions } from '@/constants'
 import { getLogger } from '@/lib/logger'
-import { cn } from '@/lib/utils'
+import { cn, downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
@@ -486,14 +486,8 @@ function generateNbtStrings(
 function downloadAsMcfunction(commands: string[]) {
   const fullstr = commands.join('\n')
   const blob = new Blob([fullstr], { type: 'application/octet-stream' }) // prevent chrome mobile from downloading as `filename.mcfunction.txt`
-  const objectUrl = URL.createObjectURL(blob)
 
-  const tempElement = document.createElement('a')
-  tempElement.href = objectUrl
-  tempElement.download = 'summon.mcfunction'
-  tempElement.click() // triggers download
-
-  URL.revokeObjectURL(objectUrl)
+  downloadFile(blob, 'summon.mcfunction')
 }
 
 async function downloadAsDatapack(
@@ -542,14 +536,7 @@ async function downloadAsDatapack(
     type: 'blob',
     compression: options.compress ? 'DEFLATE' : 'STORE',
   })
-  const objectUrl = URL.createObjectURL(blob)
-
-  const tempElement = document.createElement('a')
-  tempElement.href = objectUrl
-  tempElement.download = 'datapack.zip'
-  tempElement.click() // triggers download
-
-  URL.revokeObjectURL(objectUrl)
+  downloadFile(blob, 'datapack.zip')
 }
 
 export default ExportToMinecraftDialog
