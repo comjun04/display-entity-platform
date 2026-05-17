@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 
-import BoundingBox from './BoundingBox'
+import { BoundingBox } from './BoundingBox'
 
 type DisplayEntityGroupProps = {
   id: string
@@ -58,7 +58,11 @@ const DisplayEntityGroup: FC<DisplayEntityGroupProps> = ({
   })
 
   return (
-    <group ref={ref as MutableRefObject<Group>} onClick={onClick}>
+    <group
+      ref={ref as MutableRefObject<Group>}
+      name={`DisplayEntityGroup ${id}`}
+      onClick={onClick}
+    >
       {/* 그룹 안에 들어가야 할 display entity들은 portal을 사용해서 이 안에서 렌더링됨 */}
       <BoundingBox
         object={ref?.current}

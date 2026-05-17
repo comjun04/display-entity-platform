@@ -1,17 +1,21 @@
 import { cloneDeep, merge } from 'lodash-es'
 import { nanoid } from 'nanoid'
-import { Box3, Euler, Matrix4, Quaternion, Vector3 } from 'three'
+import { Box3, Euler, Vector3 } from 'three'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
 import { getLogger } from '@/lib/logger'
 import { getBlockList } from '@/lib/queries/getBlockList'
 import { getItemList } from '@/lib/queries/getItemList'
-import { preloadResources } from '@/lib/resources/preload'
+import {
+  calculateDefaultBlockstates,
+  getMatchingBlockstateModel,
+  loadBlockstates,
+} from '@/lib/resources/blockstates'
 import type {
-  BDEngineSaveData,
-  BDEngineSaveDataItem,
   BlockDisplayEntity,
+  BlockStateApplyModelInfo,
+  BlockstatesData,
   DeepPartial,
   DisplayEntity,
   DisplayEntityGroup,
@@ -22,13 +26,11 @@ import type {
   PartialNumber3Tuple,
   PlayerHeadProperties,
   TextDisplayEntity,
-  TextureValue,
 } from '@/types/base'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { useEditorStore } from './editorStore'
 import { useEntityRefStore } from './entityRefStore'
-import { useHistoryStore } from './historyStore'
 import { useProjectStore } from './projectStore'
 
 const logger = getLogger('displayEntityStore')
@@ -53,7 +55,7 @@ const generateId = (
   return id
 }
 
-type CreateNewEntityActionParam =
+export type CreateNewEntityActionParam =
   | (Pick<BlockDisplayEntity, 'kind' | 'type'> &
       Partial<Omit<BlockDisplayEntity, 'kind' | 'type'>>)
   | (Pick<ItemDisplayEntity, 'kind' | 'type'> &
@@ -70,20 +72,34 @@ export type DisplayEntityState = {
   // required for ObjectPanel > ObjectItem child (reverse) selection tracking
   selectedEntityIdsIncludingParent: Set<string>
 
+  instancedMeshGroup: Map<
+    string,
+    {
+      modelResourceLocation: string
+      meshes: {
+        // an entity can have same model mesh more than one,
+        // even with same x, y rotation thanks to the `multipart` system...
+        // so we need to make separate *unique* id to check
+        // (this id can contain entityId + xRot + yRot + increment, or just random id value)
+        id: string
+        entityId: string
+        xRotation: number
+        yRotation: number
+      }[]
+    }
+  >
+
   /**
    * 새로운 디스플레이 엔티티를 생성합니다.
    * @param kind 디스플레이 엔티티의 종류. `block`, `item` 혹은 `text`
    * @param typeOrText `kind`가 `block` 또는 `item`일 경우 블록/아이템 id, `text`일 경우 입력할 텍스트 (JSON Format)
    * @returns 생성된 디스플레이 엔티티 데이터 id
    */
-  createNew: (
-    params: CreateNewEntityActionParam[],
-    skipHistoryAdd?: boolean,
-  ) => void
+  createNew: (params: CreateNewEntityActionParam[]) => Promise<DisplayEntity[]>
 
   setSelected: (ids: string[]) => void
   addToSelected: (id: string) => void
-  duplicateSelected: () => void
+  cloneSelected: () => DisplayEntity[]
 
   batchSetEntityTransformation: (
     data: {
@@ -92,17 +108,14 @@ export type DisplayEntityState = {
       rotation?: PartialNumber3Tuple
       scale?: PartialNumber3Tuple
     }[],
-    skipHistoryAdd?: boolean,
   ) => void
   setEntityDisplayType: (
     id: string,
     display: ModelDisplayPositionKey | null,
-    skipHistoryAdd?: boolean,
   ) => void
   setBDEntityBlockstates: (
     id: string,
     blockstates: Record<string, string>,
-    skipHistoryAdd?: boolean,
   ) => void
   setTextDisplayProperties: (
     id: string,
@@ -112,12 +125,10 @@ export type DisplayEntityState = {
         'id' | 'kind' | 'position' | 'rotation' | 'size' | 'parent'
       >
     >,
-    skipHistoryAdd?: boolean,
-  ) => void
+  ) => boolean
   setItemDisplayPlayerHeadProperties: (
     entityId: string,
     data: PlayerHeadProperties,
-    skipHistoryAdd?: boolean,
   ) => void
   paintItemDisplayPlayerHeadTexture: (
     entityId: string,
@@ -126,10 +137,9 @@ export type DisplayEntityState = {
     y: number,
   ) => void
   setGroupName: (entityId: string, name: string) => void
-  deleteEntities: (entityIds: string[], skipHistoryAdd?: boolean) => void
+  deleteEntities: (entityIds: string[]) => DisplayEntity[]
 
-  bulkImport: (items: DisplayEntitySaveDataItem[]) => Promise<void>
-  bulkImportFromBDE: (saveData: BDEngineSaveData) => Promise<void>
+  bulkImport: (entities: Map<string, DisplayEntity>) => void
   exportAll: () => DisplayEntitySaveDataItem[]
 
   clearEntities: () => void
@@ -138,9 +148,8 @@ export type DisplayEntityState = {
   groupEntities: (
     entityIds: string[],
     groupIdToSet?: string,
-    skipHistoryAdd?: boolean,
-  ) => void
-  ungroupEntityGroup: (entityGroupId: string, skipHistoryAdd?: boolean) => void
+  ) => { groupId: string }
+  ungroupEntityGroup: (entityGroupId: string) => void
 }
 
 export const useDisplayEntityStore = create(
@@ -149,102 +158,205 @@ export const useDisplayEntityStore = create(
     selectedEntityIds: [],
     selectedEntityIdsIncludingParent: new Set(),
 
-    createNew: (params, skipHistoryAdd) => {
+    instancedMeshGroup: new Map(),
+
+    createNew: async (params) => {
       const entityIds: string[] = []
 
-      set((state) => {
-        for (const param of params) {
+      const uniqueBlockTypes = params.reduce((acc, cur) => {
+        if (cur.kind === 'block') {
+          acc.add(cur.type)
+        }
+        return acc
+      }, new Set<string>())
+      const uniqueBlockTypesArr = [...uniqueBlockTypes.values()]
+      const blockstatesDataLoadResults = await Promise.allSettled(
+        uniqueBlockTypesArr.map((type) => loadBlockstates(type)),
+      )
+      const blockstatesDatas = blockstatesDataLoadResults.reduce(
+        (acc, cur, idx) => {
+          if (cur.status === 'rejected') {
+            logger.error(
+              `Failed to load blockstates data of type ${uniqueBlockTypesArr[idx]}`,
+            )
+          } else {
+            const type = uniqueBlockTypesArr[idx]
+            acc.set(type, cur.value)
+          }
+
+          return acc
+        },
+        new Map<string, BlockstatesData>(),
+      )
+
+      const entityCreationJobs = params
+        .map<
+          | {
+              entity: DisplayEntity
+              models: BlockStateApplyModelInfo[]
+            }
+          | undefined
+        >((param) => {
           const id = param.id ?? generateId(ENTITY_ID_LENGTH)
 
           if (param.kind === 'block') {
-            state.entities.set(id, {
-              kind: 'block',
-              id,
-              type: param.type,
-              parent: param.parent,
-              size: param.size ?? [1, 1, 1],
-              position: param.position ?? [0, 0, 0],
-              rotation: param.rotation ?? [0, 0, 0],
-              display: param.display ?? null,
-              blockstates: param.blockstates ?? {},
-            })
-          } else if (param.kind === 'item') {
-            state.entities.set(id, {
-              kind: 'item',
-              id,
-              type: param.type,
-              parent: param.parent,
-              size: param.size ?? [1, 1, 1],
-              position:
-                param.position ??
-                (param.type === 'player_head' ? [0, 0.5, 0] : [0, 0, 0]),
-              rotation: param.rotation ?? [0, 0, 0],
-              display: param.display ?? null,
-              playerHeadProperties:
-                param.type === 'player_head'
-                  ? param.playerHeadProperties != null
-                    ? param.playerHeadProperties
-                    : {
-                        texture: null,
-                      }
-                  : undefined,
-            })
-          } else if (param.kind === 'text') {
-            state.entities.set(id, {
-              kind: 'text',
-              id,
-              parent: param.parent,
-              text: param.text,
-              textColor: param.textColor ?? 0xffffffff, // #ffffffff, white
-              textEffects: param.textEffects ?? {
-                bold: false,
-                italic: false,
-                underlined: false,
-                strikethrough: false,
-                obfuscated: false,
+            const blockstatesData = blockstatesDatas.get(param.type)
+            if (blockstatesData == null) {
+              return
+            }
+            const blockstates = calculateDefaultBlockstates(
+              blockstatesData,
+              param.blockstates,
+            )
+            const matchingModels = getMatchingBlockstateModel(
+              blockstatesData,
+              blockstates,
+            )
+
+            return {
+              entity: {
+                kind: 'block',
+                id,
+                type: param.type,
+                parent: param.parent,
+                size: param.size ?? [1, 1, 1],
+                position: param.position ?? [0, 0, 0],
+                rotation: param.rotation ?? [0, 0, 0],
+                display: param.display ?? null,
+                blockstates,
               },
-              size: param.size ?? [1, 1, 1],
-              position: param.position ?? [0, 0, 0],
-              rotation: param.rotation ?? [0, 0, 0],
-              alignment: param.alignment ?? 'center',
-              backgroundColor: param.backgroundColor ?? 0xff000000, // #ff000000, black
-              defaultBackground: param.defaultBackground ?? false,
-              lineWidth: param.lineWidth ?? 200,
-              seeThrough: param.seeThrough ?? false,
-              shadow: param.shadow ?? false,
-              textOpacity: param.textOpacity ?? 255,
-            })
+              models: matchingModels,
+            }
+          } else if (param.kind === 'item') {
+            return {
+              entity: {
+                kind: 'item',
+                id,
+                type: param.type,
+                parent: param.parent,
+                size: param.size ?? [1, 1, 1],
+                position:
+                  param.position ??
+                  (param.type === 'player_head' ? [0, 0.5, 0] : [0, 0, 0]),
+                rotation: param.rotation ?? [0, 0, 0],
+                display: param.display ?? null,
+                playerHeadProperties:
+                  param.type === 'player_head'
+                    ? param.playerHeadProperties != null
+                      ? param.playerHeadProperties
+                      : {
+                          texture: null,
+                        }
+                    : undefined,
+              },
+              models: [
+                {
+                  model: `item/${param.type}`,
+                  x: 0,
+                  y: 0,
+                },
+              ] satisfies BlockStateApplyModelInfo[],
+            }
+          } else if (param.kind === 'text') {
+            return {
+              entity: {
+                kind: 'text',
+                id,
+                parent: param.parent,
+                text: param.text,
+                textColor: param.textColor ?? 0xffffffff, // #ffffffff, white
+                textEffects: param.textEffects ?? {
+                  bold: false,
+                  italic: false,
+                  underlined: false,
+                  strikethrough: false,
+                  obfuscated: false,
+                },
+                size: param.size ?? [1, 1, 1],
+                position: param.position ?? [0, 0, 0],
+                rotation: param.rotation ?? [0, 0, 0],
+                alignment: param.alignment ?? 'center',
+                backgroundColor: param.backgroundColor ?? 0xff000000, // #ff000000, black
+                defaultBackground: param.defaultBackground ?? false,
+                lineWidth: param.lineWidth ?? 200,
+                seeThrough: param.seeThrough ?? false,
+                shadow: param.shadow ?? false,
+                textOpacity: param.textOpacity ?? 255,
+              },
+              models: [],
+            }
           } else if (param.kind === 'group') {
             if (param.children.length < 1) {
-              continue
+              return
             }
 
-            state.entities.set(id, {
-              kind: 'group',
-              id,
-              parent: param.parent,
-              children: param.children,
-              name: 'Group',
-              size: param.size ?? [1, 1, 1],
-              position: param.position ?? [0, 0, 0],
-              rotation: param.rotation ?? [1, 1, 1],
-            })
+            return {
+              entity: {
+                kind: 'group',
+                id,
+                parent: param.parent,
+                children: param.children,
+                name: param.name ?? 'Group',
+                size: param.size ?? [1, 1, 1],
+                position: param.position ?? [0, 0, 0],
+                rotation: param.rotation ?? [1, 1, 1],
+              },
+              models: [],
+            }
+          }
+        })
+        .filter((data) => data != null)
+
+      set((state) => {
+        for (const job of entityCreationJobs) {
+          const newEntityCreationObj = job.entity
+          state.entities.set(newEntityCreationObj.id, newEntityCreationObj)
+
+          entityIds.push(newEntityCreationObj.id)
+
+          // insert children entity id if parent group `children` array does not include one
+          // this is required when undoing deletion of multi-grouped entities
+          // to recover original location of topmost entities (find the right parent)
+          if (newEntityCreationObj.parent != null) {
+            const parentEntity = state.entities.get(newEntityCreationObj.parent)
+            if (
+              parentEntity?.kind === 'group' &&
+              !parentEntity.children.includes(newEntityCreationObj.id)
+            ) {
+              parentEntity.children.push(newEntityCreationObj.id)
+            }
           }
 
-          entityIds.push(id)
+          for (const model of job.models) {
+            const modelResourceLocation = model.model
+            const item = state.instancedMeshGroup.get(modelResourceLocation)
+            if (item != null) {
+              item.meshes.push({
+                id: generateId(8),
+                entityId: newEntityCreationObj.id,
+                xRotation: model.x ?? 0,
+                yRotation: model.y ?? 0,
+              })
+            } else {
+              state.instancedMeshGroup.set(modelResourceLocation, {
+                modelResourceLocation,
+                meshes: [
+                  {
+                    id: generateId(8),
+                    entityId: newEntityCreationObj.id,
+                    xRotation: model.x ?? 0,
+                    yRotation: model.y ?? 0,
+                  },
+                ],
+              })
+            }
+          }
         }
 
         useEntityRefStore.getState().createEntityRefs(entityIds)
-
-        if (!skipHistoryAdd) {
-          const createdEntities = entityIds.map((id) => state.entities.get(id)!)
-          useHistoryStore.getState().addHistory({
-            type: 'createEntities',
-            beforeState: {},
-            afterState: { entities: createdEntities },
-          })
-        }
       })
+
+      return entityCreationJobs.map((job) => job.entity)
     },
     setSelected: (ids) =>
       set((state) => {
@@ -302,61 +414,75 @@ export const useDisplayEntityStore = create(
         }
         f(id)
       }),
-    duplicateSelected: () =>
+    cloneSelected: () => {
+      const { entities, selectedEntityIds } = get()
+      if (selectedEntityIds.length < 1) {
+        return []
+      }
+
+      const topmostEntityIds: string[] = []
+
+      const f = (entityId: string, newParentEntityId?: string) => {
+        const entity = entities.get(entityId)!
+        const clonedEntity = cloneDeep(entity)
+        // stores cloned entity + cloned children entities
+        const clonedEntitiesArr = [clonedEntity]
+
+        // put new id to cloned entity
+        clonedEntity.id = generateId(ENTITY_ID_LENGTH)
+        if (newParentEntityId == null) {
+          topmostEntityIds.push(clonedEntity.id)
+        }
+
+        if (newParentEntityId != null) {
+          clonedEntity.parent = newParentEntityId
+        }
+
+        // create ref object and register
+
+        // if entity is a group, clone children too
+        if (clonedEntity.kind === 'group') {
+          const clonedChildren = clonedEntity.children.flatMap((d) =>
+            f(d, clonedEntity.id),
+          )
+          // set children entity id array to cloned one
+          clonedEntity.children = clonedChildren.map((entity) => entity.id)
+
+          // put cloned children entities to list
+          for (const child of clonedChildren) {
+            clonedEntitiesArr.push(child)
+          }
+        }
+
+        return clonedEntitiesArr
+      }
+
+      const clonedEntities = selectedEntityIds.flatMap((entityId) =>
+        f(entityId),
+      )
+
       set((state) => {
-        if (state.selectedEntityIds.length < 1) {
-          return
-        }
-
-        const f = (entityId: string, newParentEntityId?: string) => {
-          const entity = state.entities.get(entityId)!
-          const clonedEntity = cloneDeep(entity)
-          // stores cloned entity + cloned children entities
-          const clonedEntitiesArr = [clonedEntity]
-
-          // put new id to cloned entity
-          clonedEntity.id = generateId(ENTITY_ID_LENGTH)
-
-          if (newParentEntityId != null) {
-            clonedEntity.parent = newParentEntityId
-          }
-
-          // create ref object and register
-
-          // if entity is a group, clone children too
-          if (clonedEntity.kind === 'group') {
-            const clonedChildren = clonedEntity.children.flatMap((d) =>
-              f(d, clonedEntity.id),
-            )
-            // set children entity id array to cloned one
-            clonedEntity.children = clonedChildren.map((entity) => entity.id)
-
-            // put cloned children entities to list
-            for (const child of clonedChildren) {
-              clonedEntitiesArr.push(child)
-            }
-          }
-
-          return clonedEntitiesArr
-        }
-
-        const clonedEntities = state.selectedEntityIds.flatMap((entityId) =>
-          f(entityId),
-        )
         clonedEntities.forEach((newEntity) => {
           state.entities.set(newEntity.id, newEntity)
         })
+
+        const firstSelectedEntity = state.entities.get(selectedEntityIds[0])!
+        if (firstSelectedEntity.parent != null) {
+          const parentEntity = state.entities.get(firstSelectedEntity.parent)!
+          if (parentEntity.kind === 'group') {
+            // add topmost cloned entities as children to parent group
+            parentEntity.children.push(...topmostEntityIds)
+          }
+        }
+
         useEntityRefStore
           .getState()
           .createEntityRefs(clonedEntities.map((e) => e.id))
+      })
 
-        useHistoryStore.getState().addHistory({
-          type: 'createEntities',
-          beforeState: {},
-          afterState: { entities: clonedEntities },
-        })
-      }),
-    batchSetEntityTransformation: (data, skipHistoryAdd) =>
+      return clonedEntities
+    },
+    batchSetEntityTransformation: (data) =>
       set((state) => {
         logger.debug('batchSetEntityTransformation', data)
 
@@ -372,11 +498,6 @@ export const useDisplayEntityStore = create(
           string,
           { beforeState: Number3Tuple; afterState: Number3Tuple }
         >()
-
-        const { selectedEntityIds } = state
-        let shouldUpdateTransformControlSelectedEntitiesData = false
-
-        let hasChanges = false
 
         data.forEach((item) => {
           const entity = state.entities.get(item.id)
@@ -396,7 +517,6 @@ export const useDisplayEntityStore = create(
             })
 
             entity.position = positionDraft
-            hasChanges = true
           }
           if (item.rotation != null) {
             const rotationDraft = entity.rotation.slice() as Number3Tuple
@@ -412,7 +532,6 @@ export const useDisplayEntityStore = create(
             })
 
             entity.rotation = rotationDraft
-            hasChanges = true
           }
           if (item.scale != null) {
             const scaleDraft = entity.size.slice() as Number3Tuple
@@ -428,199 +547,70 @@ export const useDisplayEntityStore = create(
             })
 
             entity.size = scaleDraft
-            hasChanges = true
-          }
-
-          if (
-            !shouldUpdateTransformControlSelectedEntitiesData &&
-            hasChanges &&
-            selectedEntityIds.includes(item.id)
-          ) {
-            // set update flag when this entity is selected and has entity transformation changes
-            shouldUpdateTransformControlSelectedEntitiesData = true
           }
         })
-
-        if (shouldUpdateTransformControlSelectedEntitiesData) {
-          useEditorStore
-            .getState()
-            .transformControl.setSelectedEntitiesTransformationUpdateFlag(true)
-        }
-
-        if (!skipHistoryAdd) {
-          const { entities } = get()
-          const records = data.map(({ id }) => {
-            const positionChange = positionChanges.get(id)
-            const rotationChange = rotationChanges.get(id)
-            const scaleChange = scaleChanges.get(id)
-
-            const { kind } = entities.get(id)!
-            const beforeState: Pick<DisplayEntity, 'kind'> &
-              Partial<Pick<DisplayEntity, 'position' | 'rotation' | 'size'>> = {
-              kind,
-            }
-            const afterState: Pick<DisplayEntity, 'kind'> &
-              Partial<Pick<DisplayEntity, 'position' | 'rotation' | 'size'>> = {
-              kind,
-            }
-
-            if (positionChange != null) {
-              beforeState.position = positionChange.beforeState
-              afterState.position = positionChange.afterState
-            }
-            if (rotationChange != null) {
-              beforeState.rotation = rotationChange.beforeState
-              afterState.rotation = rotationChange.afterState
-            }
-            if (scaleChange != null) {
-              beforeState.size = scaleChange.beforeState
-              afterState.size = scaleChange.afterState
-            }
-
-            return { id, beforeState, afterState }
-          })
-
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: records,
-          })
-        }
       }),
-    setEntityDisplayType: (id, display, skipHistoryAdd) =>
+    setEntityDisplayType: (id, display) =>
       set((state) => {
         const entity = state.entities.get(id)
         if (entity == null) {
-          logger.error(
-            `Attempted to set display type for unknown display entity: ${id}`,
-          )
+          logger.error(`Invalid entity id ${id}`)
           return
         } else if (entity.kind !== 'item') {
           logger.error(
-            `Attempted to set display type for non-item display entity: ${id}, kind: ${entity.kind}`,
+            `Cannot set display type for non-item display entity: ${id}, kind: ${entity.kind}`,
           )
           return
-        }
-
-        if (!skipHistoryAdd) {
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: [
-              {
-                id,
-                beforeState: { kind: entity.kind, display: entity.display },
-                afterState: { kind: entity.kind, display },
-              },
-            ],
-          })
         }
 
         entity.display = display
       }),
-    setBDEntityBlockstates: (id, blockstates, skipHistoryAdd) => {
-      // 변경할 게 없으면 그냥 종료
-      if (Object.keys(blockstates).length < 1) {
-        return
-      }
-
+    setBDEntityBlockstates: (id, blockstates) => {
       set((state) => {
         const entity = state.entities.get(id)
         if (entity == null) {
-          logger.error(
-            `Attempted to set blockstates for unknown block display entity: ${id}`,
-          )
+          logger.error(`Invalid entity id ${id}`)
           return
         } else if (entity.kind !== 'block') {
           logger.error(
-            `Attempted to set blockstates for non-block display entity: ${id}, kind: ${entity.kind}`,
+            `Cannot set blockstates for non-block display entity: ${id}, kind: ${entity.kind}`,
           )
           return
-        }
-
-        if (!skipHistoryAdd) {
-          const oldBlockstates = cloneDeep(entity.blockstates)
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: [
-              {
-                id,
-                beforeState: { kind: entity.kind, blockstates: oldBlockstates },
-                afterState: { kind: entity.kind, blockstates },
-              },
-            ],
-          })
         }
 
         entity.blockstates = { ...entity.blockstates, ...blockstates }
       })
     },
-    setTextDisplayProperties: (id, properties, skipHistoryAdd) =>
+    setTextDisplayProperties: (id, properties) => {
+      if (
+        properties.lineWidth != null &&
+        // TODO: specific type check (int)
+        (!isFinite(properties.lineWidth) || properties.lineWidth < 0)
+      ) {
+        logger.error(
+          `Text Display \`lineWidth\` must be positive integer or zero, but tried to set ${properties.lineWidth} to entity ${id}`,
+        )
+        return false
+      }
+
       set((state) => {
         const entity = state.entities.get(id)
         if (entity == null) {
-          logger.error(
-            `Attempted to set properties for unknown text displau entity: ${id}`,
-          )
+          logger.error(`Invalid entity id ${id}`)
           return
         } else if (entity.kind !== 'text') {
           logger.error(
-            `Attempted to set properties for non-text display entity: ${id}`,
+            `Cannot set properties for non-text display entity: ${id}`,
           )
           return
-        }
-
-        if (
-          properties.lineWidth != null &&
-          // TODO: specific type check (int)
-          (!isFinite(properties.lineWidth) || properties.lineWidth < 0)
-        ) {
-          logger.error(
-            `Text Display \`lineWidth\` must be positive integer or zero, but tried to set ${properties.lineWidth} to entity ${id}`,
-          )
-          return
-        }
-
-        // TODO: clean up this mess
-        if (!skipHistoryAdd) {
-          const nonProxiedEntity = cloneDeep(entity)
-          const beforeState: typeof properties = {}
-          for (const key of Object.keys(properties) as Array<
-            keyof typeof properties
-          >) {
-            if (key === 'textEffects') {
-              if (properties.textEffects != null) {
-                beforeState.textEffects = Object.assign(
-                  {},
-                  nonProxiedEntity.textEffects,
-                )
-                for (const key of Object.keys(beforeState.textEffects) as Array<
-                  keyof (typeof properties)['textEffects']
-                >) {
-                  if (!(key in properties.textEffects)) {
-                    delete beforeState.textEffects[key]
-                  }
-                }
-              }
-            } else {
-              // copy original state values to beforeState
-              // @ts-expect-error beforeState[key] keeps accepting undefined only, type mismatch
-              beforeState[key] = nonProxiedEntity[key]
-            }
-          }
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: [
-              {
-                id,
-                beforeState: { kind: entity.kind, ...beforeState },
-                afterState: { kind: entity.kind, ...properties },
-              },
-            ],
-          })
         }
 
         merge(entity, properties)
-      }),
-    setItemDisplayPlayerHeadProperties: (entityId, data, skipHistoryAdd) =>
+      })
+
+      return true
+    },
+    setItemDisplayPlayerHeadProperties: (entityId, data) =>
       set((state) => {
         const entity = state.entities.get(entityId)
         if (entity == null) {
@@ -633,22 +623,6 @@ export const useDisplayEntityStore = create(
             `Attempted to set player_head properties on non player_head display`,
           )
           return
-        }
-
-        if (!skipHistoryAdd) {
-          useHistoryStore.getState().addHistory({
-            type: 'changeProperties',
-            entities: [
-              {
-                id: entityId,
-                beforeState: {
-                  kind: entity.kind,
-                  playerHeadProperties: cloneDeep(entity.playerHeadProperties),
-                },
-                afterState: { kind: entity.kind, playerHeadProperties: data },
-              },
-            ],
-          })
         }
 
         entity.playerHeadProperties = data
@@ -706,403 +680,93 @@ export const useDisplayEntityStore = create(
 
         entity.name = name
       }),
-    deleteEntities: (entityIds, skipHistoryAdd) =>
-      set((state) => {
-        const deletePendingEntityIds = new Set<string>()
+    deleteEntities: (entityIds) => {
+      const { entities } = get()
+      const flaggedEntityIds = new Set<string>()
 
-        const recursivelyFlagForDeletion = (
-          ids: string[],
-          excludeChildren?: boolean,
-        ) => {
-          for (const id of ids) {
-            // 이미 삭제 대상인 entity일 경우 스킵
-            // 이 entity의 parent entity가 삭제 대상이라 이미 처리한 경우임
-            if (deletePendingEntityIds.has(id)) continue
+      const recursivelyFlagForDeletion = (
+        ids: string[],
+        excludeChildren?: boolean,
+      ) => {
+        for (const id of ids) {
+          // 이미 삭제 대상인 entity일 경우 스킵
+          // 이 entity의 parent entity가 삭제 대상이라 이미 처리한 경우임
+          if (flaggedEntityIds.has(id)) continue
 
-            const entity = state.entities.get(id)
-            if (entity == null) {
-              logger.error(
-                `deleteEntities(): Attempt to remove unknown entity with id ${id}`,
-              )
-              continue
-            }
+          const entity = entities.get(id)
+          if (entity == null) {
+            logger.error(
+              `deleteEntities(): Cannot remove unknown entity with id ${id}`,
+            )
+            continue
+          }
 
-            // parent가 있을 경우 parent entity에서 children으로 등록된 걸 삭제
-            if (entity.parent != null) {
-              const parentElement = state.entities.get(entity.parent)
-              if (parentElement != null && parentElement.kind === 'group') {
-                const idx = parentElement.children.findIndex((d) => d === id)
-                if (idx >= 0) {
-                  parentElement.children.splice(idx, 1)
-                }
-                // parent entity의 children이 더 이상 없을 경우 같이 삭제
-                if (parentElement.children.length < 1) {
-                  recursivelyFlagForDeletion([parentElement.id], true)
-                }
+          // parent가 있을 경우 parent entity에서 children으로 등록된 걸 삭제
+          if (entity.parent != null) {
+            const parentElement = entities.get(entity.parent)
+            if (parentElement != null && parentElement.kind === 'group') {
+              // parent entity의 children이 더 이상 없을 경우 삭제 대상에 포함
+              if (parentElement.children.length < 1) {
+                recursivelyFlagForDeletion([parentElement.id], true)
               }
             }
-
-            // children으로 등록된 entity들이 있다면 같이 삭제
-            if (entity.kind === 'group' && !excludeChildren) {
-              // children entity에서 parent entity의 children id 배열을 건드릴 경우 for ... of 배열 순환에 문제가 생김
-              // index가 하나씩 앞으로 당겨지면서 일부 엔티티가 삭제 처리가 안됨
-              recursivelyFlagForDeletion(entity.children.slice())
-            }
-
-            deletePendingEntityIds.add(id)
           }
+
+          // children으로 등록된 entity들이 있다면 삭제 대상에 포함
+          if (entity.kind === 'group' && !excludeChildren) {
+            // children entity에서 parent entity의 children id 배열을 건드릴 경우 for ... of 배열 순환에 문제가 생김
+            // index가 하나씩 앞으로 당겨지면서 일부 엔티티가 삭제 처리가 안됨
+            // 따라서 배열을 복사해서 넘김
+            recursivelyFlagForDeletion(entity.children.slice())
+          }
+
+          flaggedEntityIds.add(id)
         }
+      }
 
-        recursivelyFlagForDeletion(entityIds)
+      recursivelyFlagForDeletion(entityIds)
 
+      const deletedEntities = [...flaggedEntityIds.values()].map(
+        (entityId) => entities.get(entityId)!,
+      )
+
+      set((state) => {
         useEntityRefStore
           .getState()
-          .deleteEntityRefs([...deletePendingEntityIds.values()])
+          .deleteEntityRefs([...flaggedEntityIds.values()])
 
-        // add history
-        if (!skipHistoryAdd) {
-          // get the non-proxied entities
-          const { entities } = get()
-          const deletedEntities = [...deletePendingEntityIds].map(
-            (id) => entities.get(id)!,
-          )
-          useHistoryStore.getState().addHistory({
-            type: 'deleteEntities',
-            beforeState: { entities: deletedEntities },
-            afterState: {},
-          })
-        }
-
-        for (const entityIdToDelete of deletePendingEntityIds) {
-          state.entities.delete(entityIdToDelete)
-        }
-        state.selectedEntityIds = state.selectedEntityIds.filter(
-          (entityId) => !deletePendingEntityIds.has(entityId),
-        )
-      }),
-
-    bulkImport: async (items) => {
-      const { createEntityRefs } = useEntityRefStore.getState()
-
-      const entities = new Map<string, DisplayEntity>()
-
-      const tempMatrix4 = new Matrix4()
-      const tempPositionVec = new Vector3()
-      const tempScaleVec = new Vector3()
-      const tempQuaternion = new Quaternion()
-      const tempEuler = new Euler()
-
-      const f: (
-        itemList: DisplayEntitySaveDataItem[],
-        parentEntityId?: string,
-      ) => string[] = (itemList, parentEntityId) => {
-        return itemList.map((item) => {
-          const id = nanoid(16)
-
-          tempMatrix4.fromArray(item.transforms)
-          tempMatrix4.decompose(tempPositionVec, tempQuaternion, tempScaleVec)
-          const position = tempPositionVec.toArray()
-          const scale = tempScaleVec.toArray()
-          tempEuler.setFromQuaternion(tempQuaternion)
-          const rotation = [
-            tempEuler.x,
-            tempEuler.y,
-            tempEuler.z,
-          ] satisfies Number3Tuple
-
-          if (item.kind === 'group') {
-            const children = item.children ?? []
-            const childrenIds = f(children, id)
-
-            // savedata v4 -> v5
-            // set group name to `Group` if not exist
-            const groupName = item.name ?? 'Group'
-
-            entities.set(id, {
-              kind: 'group',
-              id,
-              position,
-              rotation,
-              size: scale,
-              children: childrenIds,
-              parent: parentEntityId,
-              name: groupName,
-            })
-          } else if (item.kind === 'block') {
-            // blockstate가 없을 경우 empty string을 key로 사용하게 되어 들어가게 되므로 빼주기
-            const blockstatesCopy = Object.assign({}, item.blockstates)
-            delete blockstatesCopy['']
-
-            entities.set(id, {
-              kind: 'block',
-              id,
-              type: item.type,
-              position,
-              rotation,
-              size: scale,
-              parent: parentEntityId,
-              blockstates: item.blockstates,
-              display: item.display,
-            })
-          } else if (item.kind === 'item') {
-            entities.set(id, {
-              kind: 'item',
-              id,
-              type: item.type,
-              position,
-              rotation,
-              size: scale,
-              parent: parentEntityId,
-              display: item.display,
-            })
-
-            const entity = entities.get(id)!
-            if (isItemDisplayPlayerHead(entity)) {
-              if (item.playerHeadProperties != null) {
-                // is player_head
-                entity.playerHeadProperties = item.playerHeadProperties
-
-                // savedata v5 -> v6
-                const { texture: textureData } = entity.playerHeadProperties
-                if (
-                  textureData?.baked === false &&
-                  textureData.paintTexturePixels == null
-                ) {
-                  entity.playerHeadProperties.texture = null
-                }
-              } else {
-                // savedata v1 -> v2
-                // fill default playerHeadProperties if not exist
-                entity.playerHeadProperties = {
-                  texture: null,
-                }
+        for (const entityIdToDelete of flaggedEntityIds) {
+          const entity = state.entities.get(entityIdToDelete)!
+          if (entity.parent != null && !flaggedEntityIds.has(entity.parent)) {
+            const parentGroup = state.entities.get(entity.parent)
+            if (parentGroup?.kind === 'group') {
+              const idx = parentGroup.children.findIndex(
+                (id) => id === entityIdToDelete,
+              )
+              if (idx >= 0) {
+                parentGroup.children.splice(idx, 1)
               }
             }
-          } else if (item.kind === 'text') {
-            entities.set(id, {
-              kind: 'text',
-              id,
-              position,
-              rotation,
-              size: scale,
-              parent: parentEntityId,
-              text: item.text,
-              textColor: item.textColor,
-              textEffects: item.textEffects,
-              alignment: item.alignment,
-              backgroundColor: item.backgroundColor,
-              defaultBackground: item.defaultBackground,
-              lineWidth: item.lineWidth,
-              seeThrough: item.seeThrough,
-              shadow: item.shadow,
-              textOpacity: item.textOpacity,
-            })
           }
 
-          return id
-        })
-      }
+          state.entities.delete(entityIdToDelete)
+        }
 
-      f(items)
-
-      const entitiesArr = [...entities.values()]
-
-      await preloadResources(entitiesArr)
-
-      createEntityRefs([...entities.keys()])
-      set({ entities })
-
-      useHistoryStore.getState().clearHistory()
-    },
-    bulkImportFromBDE: async (saveData) => {
-      const entities = new Map<string, DisplayEntity>()
-
-      const tempMatrix4 = new Matrix4()
-      const tempPositionVec = new Vector3()
-      const tempScaleVec = new Vector3()
-      const tempQuaternion = new Quaternion()
-      const tempEuler = new Euler()
-
-      const f: (
-        items: BDEngineSaveDataItem[],
-        parentEntityId?: string,
-      ) => Promise<(string | null)[]> = async (items, parentEntityId) => {
-        return await Promise.all(
-          items.map(async (item) => {
-            const id = nanoid(16)
-
-            tempMatrix4.fromArray(item.transforms).transpose()
-            tempMatrix4.decompose(tempPositionVec, tempQuaternion, tempScaleVec)
-            const position = tempPositionVec.toArray()
-            const scale = tempScaleVec.toArray()
-            tempEuler.setFromQuaternion(tempQuaternion)
-            const rotation = [
-              tempEuler.x,
-              tempEuler.y,
-              tempEuler.z,
-            ] satisfies Number3Tuple
-
-            const itemType = item.name.split('[')[0] // block_type[some_blockstate=value,another_blockstate=value2]
-            const extraDataList = item.name
-              .slice(itemType.length + 1, -1)
-              .split(',')
-            const extraData: Record<string, string> = extraDataList.reduce(
-              (acc, cur) => {
-                const [k, v] = cur.split('=')
-                // blockstate가 없을 경우 empty string을 key로 사용하게 되어 들어가게 되므로 빼주기
-                if (k.length < 1) return acc
-                return { ...acc, [k]: v }
-              },
-              {},
-            )
-
-            if ('isCollection' in item && item.isCollection) {
-              // group
-
-              const children = item.children ?? []
-              const childrenIds = await f(children, id)
-
-              entities.set(id, {
-                kind: 'group',
-                id,
-                position,
-                rotation,
-                size: scale,
-                children: childrenIds.filter((id) => id != null),
-                parent: parentEntityId,
-                name: item.name,
-              })
-            } else if ('isBlockDisplay' in item && item.isBlockDisplay) {
-              // block display
-
-              entities.set(id, {
-                kind: 'block',
-                id,
-                type: itemType,
-                position,
-                rotation,
-                size: scale,
-                parent: parentEntityId,
-                blockstates: extraData,
-                display: extraData['display'] as ModelDisplayPositionKey,
-              })
-            } else if ('isItemDisplay' in item && item.isItemDisplay) {
-              // item display
-
-              entities.set(id, {
-                kind: 'item',
-                id,
-                type: itemType,
-                position,
-                rotation,
-                size: scale,
-                parent: parentEntityId,
-                display: extraData['display'] as ModelDisplayPositionKey,
-              })
-
-              const entity = entities.get(id)!
-              if (isItemDisplayPlayerHead(entity)) {
-                let textureUrl: string | undefined
-                if (item.defaultTextureValue != null) {
-                  const decodedTextureValue = JSON.parse(
-                    atob(item.defaultTextureValue),
-                  ) as TextureValue
-                  textureUrl = decodedTextureValue.textures.SKIN?.url
-                }
-
-                let paintTexturePixels: number[] = []
-                if (item.paintTexture != null) {
-                  const canvas = document.createElement('canvas')
-                  const ctx = canvas.getContext('2d')!
-                  // we need to load image asynconously to ensure image data is fully loaded before processing
-                  const image = await new Promise<HTMLImageElement>(
-                    (resolve) => {
-                      const img = new Image()
-                      img.onload = () => resolve(img)
-                      img.src = item.paintTexture!
-                    },
-                  )
-
-                  ctx.drawImage(image, 0, 0, 64, 64)
-                  const imageData = ctx.getImageData(0, 0, 64, 64)
-                  paintTexturePixels = Array.from(imageData.data)
-                }
-
-                // `paintTexture` (unbaked status) takes priority when both `paintTexture` and `defaultTextureValue` set.
-                entity.playerHeadProperties = {
-                  texture:
-                    item.paintTexture != null
-                      ? {
-                          baked: false,
-                          paintTexturePixels,
-                        }
-                      : textureUrl != null
-                        ? {
-                            baked: true,
-                            url: textureUrl,
-                          }
-                        : null,
-                }
-              }
-            } else if ('isTextDisplay' in item && item.isTextDisplay) {
-              // text display
-
-              const textColorRGB = parseInt(item.options.color.slice(1), 16)
-              const backgroundColorRGB = parseInt(
-                item.options.backgroundColor.slice(1),
-                16,
-              )
-              const backgroundColorARGB =
-                (((item.options.backgroundColorAlpha * 255) << 24) |
-                  backgroundColorRGB) >>>
-                0
-
-              entities.set(id, {
-                kind: 'text',
-                id,
-                position,
-                rotation,
-                size: scale,
-                parent: parentEntityId,
-
-                text: item.name,
-                textColor: textColorRGB,
-                textEffects: {
-                  bold: item.options.bold,
-                  italic: item.options.italic,
-                  underlined: item.options.underline,
-                  strikethrough: item.options.strikeThrough,
-                  obfuscated: item.options.obfuscated,
-                },
-                alignment: item.options.align,
-                backgroundColor: backgroundColorARGB,
-                defaultBackground: false,
-                lineWidth: item.options.lineLength,
-                seeThrough: false,
-                shadow: false,
-                textOpacity: item.options.alpha * 255,
-              })
-            } else {
-              return null
-            }
-
-            return id
-          }),
+        state.selectedEntityIds = state.selectedEntityIds.filter(
+          (entityId) => !flaggedEntityIds.has(entityId),
         )
-      }
+      })
 
-      // saveData[0]이 최상단 그룹으로 확인되어 이거만 처리함
-      await f(saveData[0].children)
+      return deletedEntities
+    },
 
-      await preloadResources([...entities.values()])
-
+    bulkImport: (entities) => {
       const { createEntityRefs } = useEntityRefStore.getState()
 
       createEntityRefs([...entities.keys()])
       set({ entities })
-
-      useHistoryStore.getState().clearHistory()
     },
+
     exportAll: () => {
       const { entities } = get()
       const { entityRefs } = useEntityRefStore.getState()
@@ -1206,20 +870,18 @@ export const useDisplayEntityStore = create(
         }
       }
 
-      deleteEntities(invalidEntityIds, true)
+      deleteEntities(invalidEntityIds)
     },
 
-    groupEntities: (entityIds, groupIdToSet, skipHistoryAdd) =>
-      set((state) => {
-        const groupId = groupIdToSet ?? nanoid(16)
+    groupEntities: (entityIds, groupIdToSet) => {
+      const groupId = groupIdToSet ?? nanoid(16)
 
+      set((state) => {
         const entities = entityIds.map((id) => state.entities.get(id)!)
 
         const firstEntityParentId = entities[0].parent
         if (!entities.every((e) => e.parent === firstEntityParentId)) {
-          logger.error(
-            'groupEntities(): cannot group entities with different parent',
-          )
+          logger.error('Cannot group entities with different parent')
           return
         }
 
@@ -1285,21 +947,16 @@ export const useDisplayEntityStore = create(
         }
         state.selectedEntityIdsIncludingParent.clear()
         f(groupId)
+      })
 
-        if (!skipHistoryAdd) {
-          useHistoryStore.getState().addHistory({
-            type: 'group',
-            parentGroupId: groupId,
-            childrenEntityIds: entityIds,
-          })
-        }
-      }),
-    ungroupEntityGroup: (entityGroupId, skipHistoryAdd) =>
+      return { groupId }
+    },
+    ungroupEntityGroup: (entityGroupId) =>
       set((state) => {
         const selectedEntityGroup = state.entities.get(entityGroupId)
         if (selectedEntityGroup?.kind !== 'group') {
           logger.error(
-            `ungroupEntityGroup(): selected entity ${entityGroupId} is not a group but ${selectedEntityGroup?.kind}`,
+            `Selected entity ${entityGroupId} is not a group but ${selectedEntityGroup?.kind}`,
           )
           return
         }
@@ -1351,14 +1008,6 @@ export const useDisplayEntityStore = create(
             e.rotation = [newRotation.x, newRotation.y, newRotation.z]
             e.size = newScale.toArray()
           })
-
-        if (!skipHistoryAdd) {
-          useHistoryStore.getState().addHistory({
-            type: 'ungroup',
-            parentGroupId: entityGroupId,
-            childrenEntityIds: selectedEntityGroup.children.slice(), // get the non-proxied array
-          })
-        }
 
         // 그룹의 children을 비우기
         // 그룹 삭제는 DisplayEntity.tsx의 useEffect()에서 수행 (그룹에 children이 비어있을 경우 삭제)

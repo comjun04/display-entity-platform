@@ -1,0 +1,67 @@
+diff --git a/controls/TransformControls.js b/controls/TransformControls.js
+index e7f1c061e59498451c1edb584528e63e038fbcb0..152d88b8b1dfcf457dc1629580e19b2aa88a128b 100644
+--- a/controls/TransformControls.js
++++ b/controls/TransformControls.js
+@@ -1,3 +1,9 @@
++/**
++ * This file contains patches from https://github.com/mrdoob/three.js/pull/27719
++ * which fixes unexpected transform happening on TransformControls under specific conditions.
++ * 
++ * This fix was originally made by AlaricBaraou (https://github.com/AlaricBaraou).
++ */
+ var __defProp = Object.defineProperty;
+ var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+ var __publicField = (obj, key, value) => {
+@@ -47,6 +53,9 @@ class TransformControls extends Object3D {
+     __publicField(this, "positionStart", new Vector3());
+     __publicField(this, "quaternionStart", new Quaternion());
+     __publicField(this, "scaleStart", new Vector3());
++    // ===== patch start =====
++    __publicField(this, "transformMatrixWorldInv", new Matrix4());
++    // ===== patch end =====
+     __publicField(this, "camera");
+     __publicField(this, "object");
+     __publicField(this, "enabled", true);
+@@ -119,6 +128,13 @@ class TransformControls extends Object3D {
+       this.camera.updateMatrixWorld();
+       this.camera.matrixWorld.decompose(this.cameraPosition, this.cameraQuaternion, this.cameraScale);
+       this.eye.copy(this.cameraPosition).sub(this.worldPosition).normalize();
++      // ===== patch start =====
++      // keep the matrixWorld to identity
++		  if (this.parent) {
++			  this.transformMatrixWorldInv.copy(this.parent.matrixWorld).invert();
++			  this.transformMatrixWorldInv.decompose(this.position, this.rotation, this.scale);
++		  }
++      // ===== patch end =====
+       super.updateMatrixWorld();
+     });
+     __publicField(this, "pointerHover", (pointer) => {
+@@ -218,21 +234,19 @@ class TransformControls extends Object3D {
+             object.position.applyQuaternion(this.quaternionStart);
+           }
+           if (space === "world") {
+-            if (object.parent) {
+-              object.position.add(this.tempVector.setFromMatrixPosition(object.parent.matrixWorld));
+-            }
++            // ===== patch start =====
++            object.getWorldPosition(this.worldPosition);
+             if (axis.search("X") !== -1) {
+-              object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
++              this.worldPosition.x = Math.round(this.worldPosition.x / this.translationSnap) * this.translationSnap;
+             }
+             if (axis.search("Y") !== -1) {
+-              object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
++              this.worldPosition.y = Math.round(this.worldPosition.y / this.translationSnap) * this.translationSnap;
+             }
+             if (axis.search("Z") !== -1) {
+-              object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
+-            }
+-            if (object.parent) {
+-              object.position.sub(this.tempVector.setFromMatrixPosition(object.parent.matrixWorld));
++              this.worldPosition.z = Math.round(this.worldPosition.z / this.translationSnap) * this.translationSnap;
+             }
++            object.position.copy(object.parent.worldToLocal(this.worldPosition));
++            // ===== patch end =====
+           }
+         }
+       } else if (mode === "scale") {

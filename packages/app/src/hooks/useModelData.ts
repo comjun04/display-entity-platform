@@ -6,7 +6,7 @@ import { useProjectStore } from '@/stores/projectStore'
 
 const logger = getLogger('useModelData()')
 
-const useModelData = (resourceLocation: string) => {
+const useModelData = (resourceLocation?: string) => {
   const [modelData, setModelData] =
     useState<Awaited<ReturnType<typeof loadModel>>>()
   const [loading, setLoading] = useState(false)

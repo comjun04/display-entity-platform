@@ -100,6 +100,25 @@ const DebugOptionsPage: FC = () => {
           )}
         </label>
       </div>
+      <div className="mt-4 flex flex-row items-center gap-2">
+        <input
+          type="checkbox"
+          id="settings_debug_showPivotIndicator"
+          checked={settings.debug.showPivotIndicator}
+          onChange={(evt) => {
+            setSettings({
+              debug: { showPivotIndicator: evt.target.checked },
+            })
+          }}
+        />
+        <label htmlFor="settings_debug_showPivotIndicator">
+          {t(
+            ($) =>
+              $.dialog.settings.page.debugOptions.options.showPivotIndicator
+                .title,
+          )}
+        </label>
+      </div>
 
       <hr />
 

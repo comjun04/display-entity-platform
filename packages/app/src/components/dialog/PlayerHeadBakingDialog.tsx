@@ -1,6 +1,7 @@
 import { type FC, useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/shallow'
 
+import { setIDEntityPlayerHeadProperties } from '@/lib/entities'
 import { getLogger } from '@/lib/logger'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -65,9 +66,6 @@ const PlayerHeadBakingDialog: FC = () => {
         completed: 0,
       })
 
-      const { setItemDisplayPlayerHeadProperties } =
-        useDisplayEntityStore.getState()
-
       workerRef.current?.postMessage({
         cmd: 'run',
         mineskinApiKey:
@@ -86,7 +84,7 @@ const PlayerHeadBakingDialog: FC = () => {
             data.heads
               .filter((headData) => headData.status === 'completed')
               .forEach((headData) => {
-                setItemDisplayPlayerHeadProperties(headData.entityId, {
+                setIDEntityPlayerHeadProperties(headData.entityId, {
                   texture: {
                     baked: true,
                     url: headData.generatedData.skinUrl,

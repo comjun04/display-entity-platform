@@ -17,14 +17,14 @@
       },
       "showWelcomeOnStartup": "Show Welcome on Startup",
       "changeLogs": [
-        "Now supports Minecraft 1.21.11!",
-        "Added Player Head Painter, where you can now paint your own player head and bake it to use in-game!",
-        "Now you can change shortcuts. Configure as you want!",
-        "Improved asset loading by load them parallel.",
-        "Added toast system. More notifications will be added soon.",
-        "Sidebar width is now limited to 80% of window width.",
-        "Now changed sidebar width will be saved, no need to resize each time when opening the app.",
-        "...and several fixes to improve the app!"
+        "Fixed an issue where the app cannot open .bdengine files saved with newer format.",
+        "Added a feature to export project to .bdengine file!",
+        "Now you can press Esc key to cancel when dragging and dropping to open file.",
+        "Fixed a bug where drag-and-drop ui shows and never get hidden when dragging text instead of file.",
+        "Fixed some unintended bugs when clone entity group and undo/redo it.",
+        "Added group name changes to history for undo/redoing.",
+        "Now you can export and import settings via file.",
+        "...and improved internal structure and fixed some bugs."
       ]
     },
     "blockDisplaySelect": {
@@ -173,6 +173,9 @@
             },
             "alertUncaughtError": {
               "title": "Notify uncaught errors with window.alert()"
+            },
+            "showPivotIndicator": {
+              "title": "Show Pivot Location"
             }
           }
         }
@@ -285,7 +288,8 @@
     "loadingProject": "Loading project file...",
     "importingBDEProject": "Importing BDEngine project...",
     "unsupportedFile": "Unsupported file",
-    "projectSaved": "Saved project"
+    "projectSaved": "Saved project",
+    "exportedToBDEngineFile": "Exported project to bdengine file"
   },
   "dropzone": {
     "text": "Drop project file to open"
