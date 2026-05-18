@@ -4,6 +4,7 @@ import { type FC, type JSX, useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { LuCircleSlash, LuCopy, LuCopyCheck } from 'react-icons/lu'
 import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
+import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
 import { GameVersions } from '@/constants'
@@ -422,7 +423,13 @@ const ExportToMinecraftDialog: FC = () => {
                   remove: [removeCommand],
                 },
                 { ...datapackOptions, gameVersion: targetGameVersion },
-              ).catch(console.error)
+              )
+                .then(() => {
+                  toast.success(
+                    t(($) => $.dialog.exportToMinecraft.datapack.exportSuccess),
+                  )
+                })
+                .catch(console.error)
             }}
           >
             {t(($) => $.dialog.exportToMinecraft.datapack.downloadButton)}

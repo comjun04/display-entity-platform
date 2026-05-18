@@ -78,7 +78,8 @@
           "summonCommand": "Run <codeblock>{{command}}</codeblock> to summon entities in this project",
           "removeCommand": "Run <codeblock>{{command}}</codeblock> to remove previously spawned entities"
         },
-        "downloadButton": "Download as Datapack"
+        "downloadButton": "Download as Datapack",
+        "exportSuccess": "Exported project to datapack"
       }
     },
     "settings": {

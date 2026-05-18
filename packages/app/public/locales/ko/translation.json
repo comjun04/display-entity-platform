@@ -78,7 +78,8 @@
           "summonCommand": "이 프로젝트에 있는 엔티티들을 소환하려면 <codeblock>{{command}}</codeblock> 을(를) 실행합니다.",
           "removeCommand": "기존에 소환한 엔티티들을 제거하려면 <codeblock>{{command}}</codeblock> 을(를) 실행합니다."
         },
-        "downloadButton": "데이터 팩으로 다운로드"
+        "downloadButton": "데이터 팩으로 다운로드",
+        "exportSuccess": "프로젝트를 데이터 팩으로 내보냈습니다"
       }
     },
     "settings": {
