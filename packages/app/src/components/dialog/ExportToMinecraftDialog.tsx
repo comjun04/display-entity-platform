@@ -146,8 +146,7 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
       )}
 
       <div className="text-neutral-400">
-        The base tag will be added to every display entity, allowing you to
-        edit, move, or remove entities easily.
+        {t(($) => $.dialog.exportToMinecraft.baseTag.desc)}
       </div>
     </div>
   )
@@ -222,8 +221,12 @@ const ExportToMinecraftDialog: FC = () => {
 
       <Tabs defaultValue="command" className="h-full min-h-0">
         <TabsList>
-          <TabsTrigger value="command">Commands</TabsTrigger>
-          <TabsTrigger value="datapack">Data Pack</TabsTrigger>
+          <TabsTrigger value="command">
+            {t(($) => $.dialog.exportToMinecraft.tabs.command)}
+          </TabsTrigger>
+          <TabsTrigger value="datapack">
+            {t(($) => $.dialog.exportToMinecraft.tabs.datapack)}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="command" className="flex min-h-0 flex-col gap-2">
@@ -288,14 +291,26 @@ const ExportToMinecraftDialog: FC = () => {
         </TabsContent>
         <TabsContent value="datapack" className="flex flex-col gap-2">
           <FieldSet>
-            <FieldLegend>Datapack Export Options</FieldLegend>
+            <FieldLegend>
+              {t(($) => $.dialog.exportToMinecraft.datapack.options.title)}
+            </FieldLegend>
 
             <FieldGroup>
               <Field orientation="responsive">
                 <FieldContent>
-                  <FieldLabel>Namespace</FieldLabel>
+                  <FieldLabel>
+                    {t(
+                      ($) =>
+                        $.dialog.exportToMinecraft.datapack.options.namespace
+                          .name,
+                    )}
+                  </FieldLabel>
                   <FieldDescription>
-                    Set the namespace of generated mcfunction files
+                    {t(
+                      ($) =>
+                        $.dialog.exportToMinecraft.datapack.options.namespace
+                          .desc,
+                    )}
                   </FieldDescription>
                 </FieldContent>
                 <Input
@@ -307,9 +322,19 @@ const ExportToMinecraftDialog: FC = () => {
 
               <Field orientation="horizontal">
                 <FieldContent>
-                  <FieldLabel>Compress datapack</FieldLabel>
+                  <FieldLabel>
+                    {t(
+                      ($) =>
+                        $.dialog.exportToMinecraft.datapack.options.compress
+                          .name,
+                    )}
+                  </FieldLabel>
                   <FieldDescription>
-                    Apply compression to the final datapack .zip file
+                    {t(
+                      ($) =>
+                        $.dialog.exportToMinecraft.datapack.options.compress
+                          .desc,
+                    )}
                   </FieldDescription>
                 </FieldContent>
                 <Switch
@@ -321,25 +346,38 @@ const ExportToMinecraftDialog: FC = () => {
           </FieldSet>
 
           <div>
-            <FieldLegend>How to use datapack</FieldLegend>
+            <FieldLegend>
+              {t(($) => $.dialog.exportToMinecraft.datapack.howToUse.title)}
+            </FieldLegend>
             <div>
-              You can use functions to spawn and remove entities in this
-              project.
+              {t(($) => $.dialog.exportToMinecraft.datapack.howToUse.desc)}
             </div>
             <ul className="list-disc pl-4">
               <li>
-                Run{' '}
-                <code className="text-neutral-500">
-                  /function {datapackOptions.namespace}:summon
-                </code>{' '}
-                to summon entities in this project
+                <Trans
+                  i18nKey={($) =>
+                    $.dialog.exportToMinecraft.datapack.howToUse.summonCommand
+                  }
+                  components={{
+                    codeblock: <code className="text-neutral-500" />,
+                  }}
+                  values={{
+                    command: `/function ${datapackOptions.namespace}:summon`,
+                  }}
+                />
               </li>
               <li>
-                Run{' '}
-                <code className="text-neutral-500">
-                  /function {datapackOptions.namespace}:remove
-                </code>{' '}
-                to remove previously spawned entities
+                <Trans
+                  i18nKey={($) =>
+                    $.dialog.exportToMinecraft.datapack.howToUse.removeCommand
+                  }
+                  components={{
+                    codeblock: <code className="text-neutral-500" />,
+                  }}
+                  values={{
+                    command: `/function ${datapackOptions.namespace}:remove`,
+                  }}
+                />
               </li>
             </ul>
           </div>
@@ -355,7 +393,7 @@ const ExportToMinecraftDialog: FC = () => {
               ).catch(console.error)
             }}
           >
-            Download as Datapack
+            {t(($) => $.dialog.exportToMinecraft.datapack.downloadButton)}
           </Button>
         </TabsContent>
       </Tabs>
