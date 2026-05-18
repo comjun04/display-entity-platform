@@ -149,6 +149,61 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
   )
 }
 
+interface DatapackNamespaceFieldProps {
+  onChange: (text: string) => void
+}
+const DatapackNamespaceField: FC<DatapackNamespaceFieldProps> = ({
+  onChange,
+}) => {
+  const { t } = useTranslation()
+
+  const [input, setInput] = useState('minecraft')
+  const [hasValidationErrors, setHasValidationErrors] = useState(false)
+
+  return (
+    <Field orientation="responsive" data-invalid={hasValidationErrors}>
+      <FieldContent>
+        <FieldLabel>
+          {t(($) => $.dialog.exportToMinecraft.datapack.options.namespace.name)}
+        </FieldLabel>
+        {hasValidationErrors && (
+          <FieldError>
+            <Trans
+              i18nKey={($) =>
+                $.dialog.exportToMinecraft.datapack.options.namespace
+                  .invalidValue
+              }
+              components={{
+                codeblock: (
+                  <code className="rounded-sm bg-neutral-800 p-1 font-mono" />
+                ),
+              }}
+            />
+          </FieldError>
+        )}
+        <FieldDescription>
+          {t(($) => $.dialog.exportToMinecraft.datapack.options.namespace.desc)}
+        </FieldDescription>
+      </FieldContent>
+      <Input
+        className="w-auto"
+        value={input}
+        onChange={(evt) => {
+          const text = evt.target.value
+          setInput(text)
+
+          if (/^[a-z0-9_\-.]*$/g.test(text) && text !== '..') {
+            setHasValidationErrors(false)
+            onChange?.(text)
+          } else {
+            setHasValidationErrors(true)
+          }
+        }}
+      />
+    </Field>
+  )
+}
+
 const ExportToMinecraftDialog: FC = () => {
   const { t } = useTranslation()
 
@@ -293,29 +348,9 @@ const ExportToMinecraftDialog: FC = () => {
             </FieldLegend>
 
             <FieldGroup>
-              <Field orientation="responsive">
-                <FieldContent>
-                  <FieldLabel>
-                    {t(
-                      ($) =>
-                        $.dialog.exportToMinecraft.datapack.options.namespace
-                          .name,
-                    )}
-                  </FieldLabel>
-                  <FieldDescription>
-                    {t(
-                      ($) =>
-                        $.dialog.exportToMinecraft.datapack.options.namespace
-                          .desc,
-                    )}
-                  </FieldDescription>
-                </FieldContent>
-                <Input
-                  className="w-auto"
-                  value={namespace}
-                  onChange={(evt) => setNamespace(evt.target.value)}
-                />
-              </Field>
+              <DatapackNamespaceField
+                onChange={(newNamespace) => setNamespace(newNamespace)}
+              />
 
               <Field orientation="horizontal">
                 <FieldContent>

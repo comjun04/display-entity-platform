@@ -64,7 +64,8 @@
           "title": "데이터 팩 내보내기 설정",
           "namespace": {
             "name": "네임스페이스",
-            "desc": "생성된 mcfunction 파일들의 네임스페이스를 정합니다"
+            "desc": "생성된 mcfunction 파일들의 네임스페이스를 정합니다",
+            "invalidValue": "네임스페이스는 영소문자, 숫자, <codeblock>_</codeblock>, <codeblock>-</codeblock>, and <codeblock>.</codeblock> 문자만 포함해야 하며, <codeblock>..</codeblock>이(가) 될 수 없습니다."
           },
           "compress": {
             "name": "데이터 팩 압축",

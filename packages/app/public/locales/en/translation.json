@@ -64,7 +64,8 @@
           "title": "Datapack Export Options",
           "namespace": {
             "name": "Namespace",
-            "desc": "Set the namespace of generated mcfunction files"
+            "desc": "Set the namespace of generated mcfunction files",
+            "invalidValue": "Namespace can only contain lowercase alphabets, digits, <codeblock>_</codeblock>, <codeblock>-</codeblock>, and <codeblock>.</codeblock> characters, and cannot be <codeblock>..</codeblock>."
           },
           "compress": {
             "name": "Compress datapack",
