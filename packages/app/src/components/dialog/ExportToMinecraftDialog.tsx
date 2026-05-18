@@ -198,10 +198,12 @@ const ExportToMinecraftDialog: FC = () => {
   )
   const removeCommand = `/kill @e[${baseTag.length > 0 ? `tag=${baseTag}` : 'type=block_display'},distance=..2]`
 
-  const [datapackOptions, setDatapackOptions] = useState({
-    namespace: 'minecraft',
-    compress: true,
-  })
+  const [namespace, setNamespace] = useState('minecraft')
+  const [compressDatapack, setCompressDatapack] = useState(true)
+  const datapackOptions = {
+    namespace: namespace.length > 0 ? namespace : 'minecraft',
+    compress: compressDatapack,
+  }
 
   return (
     <Dialog
@@ -293,13 +295,8 @@ const ExportToMinecraftDialog: FC = () => {
                 </FieldContent>
                 <Input
                   className="w-auto"
-                  value={datapackOptions.namespace}
-                  onChange={(evt) =>
-                    setDatapackOptions((prev) => ({
-                      ...prev,
-                      namespace: evt.target.value,
-                    }))
-                  }
+                  value={namespace}
+                  onChange={(evt) => setNamespace(evt.target.value)}
                 />
               </Field>
 
@@ -311,13 +308,8 @@ const ExportToMinecraftDialog: FC = () => {
                   </FieldDescription>
                 </FieldContent>
                 <Switch
-                  checked={datapackOptions.compress}
-                  onCheckedChange={(checked) =>
-                    setDatapackOptions((prev) => ({
-                      ...prev,
-                      compress: checked,
-                    }))
-                  }
+                  checked={compressDatapack}
+                  onCheckedChange={(checked) => setCompressDatapack(checked)}
                 />
               </Field>
             </FieldGroup>
