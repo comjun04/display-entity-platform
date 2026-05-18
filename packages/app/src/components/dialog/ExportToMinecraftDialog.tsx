@@ -144,6 +144,11 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
           </Trans>
         </span>
       )}
+
+      <div className="text-neutral-400">
+        The base tag will be added to every display entity, allowing you to
+        edit, move, or remove entities easily.
+      </div>
     </div>
   )
 }
@@ -314,6 +319,31 @@ const ExportToMinecraftDialog: FC = () => {
               </Field>
             </FieldGroup>
           </FieldSet>
+
+          <div>
+            <FieldLegend>How to use datapack</FieldLegend>
+            <div>
+              You can use functions to spawn and remove entities in this
+              project.
+            </div>
+            <ul className="list-disc pl-4">
+              <li>
+                Run{' '}
+                <code className="text-neutral-500">
+                  /function {datapackOptions.namespace}:summon
+                </code>{' '}
+                to summon entities in this project
+              </li>
+              <li>
+                Run{' '}
+                <code className="text-neutral-500">
+                  /function {datapackOptions.namespace}:remove
+                </code>{' '}
+                to remove previously spawned entities
+              </li>
+            </ul>
+          </div>
+
           <Button
             onClick={() => {
               downloadAsDatapack(
