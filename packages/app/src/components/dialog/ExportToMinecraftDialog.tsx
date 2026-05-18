@@ -25,6 +25,7 @@ import {
   Field,
   FieldContent,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -107,29 +108,26 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
   const [hasValidationErrors, setHasValidationErrors] = useState(false)
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <span className="flex-none">
-          {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
-        </span>
-        <Input
-          value={input}
-          onChange={(evt) => {
-            const text = evt.target.value
-            setInput(text)
+    <Field data-invalid={hasValidationErrors}>
+      <FieldLabel>
+        {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
+      </FieldLabel>
+      <Input
+        value={input}
+        onChange={(evt) => {
+          const text = evt.target.value
+          setInput(text)
 
-            if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
-              setHasValidationErrors(false)
-              onChange?.(text)
-            } else {
-              setHasValidationErrors(true)
-            }
-          }}
-        />
-      </div>
-
+          if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
+            setHasValidationErrors(false)
+            onChange?.(text)
+          } else {
+            setHasValidationErrors(true)
+          }
+        }}
+      />
       {hasValidationErrors && (
-        <span className="text-sm text-red-500">
+        <FieldError>
           <Trans
             i18nKey={($) => $.dialog.exportToMinecraft.baseTag.invalidTagNotice}
             ns="translation"
@@ -142,13 +140,12 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
             <code className="rounded-sm bg-neutral-800 p-1 font-mono">+</code>{' '}
             characters.
           </Trans>
-        </span>
+        </FieldError>
       )}
-
-      <div className="text-neutral-400">
+      <FieldDescription>
         {t(($) => $.dialog.exportToMinecraft.baseTag.desc)}
-      </div>
-    </div>
+      </FieldDescription>
+    </Field>
   )
 }
 
