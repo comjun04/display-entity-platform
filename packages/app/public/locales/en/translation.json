@@ -43,15 +43,43 @@
       "title": "Export to Minecraft",
       "baseTag": {
         "title": "Base Tag",
+        "desc": "The base tag will be added to every display entity, allowing you to edit, move, or remove entities easily.",
         "invalidTagNotice": "Tag must contain only alphabets, numbers, <2>_</2>, <5>-</5>, <8>.</8>, and <11>+</11> characters."
       },
+      "tabs": {
+        "command": "Commands",
+        "datapack": "Data Pack"
+      },
       "result": {
+        "noEntities": "No display entities to export",
         "summonCommand": "Summon command {{n}}",
         "removeCommand": "Remove command",
         "copyBtn": {
           "normal": "Copy",
           "copied": "Copied!"
         }
+      },
+      "datapack": {
+        "options": {
+          "title": "Datapack Export Options",
+          "namespace": {
+            "name": "Namespace",
+            "desc": "Set the namespace of generated mcfunction files",
+            "invalidValue": "Namespace can only contain lowercase alphabets, digits, <codeblock>_</codeblock>, <codeblock>-</codeblock>, and <codeblock>.</codeblock> characters, and cannot be <codeblock>..</codeblock>."
+          },
+          "compress": {
+            "name": "Compress datapack",
+            "desc": "Apply compression to the final datapack .zip file"
+          }
+        },
+        "howToUse": {
+          "title": "How to use datapack",
+          "desc": "You can use functions to spawn and remove display entities in this project.",
+          "summonCommand": "Run <codeblock>{{command}}</codeblock> to summon entities in this project",
+          "removeCommand": "Run <codeblock>{{command}}</codeblock> to remove previously spawned entities"
+        },
+        "downloadButton": "Download as Datapack",
+        "exportSuccess": "Exported project to datapack"
       }
     },
     "settings": {

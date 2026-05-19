@@ -43,15 +43,43 @@
       "title": "Minecraft로 내보내기",
       "baseTag": {
         "title": "기본 태그",
+        "desc": "기본 태그는 모든 디스플레이 엔티티들에 추가되어, 엔티티들의 수정, 이동, 제거를 쉽게 할 수 있도록 합니다.",
         "invalidTagNotice": "태그는 반드시 영문자, 숫자, <2>_</2>, <5>-</5>, <8>.</8>, 그리고 <11>+</11> 글자만 포함되어야 합니다."
       },
+      "tabs": {
+        "command": "명령어",
+        "datapack": "데이터 팩"
+      },
       "result": {
+        "noEntities": "내보낼 디스플레이 엔티티가 없습니다",
         "summonCommand": "소환 명령어 {{n}}",
         "removeCommand": "제거 명령어",
         "copyBtn": {
           "normal": "복사",
           "copied": "복사 완료!"
         }
+      },
+      "datapack": {
+        "options": {
+          "title": "데이터 팩 내보내기 설정",
+          "namespace": {
+            "name": "네임스페이스",
+            "desc": "생성된 mcfunction 파일들의 네임스페이스를 정합니다",
+            "invalidValue": "네임스페이스는 영소문자, 숫자, <codeblock>_</codeblock>, <codeblock>-</codeblock>, and <codeblock>.</codeblock> 문자만 포함해야 하며, <codeblock>..</codeblock>이(가) 될 수 없습니다."
+          },
+          "compress": {
+            "name": "데이터 팩 압축",
+            "desc": "최종 데이터 팩 .zip 파일에 압축을 적용합니다"
+          }
+        },
+        "howToUse": {
+          "title": "데이터 팩 사용 방법",
+          "desc": "함수를 사용하여 이 프로젝트에 있는 디스플레이 엔티티들을 소환하고 제거할 수 있습니다.",
+          "summonCommand": "이 프로젝트에 있는 엔티티들을 소환하려면 <codeblock>{{command}}</codeblock> 을(를) 실행합니다.",
+          "removeCommand": "기존에 소환한 엔티티들을 제거하려면 <codeblock>{{command}}</codeblock> 을(를) 실행합니다."
+        },
+        "downloadButton": "데이터 팩으로 다운로드",
+        "exportSuccess": "프로젝트를 데이터 팩으로 내보냈습니다"
       }
     },
     "settings": {
