@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { type FC, useEffect } from 'react'
 
+import ContextMenuHandler from './components/ContextMenuHandler'
 import FileDropzone from './components/FileDropzone'
 import LeftButtonPanel from './components/LeftButtonPanel'
 import MobileBottomButtonPanel from './components/MobileBottomButtonPanel'
@@ -15,12 +16,6 @@ import Modal from './components/dialog/Modal.tsx'
 import PlayerHeadBakingDialog from './components/dialog/PlayerHeadBakingDialog'
 import SettingsDialog from './components/dialog/SettingsDialog'
 import WelcomeDialog from './components/dialog/WelcomeDialog'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from './components/ui/context-menu'
 import { TooltipProvider } from './components/ui/tooltip'
 import { queryClient } from './lib/query.ts'
 import AutosaveService from './lib/services/autosave.service.ts'
@@ -70,18 +65,9 @@ function App() {
           <div className="relative h-full flex-1 overflow-hidden">
             {/* overflow-hidden is required to prevent child canvas width height from affecting parent div
               and correctly measure parent container size for canvas resizing */}
-            <ContextMenu>
-              <ContextMenuTrigger className="h-full w-full">
-                <Scene />
-              </ContextMenuTrigger>
-              <ContextMenuContent className="origin-top-left">
-                <ContextMenuItem>test item</ContextMenuItem>
-                <ContextMenuItem>test item</ContextMenuItem>
-                <ContextMenuItem>test item</ContextMenuItem>
-                <ContextMenuItem>test item</ContextMenuItem>
-                <ContextMenuItem>test item</ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
+            <ContextMenuHandler triggerClassName="h-full w-full">
+              <Scene />
+            </ContextMenuHandler>
 
             {/* floating buttons */}
             <LeftButtonPanel />
