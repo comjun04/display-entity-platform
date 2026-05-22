@@ -446,7 +446,9 @@ export const useDisplayEntityStore = create(
             f(d, clonedEntity.id),
           )
           // set children entity id array to cloned one
-          clonedEntity.children = clonedChildren.map((entity) => entity.id)
+          clonedEntity.children = clonedChildren
+            .filter((entity) => entity.parent === clonedEntity.id)
+            .map((entity) => entity.id)
 
           // put cloned children entities to list
           for (const child of clonedChildren) {
