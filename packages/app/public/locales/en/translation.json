@@ -189,9 +189,6 @@
         "debugOptions": {
           "title": "Debug Options",
           "options": {
-            "testOption": {
-              "title": "Test Option"
-            },
             "minLogLevel": {
               "title": "Minimum Log Level"
             },

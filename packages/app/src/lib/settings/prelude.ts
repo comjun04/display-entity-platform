@@ -84,7 +84,6 @@ export const settingsSchema = z.object({
     .prefault({}),
   debug: z
     .object({
-      testOption: z.boolean().default(false),
       minLogLevel: z
         .enum(['error', 'warn', 'info', 'debug'] satisfies LogLevel[])
         .default('info'),

@@ -22,23 +22,7 @@ const DebugOptionsPage: FC = () => {
       <h3 className="text-xl font-bold">
         {t(($) => $.dialog.settings.page.debugOptions.title)}
       </h3>
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_debug_testoption"
-          checked={settings.debug.testOption}
-          onChange={(evt) => {
-            setSettings({
-              debug: { testOption: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_debug_testoption">
-          {t(
-            ($) => $.dialog.settings.page.debugOptions.options.testOption.title,
-          )}
-        </label>
-      </div>
+
       <div className="mt-4 flex flex-row items-center gap-2">
         <label htmlFor="settings_debug_minloglevel">
           {t(
