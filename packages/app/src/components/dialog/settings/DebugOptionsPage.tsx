@@ -108,6 +108,25 @@ const DebugOptionsPage: FC = () => {
               }}
             />
           </Field>
+
+          <Field orientation="horizontal">
+            <FieldLabel htmlFor="settings_debug_showEntityIdOnObjectPanel">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.debugOptions.options
+                    .showEntityIdOnObjectPanel.title,
+              )}
+            </FieldLabel>
+            <Switch
+              id="settings_debug_showEntityIdOnObjectPanel"
+              checked={settings.debug.showEntityIdOnObjectPanel}
+              onCheckedChange={(checked) => {
+                setSettings({
+                  debug: { showEntityIdOnObjectPanel: checked },
+                })
+              }}
+            />
+          </Field>
         </FieldGroup>
 
         <div className="flex gap-2">

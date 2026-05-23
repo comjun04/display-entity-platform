@@ -90,6 +90,7 @@ export const settingsSchema = z.object({
       perfMonitorEnabled: z.boolean().default(false),
       alertUncaughtError: z.boolean().default(false),
       showPivotIndicator: z.boolean().default(false),
+      showEntityIdOnObjectPanel: z.boolean().default(false),
     })
     .prefault({}),
 })

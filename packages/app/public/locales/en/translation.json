@@ -200,6 +200,9 @@
             },
             "showPivotIndicator": {
               "title": "Show Pivot Location"
+            },
+            "showEntityIdOnObjectPanel": {
+              "title": "Show Entity internal ID on ObjectPanel"
             }
           }
         }

@@ -7,6 +7,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { cn } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 
@@ -50,12 +51,23 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
     state.selectedEntityIdsIncludingParent.has(id),
   )
 
+  const showEntityIdFirst = useEditorStore(
+    (state) => state.settings.debug.showEntityIdOnObjectPanel,
+  )
+
   const blockstateArr: string[] = []
   if (kind === 'block') {
     for (const key in blockstates!) {
       blockstateArr.push(`${key}=${blockstates[key]}`)
     }
   }
+
+  const itemName =
+    kind === 'group'
+      ? groupName || 'Group'
+      : kind === 'text'
+        ? textDisplayText
+        : type
 
   return (
     <div>
@@ -112,27 +124,23 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
           {kind === 'text' && <LuType size={16} />}
           {kind === 'group' && <LuChevronRight size={16} />}
         </span>
-        <span>
-          {kind === 'group'
-            ? groupName || 'Group'
-            : kind === 'text'
-              ? textDisplayText
-              : type}
+        <span className="flex flex-none gap-1">
+          {showEntityIdFirst && <span className="font-mono">{id}</span>}
+          {itemName}
+          {blockstateArr.length > 0 && (
+            <span className="truncate opacity-50">
+              [{blockstateArr.join(',')}]
+            </span>
+          )}
+          {kind === 'item' && display != null && (
+            <span className="truncate opacity-50">[display={display}]</span>
+          )}
         </span>
 
         {playerHeadProperties?.texture?.baked === false && (
           <div className="rounded-sm bg-neutral-700 px-1 py-0.5 text-xs text-gray-400">
             Painted
           </div>
-        )}
-
-        {blockstateArr.length > 0 && (
-          <span className="truncate opacity-50">
-            [{blockstateArr.join(',')}]
-          </span>
-        )}
-        {kind === 'item' && display != null && (
-          <span className="truncate opacity-50">[display={display}]</span>
         )}
       </div>
 
@@ -159,7 +167,7 @@ const ObjectsPanel: FC = () => {
   )
 
   return (
-    <SidePanel className="max-h-[50vh]">
+    <SidePanel className="max-h-[50vh] overflow-x-auto">
       <SidePanelTitle>{t(($) => $.sidebar.objectsPanel.title)}</SidePanelTitle>
       <SidePanelContent>
         {rootEntityIds.map((id) => (
