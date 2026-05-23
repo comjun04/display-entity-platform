@@ -25,6 +25,8 @@ const InsideCanvas: FC = () => {
   const headPainting = useEditorStore((state) => state.headPainter.nowPainting)
 
   const controls = useThree((state) => state.controls)
+  // silence eslint errors due to use of `any`
+  /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
   const oldControlsEnabledRef = useRef<boolean>((controls as any)?.enabled)
 
   useEffect(() => {
@@ -41,6 +43,7 @@ const InsideCanvas: FC = () => {
       }
     }
   }, [headPainting, controls])
+  /* eslint-enable */
 
   useEffect(() => {
     const fn = () => {
