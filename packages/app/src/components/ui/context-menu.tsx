@@ -14,18 +14,21 @@ function ContextMenuPortal({ ...props }: ContextMenuPrimitive.Portal.Props) {
   )
 }
 
-function ContextMenuTrigger({
-  className,
-  ...props
-}: ContextMenuPrimitive.Trigger.Props) {
+// TODO: remove forwardRef after react v19 update
+const ContextMenuTrigger = React.forwardRef<
+  HTMLDivElement,
+  ContextMenuPrimitive.Trigger.Props
+>(({ className, ...props }, ref) => {
   return (
     <ContextMenuPrimitive.Trigger
       data-slot="context-menu-trigger"
       className={cn('select-none', className)}
       {...props}
+      ref={ref}
     />
   )
-}
+})
+ContextMenuTrigger.displayName = 'ContextMenuTrigger'
 
 function ContextMenuContent({
   className,

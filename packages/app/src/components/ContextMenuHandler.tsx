@@ -1,4 +1,4 @@
-import type { FC, ReactNode } from 'react'
+import { type FC, type ReactNode, useEffect, useRef, useState } from 'react'
 import { LuCopyPlus, LuGroup, LuScan, LuTrash } from 'react-icons/lu'
 
 import {
@@ -79,9 +79,33 @@ const ContextMenuHandler: FC<ContextMenuHandlerProps> = ({
   children,
   triggerClassName: className,
 }) => {
+  const [disableMenu, setDisableMenu] = useState(false)
+
+  const triggerRef = useRef<HTMLDivElement>(null)
+
+  // disable context menu from triggering when dragging with right mouse button pressed
+  // which acts as canvas panning
+  useEffect(() => {
+    const triggerElement = triggerRef.current
+    const handle = (evt: MouseEvent) => {
+      if (evt.buttons === 2) {
+        setDisableMenu(true)
+      } else {
+        setDisableMenu(false)
+      }
+    }
+
+    triggerElement?.addEventListener('mousemove', handle)
+    return () => {
+      triggerElement?.removeEventListener('mousemove', handle)
+    }
+  }, [])
+
   return (
-    <ContextMenu>
-      <ContextMenuTrigger className={className}>{children}</ContextMenuTrigger>
+    <ContextMenu disabled={disableMenu}>
+      <ContextMenuTrigger className={className} ref={triggerRef}>
+        {children}
+      </ContextMenuTrigger>
       <ContextMenuContentArea />
     </ContextMenu>
   )
