@@ -328,5 +328,11 @@
   },
   "dropzone": {
     "text": "여기에 프로젝트 파일을 드롭하여 열기"
+  },
+  "contextMenu": {
+    "duplicate": "복제",
+    "group": "그룹",
+    "selectAll": "전체 선택",
+    "delete": "삭제"
   }
 }

@@ -320,5 +320,11 @@
   },
   "dropzone": {
     "text": "Drop project file to open"
+  },
+  "contextMenu": {
+    "duplicate": "Duplicate",
+    "group": "Group",
+    "selectAll": "Select All",
+    "delete": "Delete"
   }
 }

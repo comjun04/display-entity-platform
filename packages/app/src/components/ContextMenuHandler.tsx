@@ -1,4 +1,5 @@
 import { type FC, type ReactNode, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LuCopyPlus, LuGroup, LuScan, LuTrash } from 'react-icons/lu'
 
 import {
@@ -19,6 +20,8 @@ import {
 // split actual context menu content to prevent rendering context menu trigger item
 // when context menu content needs to be rerendered by external data change
 const ContextMenuContentArea: FC = () => {
+  const { t } = useTranslation()
+
   const selectedEntityIds = useDisplayEntityStore(
     (state) => state.selectedEntityIds,
   )
@@ -32,7 +35,7 @@ const ContextMenuContentArea: FC = () => {
           cloneSelectedEntities()
         }}
       >
-        <LuCopyPlus /> Duplicate
+        <LuCopyPlus /> {t(($) => $.contextMenu.duplicate)}
       </ContextMenuItem>
       <ContextMenuItem
         disabled={!someItemsSelected}
@@ -40,7 +43,7 @@ const ContextMenuContentArea: FC = () => {
           groupEntities(selectedEntityIds)
         }}
       >
-        <LuGroup /> Group
+        <LuGroup /> {t(($) => $.contextMenu.group)}
       </ContextMenuItem>
 
       <ContextMenuSeparator />
@@ -54,7 +57,7 @@ const ContextMenuContentArea: FC = () => {
           setSelected(rootEntityIds)
         }}
       >
-        <LuScan /> Select All
+        <LuScan /> {t(($) => $.contextMenu.selectAll)}
       </ContextMenuItem>
 
       <ContextMenuSeparator />
@@ -65,7 +68,7 @@ const ContextMenuContentArea: FC = () => {
           deleteEntities(selectedEntityIds)
         }}
       >
-        <LuTrash /> Delete
+        <LuTrash /> {t(($) => $.contextMenu.delete)}
       </ContextMenuItem>
     </ContextMenuContent>
   )
