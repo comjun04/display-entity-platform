@@ -24,6 +24,11 @@ if (process.env.GENERATE_BUILD_STATS) {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins,
+  server: {
+    watch: {
+      ignored: ['**/public/locales/**/*'],
+    },
+  },
   resolve: {
     alias: [
       {
