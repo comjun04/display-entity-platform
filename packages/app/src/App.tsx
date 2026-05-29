@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { type FC, useEffect } from 'react'
 
+import ContextMenuHandler from './components/ContextMenuHandler'
 import FileDropzone from './components/FileDropzone'
 import LeftButtonPanel from './components/LeftButtonPanel'
 import MobileBottomButtonPanel from './components/MobileBottomButtonPanel'
@@ -64,7 +65,9 @@ function App() {
           <div className="relative h-full flex-1 overflow-hidden">
             {/* overflow-hidden is required to prevent child canvas width height from affecting parent div
               and correctly measure parent container size for canvas resizing */}
-            <Scene />
+            <ContextMenuHandler triggerClassName="h-full w-full">
+              <Scene />
+            </ContextMenuHandler>
 
             {/* floating buttons */}
             <LeftButtonPanel />
