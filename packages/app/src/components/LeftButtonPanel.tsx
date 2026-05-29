@@ -2,10 +2,14 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoMove } from 'react-icons/io5'
 import {
+  LuFilePlus,
+  LuFolderOpen,
   LuMenu,
   LuMoveDiagonal,
   LuRedo,
   LuRotate3D,
+  LuSave,
+  LuSettings,
   LuUndo,
 } from 'react-icons/lu'
 import { useShallow } from 'zustand/shallow'
@@ -96,11 +100,13 @@ const LeftButtonPanel: FC = () => {
             onClick={() => void clearProject()}
           >
             <div className="flex w-full flex-row items-center gap-2 text-sm">
+              <LuFilePlus />
               <span className="grow">{t(($) => $.menu.newProject)}</span>
             </div>
           </DropdownMenuItem>
           <DropdownMenuItem className="w-full" onClick={openFileFromUserSelect}>
             <div className="flex w-full flex-row items-center gap-2 text-sm">
+              <LuFolderOpen />
               <span className="grow">{t(($) => $.menu.open)}</span>
               <span className="text-xs text-neutral-500">
                 {getFormattedShortcutKeyString(
@@ -118,6 +124,7 @@ const LeftButtonPanel: FC = () => {
             }}
           >
             <div className="flex w-full flex-row items-center gap-2 text-sm">
+              <LuSave />
               <span className="grow">{t(($) => $.menu.save)}</span>
               <span className="text-xs text-neutral-500">
                 {getFormattedShortcutKeyString(
@@ -169,6 +176,7 @@ const LeftButtonPanel: FC = () => {
             onClick={() => setOpenedDialog('settings')}
           >
             <div className="flex w-full flex-row items-center gap-2 text-sm">
+              <LuSettings />
               <div className="grow">{t(($) => $.menu.settings)}</div>
               <span className="text-xs text-neutral-500">
                 {getFormattedShortcutKeyString(
