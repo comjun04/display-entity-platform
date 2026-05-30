@@ -322,6 +322,7 @@
     "text": "Drop project file to open"
   },
   "contextMenu": {
+    "copy": "Copy",
     "duplicate": "Duplicate",
     "group": "Group",
     "selectAll": "Select All",

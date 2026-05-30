@@ -327,6 +327,7 @@
     "text": "여기에 프로젝트 파일을 드롭하여 열기"
   },
   "contextMenu": {
+    "copy": "복사",
     "duplicate": "복제",
     "group": "그룹",
     "selectAll": "전체 선택",

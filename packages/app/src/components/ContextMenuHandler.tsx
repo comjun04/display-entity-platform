@@ -2,12 +2,14 @@ import { type FC, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCopyPlus, LuGroup, LuScan, LuTrash } from 'react-icons/lu'
 
+import { copySelectedEntities } from '@/lib/clipboard'
 import {
   cloneSelectedEntities,
   deleteEntities,
   groupEntities,
 } from '@/lib/entities'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 
 import {
   ContextMenu,
@@ -29,6 +31,13 @@ const ContextMenuContentArea: FC = () => {
 
   return (
     <ContextMenuContent className="min-w-48 origin-top-left">
+      <ContextMenuItem
+        disabled={!someItemsSelected}
+        onClick={() => copySelectedEntities()}
+      >
+        <LuCopy /> {t(($) => $.contextMenu.copy)}
+      </ContextMenuItem>
+
       <ContextMenuItem
         disabled={!someItemsSelected}
         onClick={() => {
