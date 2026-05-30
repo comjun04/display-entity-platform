@@ -323,6 +323,7 @@
   },
   "contextMenu": {
     "copy": "Copy",
+    "paste": "Paste",
     "duplicate": "Duplicate",
     "group": "Group",
     "selectAll": "Select All",

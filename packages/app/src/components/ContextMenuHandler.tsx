@@ -1,8 +1,15 @@
 import { type FC, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuCopyPlus, LuGroup, LuScan, LuTrash } from 'react-icons/lu'
+import {
+  LuClipboard,
+  LuCopy,
+  LuCopyPlus,
+  LuGroup,
+  LuScan,
+  LuTrash,
+} from 'react-icons/lu'
 
-import { copySelectedEntities } from '@/lib/clipboard'
+import { copySelectedEntities, pasteCopiedEntities } from '@/lib/clipboard'
 import {
   cloneSelectedEntities,
   deleteEntities,
@@ -29,6 +36,10 @@ const ContextMenuContentArea: FC = () => {
   )
   const someItemsSelected = selectedEntityIds.length > 0
 
+  const clipboardDataExists = useEditorStore(
+    (state) => state.clipboard.data.length > 0,
+  )
+
   return (
     <ContextMenuContent className="min-w-48 origin-top-left">
       <ContextMenuItem
@@ -36,6 +47,12 @@ const ContextMenuContentArea: FC = () => {
         onClick={() => copySelectedEntities()}
       >
         <LuCopy /> {t(($) => $.contextMenu.copy)}
+      </ContextMenuItem>
+      <ContextMenuItem
+        disabled={!clipboardDataExists}
+        onClick={() => pasteCopiedEntities()}
+      >
+        <LuClipboard /> {t(($) => $.contextMenu.paste)}
       </ContextMenuItem>
 
       <ContextMenuItem

@@ -328,6 +328,7 @@
   },
   "contextMenu": {
     "copy": "복사",
+    "paste": "붙여넣기",
     "duplicate": "복제",
     "group": "그룹",
     "selectAll": "전체 선택",
