@@ -1,6 +1,7 @@
 import { type FC, useEffect, useMemo } from 'react'
 
 import { toggleGroup } from '@/lib/actions'
+import { copySelectedEntities, pasteCopiedEntities } from '@/lib/clipboard'
 import { cloneSelectedEntities, deleteEntities } from '@/lib/entities'
 import { openFileFromUserSelect, saveToFile } from '@/lib/file-handler'
 import { getLogger } from '@/lib/logger'
@@ -107,6 +108,12 @@ const ShortcutHandler: FC = () => {
             break
           case 'general.openSettings':
             setOpenedDialog('settings')
+            break
+          case 'general.copy':
+            copySelectedEntities()
+            break
+          case 'general.paste':
+            pasteCopiedEntities()
             break
           case 'general.undo':
             undoHistory()
