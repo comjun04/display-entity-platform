@@ -56,6 +56,20 @@ const ContextMenuContentArea: FC = () => {
       </ContextMenuItem>
 
       <ContextMenuItem
+        onClick={() => {
+          const { entities, setSelected } = useDisplayEntityStore.getState()
+          const rootEntityIds = [...entities.values()]
+            .filter((entity) => entity.parent == null)
+            .map((entity) => entity.id)
+          setSelected(rootEntityIds)
+        }}
+      >
+        <LuScan /> {t(($) => $.contextMenu.selectAll)}
+      </ContextMenuItem>
+
+      <ContextMenuSeparator />
+
+      <ContextMenuItem
         disabled={!someItemsSelected}
         onClick={() => {
           cloneSelectedEntities()
@@ -70,20 +84,6 @@ const ContextMenuContentArea: FC = () => {
         }}
       >
         <LuGroup /> {t(($) => $.contextMenu.group)}
-      </ContextMenuItem>
-
-      <ContextMenuSeparator />
-
-      <ContextMenuItem
-        onClick={() => {
-          const { entities, setSelected } = useDisplayEntityStore.getState()
-          const rootEntityIds = [...entities.values()]
-            .filter((entity) => entity.parent == null)
-            .map((entity) => entity.id)
-          setSelected(rootEntityIds)
-        }}
-      >
-        <LuScan /> {t(($) => $.contextMenu.selectAll)}
       </ContextMenuItem>
 
       <ContextMenuSeparator />
