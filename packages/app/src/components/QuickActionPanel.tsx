@@ -130,6 +130,25 @@ const QuickActionPanel: FC = () => {
               {t(($) => $.editor.topBar.textDisplay)}
             </TooltipContent>
           </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <FloatingButton
+                  onClick={() => {
+                    createNewEntities([
+                      { kind: 'item', type: 'player_head' },
+                    ]).catch(console.error)
+                  }}
+                >
+                  <LuSmile size={24} />
+                </FloatingButton>
+              }
+            />
+            <TooltipContent side="bottom">
+              {t(($) => $.editor.topBar.addPlayerHead)}
+            </TooltipContent>
+          </Tooltip>
         </div>
         {/* Mobile - show dropdown menu for 'Add Display Entity' action */}
         <DropdownMenu>
@@ -178,29 +197,22 @@ const QuickActionPanel: FC = () => {
 
               {t(($) => $.editor.topBar.textDisplay)}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex flex-row items-center gap-2"
+              onClick={() => {
+                createNewEntities([
+                  { kind: 'item', type: 'player_head' },
+                ]).catch(console.error)
+              }}
+            >
+              <LuSmile />
+
+              {t(($) => $.editor.topBar.addPlayerHead)}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <div className="my-2 border-l border-gray-700" />
-
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <FloatingButton
-                onClick={() => {
-                  createNewEntities([
-                    { kind: 'item', type: 'player_head' },
-                  ]).catch(console.error)
-                }}
-              >
-                <LuSmile size={24} />
-              </FloatingButton>
-            }
-          />
-          <TooltipContent side="bottom">
-            {t(($) => $.editor.topBar.addPlayerHead)}
-          </TooltipContent>
-        </Tooltip>
 
         <Tooltip>
           <TooltipTrigger
