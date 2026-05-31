@@ -149,6 +149,8 @@
             "general": {
               "title": "일반",
               "items": {
+                "copy": "복사",
+                "paste": "붙여넣기",
                 "openFromFile": "파일에서 열기",
                 "saveToFile": "파일로 저장",
                 "openSettings": "설정 열기",

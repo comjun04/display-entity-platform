@@ -149,6 +149,8 @@
             "general": {
               "title": "General",
               "items": {
+                "copy": "Copy",
+                "paste": "Paste",
                 "openFromFile": "Open from file",
                 "saveToFile": "Save to file",
                 "openSettings": "Open Settings",
