@@ -42,7 +42,7 @@ const SettingsDialog: FC = () => {
       onClose={closeActiveDialog}
       className={cn(selectedPage === 'appearance' && 'bg-background/60')}
       backdropClassName={cn(
-        selectedPage === 'appearance' && 'sm:backdrop-blur-none',
+        selectedPage === 'appearance' && 'backdrop-blur-none!',
       )}
     >
       <div className="flex h-full w-full flex-col overflow-auto sm:flex-row">
