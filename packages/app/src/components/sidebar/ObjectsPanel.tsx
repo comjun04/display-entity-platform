@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { type FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoCubeOutline } from 'react-icons/io5'
 import { LuChevronRight, LuSmile, LuType } from 'react-icons/lu'
@@ -69,6 +69,12 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
         ? textDisplayText
         : type
 
+  const [manuallyExpandGroup, setManuallyExpandGroup] = useState(false)
+  const expandGroupChildren =
+    kind === 'group' &&
+    children != null &&
+    (thisOrChildSelected || manuallyExpandGroup)
+
   return (
     <div>
       <div
@@ -110,8 +116,8 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
       >
         <span
           className={cn(
-            'flex-none transition-transform duration-200',
-            kind === 'group' && thisOrChildSelected && 'rotate-90',
+            'flex flex-none items-center transition-transform duration-200',
+            expandGroupChildren && 'rotate-90',
           )}
         >
           {kind === 'block' && <IoCubeOutline size={16} />}
@@ -122,7 +128,16 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
               <TbDiamondFilled size={16} />
             ))}
           {kind === 'text' && <LuType size={16} />}
-          {kind === 'group' && <LuChevronRight size={16} />}
+          {kind === 'group' && (
+            <button
+              onClick={(evt) => {
+                evt.stopPropagation()
+                setManuallyExpandGroup((state) => !state)
+              }}
+            >
+              <LuChevronRight size={16} />
+            </button>
+          )}
         </span>
         <span className="flex flex-none gap-1">
           {showEntityIdFirst && <span className="font-mono">{id}</span>}
@@ -144,7 +159,7 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
         )}
       </div>
 
-      {kind === 'group' && children != null && thisOrChildSelected && (
+      {expandGroupChildren && (
         <div className="pl-4">
           {children.map((entityId) => (
             <ObjectItem key={entityId} id={entityId} />
