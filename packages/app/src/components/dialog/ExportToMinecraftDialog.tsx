@@ -1,7 +1,12 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
-import { type FC, type JSX, useEffect, useState } from 'react'
+import {
+  type ComponentPropsWithoutRef,
+  type FC,
+  useEffect,
+  useState,
+} from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { LuCircleSlash, LuCopy, LuCopyCheck } from 'react-icons/lu'
 import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
@@ -10,7 +15,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { GameVersions } from '@/constants'
 import { getLogger } from '@/lib/logger'
-import { cn, downloadFile } from '@/lib/utils'
+import { downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
@@ -40,12 +45,11 @@ import Dialog from './Dialog'
 
 const logger = getLogger('ExportToMinecraftDialog')
 
-type CopyButtonProps = JSX.IntrinsicElements['button'] & {
+type CopyButtonProps = ComponentPropsWithoutRef<'button'> & {
   valueToCopy: string
 }
 
 const CopyButton: FC<CopyButtonProps> = ({
-  className,
   valueToCopy,
   onClick,
   ...props
@@ -71,11 +75,8 @@ const CopyButton: FC<CopyButtonProps> = ({
   }, [clicked])
 
   return (
-    <button
-      className={cn(
-        'flex flex-row items-center gap-2 rounded-lg bg-white/10 px-3 py-1 transition hover:bg-white/5',
-        className,
-      )}
+    <Button
+      variant="outline"
       onClick={(evt) => {
         onClick?.(evt)
         void navigator.clipboard.writeText(valueToCopy)
@@ -94,7 +95,7 @@ const CopyButton: FC<CopyButtonProps> = ({
           {t(($) => $.dialog.exportToMinecraft.result.copyBtn.normal)}
         </>
       )}
-    </button>
+    </Button>
   )
 }
 
