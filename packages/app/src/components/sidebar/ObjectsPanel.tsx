@@ -76,7 +76,7 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
     (thisOrChildSelected || manuallyExpandGroup)
 
   return (
-    <div>
+    <div className="border-l-2 border-neutral-700 pl-1">
       <div
         className={cn(
           'flex cursor-pointer flex-row items-center gap-1',
