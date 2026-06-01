@@ -36,7 +36,6 @@ import {
 import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
-import { Textarea } from '../ui/textarea'
 import Dialog from './Dialog'
 
 const logger = getLogger('ExportToMinecraftDialog')
@@ -261,7 +260,7 @@ const ExportToMinecraftDialog: FC = () => {
   const virtualizer = useVirtualizer({
     count: summonCommands.length + 1,
     getScrollElement: () => commandListParentRef,
-    estimateSize: () => 100,
+    estimateSize: () => 60,
     overscan: 5,
     gap: 8,
   })
@@ -346,10 +345,9 @@ const ExportToMinecraftDialog: FC = () => {
                         </span>
                         <CopyButton valueToCopy={command} />
                       </div>
-                      <Textarea
-                        className="h-18 resize-none"
-                        readOnly
-                        value={command}
+                      <Input
+                        disabled
+                        value={command.slice(0, 500)}
                         onFocus={(evt) => {
                           evt.target.select()
                         }}
@@ -376,10 +374,9 @@ const ExportToMinecraftDialog: FC = () => {
                         </span>
                         <CopyButton valueToCopy={removeCommand} />
                       </div>
-                      <Textarea
-                        className="h-18 resize-none"
-                        readOnly
-                        value={removeCommand}
+                      <Input
+                        disabled
+                        value={removeCommand.slice(0, 500)}
                         onFocus={(evt) => {
                           evt.target.select()
                         }}
