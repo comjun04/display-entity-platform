@@ -1,4 +1,5 @@
 import { useDebouncedEffect } from '@react-hookz/web'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
 import { type FC, type JSX, useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -255,6 +256,16 @@ const ExportToMinecraftDialog: FC = () => {
   )
   const removeCommand = `/kill @e[${baseTag.length > 0 ? `tag=${baseTag}` : 'type=block_display'},distance=..2]`
 
+  const [commandListParentRef, setCommandListParentRef] =
+    useState<HTMLDivElement | null>(null)
+  const virtualizer = useVirtualizer({
+    count: summonCommands.length + 1,
+    getScrollElement: () => commandListParentRef,
+    estimateSize: () => 100,
+    overscan: 5,
+    gap: 8,
+  })
+
   const [namespace, setNamespace] = useState('minecraft')
   const [compressDatapack, setCompressDatapack] = useState(true)
   const datapackOptions = {
@@ -300,46 +311,84 @@ const ExportToMinecraftDialog: FC = () => {
             </div>
           )}
 
-          <div className="overflow-y-auto">
-            {summonCommands.map((command, idx) => (
-              <div key={idx}>
-                <div className="flex flex-row items-center">
-                  <span className="grow">
-                    {t(($) => $.dialog.exportToMinecraft.result.summonCommand, {
-                      n: idx + 1,
-                    })}
-                  </span>
-                  <CopyButton valueToCopy={command} />
-                </div>
-                <Textarea
-                  className="h-18 resize-none"
-                  readOnly
-                  value={command}
-                  onFocus={(evt) => {
-                    evt.target.select()
-                  }}
-                />
-              </div>
-            ))}
-
-            {nbtStrings.length > 0 && (
-              <div>
-                <div className="flex flex-row items-center">
-                  <span className="grow">
-                    {t(($) => $.dialog.exportToMinecraft.result.removeCommand)}
-                  </span>
-                  <CopyButton valueToCopy={removeCommand} />
-                </div>
-                <Textarea
-                  className="h-18 resize-none"
-                  readOnly
-                  value={removeCommand}
-                  onFocus={(evt) => {
-                    evt.target.select()
-                  }}
-                />
-              </div>
-            )}
+          <div
+            className="overflow-y-auto"
+            ref={(element) => setCommandListParentRef(element)}
+          >
+            <div
+              className="relative w-full"
+              style={{
+                height: virtualizer.getTotalSize(),
+              }}
+            >
+              {virtualizer.getVirtualItems().map((item) => {
+                if (item.index < summonCommands.length) {
+                  // summon command
+                  const command = summonCommands[item.index]
+                  return (
+                    <div
+                      key={item.key}
+                      className="absolute top-0 left-0 w-full"
+                      style={{
+                        height: item.size,
+                        transform: `translateY(${item.start}px)`,
+                      }}
+                    >
+                      <div className="flex flex-row items-center">
+                        <span className="grow">
+                          {t(
+                            ($) =>
+                              $.dialog.exportToMinecraft.result.summonCommand,
+                            {
+                              n: item.index + 1,
+                            },
+                          )}
+                        </span>
+                        <CopyButton valueToCopy={command} />
+                      </div>
+                      <Textarea
+                        className="h-18 resize-none"
+                        readOnly
+                        value={command}
+                        onFocus={(evt) => {
+                          evt.target.select()
+                        }}
+                      />
+                    </div>
+                  )
+                } else {
+                  // remove command
+                  return (
+                    <div
+                      key={item.key}
+                      className="absolute top-0 left-0 w-full"
+                      style={{
+                        height: item.size,
+                        transform: `translateY(${item.start}px)`,
+                      }}
+                    >
+                      <div className="flex flex-row items-center">
+                        <span className="grow">
+                          {t(
+                            ($) =>
+                              $.dialog.exportToMinecraft.result.removeCommand,
+                          )}
+                        </span>
+                        <CopyButton valueToCopy={removeCommand} />
+                      </div>
+                      <Textarea
+                        className="h-18 resize-none"
+                        readOnly
+                        value={removeCommand}
+                        onFocus={(evt) => {
+                          evt.target.select()
+                        }}
+                      />
+                    </div>
+                  )
+                }
+              })}
+            </div>
           </div>
         </TabsContent>
         <TabsContent value="datapack" className="flex flex-col gap-2">
