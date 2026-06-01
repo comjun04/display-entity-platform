@@ -41,28 +41,32 @@ interface SpecialThanksProps {
 export const SpecialThanks: FC<SpecialThanksProps> = ({ className }) => {
   return (
     <div className={cn('mt-4 text-sm text-neutral-500', className)}>
-      <Trans i18nKey={($) => $.branding.specialThanks} ns="translation">
-        Special Thanks to{' '}
-        <a
-          href="https://github.com/eszesbalint"
-          target="_blank"
-          className="underline"
-          rel="noreferrer"
-        >
-          Eszes Bálint
-        </a>{' '}
-        for creating{' '}
-        <a
-          href="https://github.com/eszesbalint/bdstudio"
-          target="_blank"
-          className="underline"
-          rel="noreferrer"
-        >
-          BDStudio
-        </a>
-        , the initial editor of Minecraft display entities, and inspiration of
-        this project
-      </Trans>
+      <Trans
+        i18nKey={($) => $.branding.specialThanks}
+        ns="translation"
+        components={{
+          user: (
+            <a
+              href="https://github.com/eszesbalint"
+              target="_blank"
+              className="underline"
+              rel="noreferrer"
+            >
+              Eszes Bálint
+            </a>
+          ),
+          bdstudio: (
+            <a
+              href="https://github.com/eszesbalint/bdstudio"
+              target="_blank"
+              className="underline"
+              rel="noreferrer"
+            >
+              BDStudio
+            </a>
+          ),
+        }}
+      />
     </div>
   )
 }
@@ -73,16 +77,20 @@ interface OpenSourceNoticeProps {
 export const OpenSourceNotice: FC<OpenSourceNoticeProps> = ({ className }) => {
   return (
     <div className={cn('mt-4 text-sm text-neutral-500', className)}>
-      <Trans i18nKey={($) => $.branding.openSourceNotice}>
-        This app is free and open source.
-        <a
-          href="https://github.com/comjun04/display-entity-platform"
-          className="flex flex-row items-center gap-1 underline"
-          target="_blank"
-        >
-          Full source code is available on <FaGithub /> GitHub.
-        </a>
-      </Trans>
+      <Trans
+        i18nKey={($) => $.branding.openSourceNotice}
+        components={{
+          projectLink: (
+            <a
+              href="https://github.com/comjun04/display-entity-platform"
+              className="flex flex-row items-center gap-1 underline"
+              target="_blank"
+              rel="noreferrer"
+            />
+          ),
+          githubIcon: <FaGithub />,
+        }}
+      />
     </div>
   )
 }

@@ -133,15 +133,12 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
           <Trans
             i18nKey={($) => $.dialog.exportToMinecraft.baseTag.invalidTagNotice}
             ns="translation"
-          >
-            Tag must contain only alphabets, numbers,{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">_</code>,{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">-</code>,{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">.</code>,
-            and{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">+</code>{' '}
-            characters.
-          </Trans>
+            components={{
+              codeblock: (
+                <code className="rounded-sm bg-neutral-800 p-1 font-mono" />
+              ),
+            }}
+          />
         </FieldError>
       )}
       <FieldDescription>

@@ -2,8 +2,8 @@
   "branding": {
     "desc": "Graphical editor for Minecraft Display entities",
     "disclaimer": "This app is not an official Minecraft product. Minecraft is a trademark of Mojang AB. All rights related to Minecraft and its intellectual property are owned by Mojang AB.",
-    "specialThanks": "Special Thanks to <2>Eszes Bálint</2> for creating <6>BDStudio</6>, the initial editor of Minecraft display entities, and inspiration of this project",
-    "openSourceNotice": "This app is free and open source. <1>Full source code is available on <1 /> GitHub.</1>"
+    "specialThanks": "Special Thanks to <user /> for creating <bdstudio />, the initial editor of Minecraft display entities, and inspiration of this project",
+    "openSourceNotice": "This app is free and open source. <projectLink>Full source code is available on <githubIcon /> GitHub.</projectLink>"
   },
   "dialog": {
     "welcome": {
@@ -44,7 +44,7 @@
       "baseTag": {
         "title": "Base Tag",
         "desc": "The base tag will be added to every display entity, allowing you to edit, move, or remove entities easily.",
-        "invalidTagNotice": "Tag must contain only alphabets, numbers, <2>_</2>, <5>-</5>, <8>.</8>, and <11>+</11> characters."
+        "invalidTagNotice": "Tag must contain only alphabets, numbers, <codeblock>_</codeblock>, <codeblock>-</codeblock>, <codeblock>.</codeblock>, and <codeblock>+</codeblock> characters."
       },
       "tabs": {
         "command": "Commands",
