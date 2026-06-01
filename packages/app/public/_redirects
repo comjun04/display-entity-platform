@@ -1,0 +1,3 @@
+# Redirect all subpath request to main index.html
+# https://docs.netlify.com/manage/routing/redirects/overview/
+/* /index.html 200
