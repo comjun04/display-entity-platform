@@ -256,7 +256,7 @@ export type BDEngineTextDisplay = BDEngineDisplayEntityBase & {
     color: string // text color, #abcdef
     alpha: number // text color alpha, 0 ~ 1
     backgroundColor: string // #abcdef
-    backgroundColorAlpha: number // 0 ~ 1
+    backgroundAlpha: number // 0 ~ 1
     bold: boolean
     italic: boolean
     underline: boolean

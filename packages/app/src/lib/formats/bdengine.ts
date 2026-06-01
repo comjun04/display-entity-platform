@@ -154,7 +154,7 @@ export async function importBDEngineProjectFrom(saveData: BDEngineSaveData) {
             16,
           )
           const backgroundColorARGB =
-            (((item.options.backgroundColorAlpha * 255) << 24) |
+            (((item.options.backgroundAlpha * 255) << 24) |
               backgroundColorRGB) >>>
             0
 
@@ -313,7 +313,7 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
           color: textColorHex,
           backgroundColor: backgroundColorHex,
           alpha: entity.textOpacity / 255,
-          backgroundColorAlpha,
+          backgroundAlpha: backgroundColorAlpha,
         },
       } satisfies BDEngineTextDisplay
     } else if (entity.kind === 'group') {
