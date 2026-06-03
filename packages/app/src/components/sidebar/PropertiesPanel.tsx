@@ -542,11 +542,20 @@ const GroupProperties: FC = () => {
 const ProjectProperties: FC = () => {
   const { t } = useTranslation()
 
-  const { targetGameVersion, projectName, setProjectName } = useProjectStore(
+  const {
+    targetGameVersion,
+    projectName,
+    setProjectName,
+    mainNBT,
+    setMainNBT,
+  } = useProjectStore(
     useShallow((state) => ({
       targetGameVersion: state.targetGameVersion,
       projectName: state.projectName,
       setProjectName: state.setProjectName,
+
+      mainNBT: state.mainNBT,
+      setMainNBT: state.setMainNBT,
     })),
   )
 
@@ -633,6 +642,23 @@ const ProjectProperties: FC = () => {
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label>
+          {t(
+            ($) =>
+              $.sidebar.propertiesPanel.sections.project.properties.mainNBT
+                .title,
+          )}
+        </label>
+        <textarea
+          className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
+          value={mainNBT}
+          onChange={(evt) => {
+            setMainNBT(evt.target.value)
+          }}
+        />
       </div>
     </div>
   )

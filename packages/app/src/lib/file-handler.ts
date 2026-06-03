@@ -120,7 +120,8 @@ async function openProjectFile(file: Blob): Promise<boolean> {
   toast(t(($) => $.toast.loadingProject))
 
   const { bulkImport } = useDisplayEntityStore.getState()
-  const { setTargetGameVersion, setProjectName } = useProjectStore.getState()
+  const { setTargetGameVersion, setProjectName, setMainNBT } =
+    useProjectStore.getState()
 
   // load targetGameVersion
   const targetGameVersion =
@@ -135,6 +136,13 @@ async function openProjectFile(file: Blob): Promise<boolean> {
       ? (saveData as DisplayEntitySaveData_Latest).projectName
       : ''
   setProjectName(projectName)
+
+  // load mainNBT
+  const mainNBT =
+    saveData.__version >= 7
+      ? (saveData as DisplayEntitySaveData_Latest).mainNBT
+      : ''
+  setMainNBT(mainNBT)
 
   const entities = importDeplProjectFrom(saveData.entities)
 
@@ -159,14 +167,14 @@ export async function saveToFile() {
 
 export async function createSaveData() {
   const rootEntities = useDisplayEntityStore.getState().exportAll()
-  const { targetGameVersion, projectName } = useProjectStore.getState()
+  const { targetGameVersion, projectName, mainNBT } = useProjectStore.getState()
   const finalSaveObject = {
     __version: FILE_VERSION,
     __program: 'Display Entity Platform',
     projectName,
     targetGameVersion,
     entities: rootEntities,
-    mainNBT: '',
+    mainNBT,
   } satisfies DisplayEntitySaveData_Latest
 
   const finalSaveObjectString = JSON.stringify(finalSaveObject)
@@ -192,7 +200,8 @@ async function importFromBDE(file: Blob): Promise<boolean> {
   toast(t(($) => $.toast.importingBDEProject))
 
   const { bulkImport, clearEntities } = useDisplayEntityStore.getState()
-  const { setTargetGameVersion, setProjectName } = useProjectStore.getState()
+  const { setTargetGameVersion, setProjectName, setMainNBT } =
+    useProjectStore.getState()
 
   // reset project and load data
   clearEntities()
@@ -205,6 +214,9 @@ async function importFromBDE(file: Blob): Promise<boolean> {
 
   // load projectName
   setProjectName(saveData[0].name)
+
+  // load mainNBT
+  setMainNBT(saveData[0].mainNBT)
 
   const entities = await importBDEngineProjectFrom(saveData)
   await preloadResources([...entities.values()])
@@ -235,7 +247,7 @@ export async function saveAsBDEngineFile() {
   const { entities } = useDisplayEntityStore.getState()
   const rootEntities = exportBDEProject(entities)
 
-  const { projectName } = useProjectStore.getState()
+  const { projectName, mainNBT } = useProjectStore.getState()
 
   const finalSaveObject: BDEngineSaveData = [
     {
@@ -243,7 +255,7 @@ export async function saveAsBDEngineFile() {
       name: projectName,
       children: rootEntities,
       transforms: new Matrix4().toArray(),
-      mainNBT: '',
+      mainNBT,
       settings: { defaultBrightness: true },
     },
   ]
