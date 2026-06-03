@@ -223,6 +223,7 @@ export const useDisplayEntityStore = create(
                 position: param.position ?? [0, 0, 0],
                 rotation: param.rotation ?? [0, 0, 0],
                 display: param.display ?? null,
+                nbt: '',
                 blockstates,
               },
               models: matchingModels,
@@ -240,6 +241,7 @@ export const useDisplayEntityStore = create(
                   (param.type === 'player_head' ? [0, 0.5, 0] : [0, 0, 0]),
                 rotation: param.rotation ?? [0, 0, 0],
                 display: param.display ?? null,
+                nbt: '',
                 playerHeadProperties:
                   param.type === 'player_head'
                     ? param.playerHeadProperties != null
@@ -275,6 +277,7 @@ export const useDisplayEntityStore = create(
                 size: param.size ?? [1, 1, 1],
                 position: param.position ?? [0, 0, 0],
                 rotation: param.rotation ?? [0, 0, 0],
+                nbt: '',
                 alignment: param.alignment ?? 'center',
                 backgroundColor: param.backgroundColor ?? 0xff000000, // #ff000000, black
                 defaultBackground: param.defaultBackground ?? false,
@@ -300,6 +303,7 @@ export const useDisplayEntityStore = create(
                 size: param.size ?? [1, 1, 1],
                 position: param.position ?? [0, 0, 0],
                 rotation: param.rotation ?? [1, 1, 1],
+                nbt: '',
               },
               models: [],
             }
@@ -786,6 +790,7 @@ export const useDisplayEntityStore = create(
             transforms,
             blockstates: entity.blockstates,
             display: entity.display,
+            nbt: entity.nbt,
           }
         } else if (entity.kind === 'item') {
           return {
@@ -793,6 +798,7 @@ export const useDisplayEntityStore = create(
             type: entity.type,
             transforms,
             display: entity.display,
+            nbt: entity.nbt,
             playerHeadProperties:
               'playerHeadProperties' in entity
                 ? entity.playerHeadProperties
@@ -802,6 +808,8 @@ export const useDisplayEntityStore = create(
           return {
             kind: entity.kind,
             transforms,
+            nbt: entity.nbt,
+
             text: entity.text,
             textColor: entity.textColor,
             textEffects: entity.textEffects,
@@ -823,6 +831,7 @@ export const useDisplayEntityStore = create(
             transforms,
             children,
             name: entity.name,
+            nbt: entity.nbt,
           }
         }
 
@@ -924,6 +933,7 @@ export const useDisplayEntityStore = create(
           position: box3.min.toArray(),
           rotation: [0, 0, 0],
           size: [1, 1, 1],
+          nbt: '',
           parent: firstEntityParentId,
           children: entityIds,
           name: 'Group',

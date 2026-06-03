@@ -1,5 +1,12 @@
 # Save file format changelog
 
+### Version `7`
+
+- Add `nbt` field in `BaseDisplayEntity`
+  - Every display entity now has `nbt` field
+- Add `mainNBT` field to save data root
+  - This nbt field is used for root group entity nbt
+
 ### Version `6`
 
 - Breaking change to `playerHeadProperties.texture` property if entity kind `item`
