@@ -13,6 +13,7 @@ import { BackendHost, GameVersions } from '@/constants'
 import useBlockStates from '@/hooks/useBlockStates'
 import {
   setBDEntityBlockstates,
+  setEntityNBT,
   setGroupName,
   setIDEntityDisplayType,
   setIDEntityPlayerHeadProperties,
@@ -637,6 +638,43 @@ const ProjectProperties: FC = () => {
   )
 }
 
+const CommonDisplayProperties: FC = () => {
+  const { t } = useTranslation()
+
+  const singleSelectedEntity = useDisplayEntityStore((state) => {
+    const entity =
+      state.selectedEntityIds.length === 1
+        ? state.entities.get(state.selectedEntityIds[0])!
+        : null
+    return entity
+  })
+
+  if (singleSelectedEntity == null) return null
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+        {t(($) => $.sidebar.propertiesPanel.sections.nbt.title)}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="">
+          {t(
+            ($) => $.sidebar.propertiesPanel.sections.nbt.properties.nbt.title,
+          )}
+        </label>
+        <textarea
+          className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
+          value={singleSelectedEntity.nbt}
+          onChange={(evt) => {
+            setEntityNBT(singleSelectedEntity.id, evt.target.value)
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 const PropertiesPanel: FC = () => {
   const { t } = useTranslation()
 
@@ -656,11 +694,13 @@ const PropertiesPanel: FC = () => {
       <SidePanelTitle>
         {t(($) => $.sidebar.propertiesPanel.title)}
       </SidePanelTitle>
-      <SidePanelContent>
+      <SidePanelContent className="flex flex-col gap-2">
         {singleSelectedEntity?.kind === 'block' && <BlockDisplayProperties />}
         {singleSelectedEntity?.kind === 'item' && <ItemDisplayProperties />}
         {singleSelectedEntity?.kind === 'text' && <TextDisplayProperties />}
         {singleSelectedEntity?.kind === 'group' && <GroupProperties />}
+
+        {singleSelectedEntity != null && <CommonDisplayProperties />}
 
         {singleSelectedEntity == null && <ProjectProperties />}
       </SidePanelContent>

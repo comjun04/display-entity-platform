@@ -109,6 +109,7 @@ export type DisplayEntityState = {
       scale?: PartialNumber3Tuple
     }[],
   ) => void
+  setEntityNBT: (id: string, nbt: string) => void
   setEntityDisplayType: (
     id: string,
     display: ModelDisplayPositionKey | null,
@@ -555,6 +556,16 @@ export const useDisplayEntityStore = create(
             entity.size = scaleDraft
           }
         })
+      }),
+    setEntityNBT: (id, nbt) =>
+      set((state) => {
+        const entity = state.entities.get(id)
+        if (entity == null) {
+          logger.error(`Invalid entity id ${id}`)
+          return
+        }
+
+        entity.nbt = nbt
       }),
     setEntityDisplayType: (id, display) =>
       set((state) => {

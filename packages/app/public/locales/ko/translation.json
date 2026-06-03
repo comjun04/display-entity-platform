@@ -314,6 +314,14 @@
               "title": "그룹 이름"
             }
           }
+        },
+        "nbt": {
+          "title": "NBT",
+          "properties": {
+            "nbt": {
+              "title": "NBT"
+            }
+          }
         }
       }
     }

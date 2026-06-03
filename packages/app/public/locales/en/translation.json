@@ -309,6 +309,14 @@
               "title": "Group Name"
             }
           }
+        },
+        "nbt": {
+          "title": "NBT",
+          "properties": {
+            "nbt": {
+              "title": "NBT"
+            }
+          }
         }
       }
     }
