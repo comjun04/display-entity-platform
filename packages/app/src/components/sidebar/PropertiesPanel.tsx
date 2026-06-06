@@ -1,7 +1,9 @@
-import { type FC, useState } from 'react'
+import mojangson from 'mojangson'
+import { type FC, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   LuBold,
+  LuCircleAlert,
   LuItalic,
   LuShuffle,
   LuStrikethrough,
@@ -559,6 +561,8 @@ const ProjectProperties: FC = () => {
     })),
   )
 
+  const mainNBTValid = useMemo(() => validateSNBT(mainNBT), [mainNBT])
+
   return (
     <div className="flex flex-col gap-2">
       <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
@@ -656,9 +660,15 @@ const ProjectProperties: FC = () => {
           className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
           value={mainNBT}
           onChange={(evt) => {
-            setMainNBT(evt.target.value)
+            setMainNBT(stripWhitespace(evt.target.value))
           }}
         />
+        {!mainNBTValid && (
+          <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+            <LuCircleAlert size={20} /> The NBT value seems to be invalid.
+            Exported commands may fail.
+          </div>
+        )}
       </div>
     </div>
   )
@@ -674,6 +684,11 @@ const CommonDisplayProperties: FC = () => {
         : null
     return entity
   })
+
+  const nbtValid = useMemo(
+    () => validateSNBT(singleSelectedEntity?.nbt ?? ''),
+    [singleSelectedEntity?.nbt],
+  )
 
   if (singleSelectedEntity == null) return null
 
@@ -693,9 +708,18 @@ const CommonDisplayProperties: FC = () => {
           className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
           value={singleSelectedEntity.nbt}
           onChange={(evt) => {
-            setEntityNBT(singleSelectedEntity.id, evt.target.value)
+            setEntityNBT(
+              singleSelectedEntity.id,
+              stripWhitespace(evt.target.value),
+            )
           }}
         />
+        {singleSelectedEntity != null && !nbtValid && (
+          <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+            <LuCircleAlert size={20} /> The NBT value seems to be invalid.
+            Exported commands may fail.
+          </div>
+        )}
       </div>
     </div>
   )
@@ -735,3 +759,16 @@ const PropertiesPanel: FC = () => {
 }
 
 export default PropertiesPanel
+
+function stripWhitespace(input: string) {
+  return input.replace(/[\r\n\v]+/g, '')
+}
+
+function validateSNBT(input: string) {
+  try {
+    mojangson.parse(input)
+    return true
+  } catch {
+    return false
+  }
+}
