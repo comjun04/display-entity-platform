@@ -1,6 +1,7 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
+import mojangson, { type MojangsonList } from 'mojangson'
 import {
   type ComponentPropsWithoutRef,
   type FC,
@@ -218,7 +219,12 @@ const ExportToMinecraftDialog: FC = () => {
     })),
   )
 
-  const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
+  const { targetGameVersion, mainNBT } = useProjectStore(
+    useShallow((state) => ({
+      targetGameVersion: state.targetGameVersion,
+      mainNBT: state.mainNBT,
+    })),
+  )
 
   const [baseTag, setBaseTag] = useState('')
   const [nbtDataGenerated, setNbtDataGenerated] = useState(false)
@@ -233,7 +239,7 @@ const ExportToMinecraftDialog: FC = () => {
   // 엔티티 데이터나 태그가 바뀌었다면 커맨드를 다시 생성해야 함
   useEffect(() => {
     setNbtDataGenerated(false)
-  }, [entities, baseTag, targetGameVersion])
+  }, [entities, baseTag, mainNBT, targetGameVersion])
 
   useEffect(() => {
     if (!nbtDataGenerated && isOpen) {
@@ -241,12 +247,13 @@ const ExportToMinecraftDialog: FC = () => {
         entities,
         targetGameVersion,
         baseTag,
+        mainNBT,
       )
 
       setNbtStrings(newNbtStrings)
       setNbtDataGenerated(true)
     }
-  }, [nbtDataGenerated, isOpen, baseTag, entities, targetGameVersion])
+  }, [nbtDataGenerated, isOpen, baseTag, mainNBT, entities, targetGameVersion])
 
   const summonCommands = nbtStrings.map(
     (nbt) => `/summon block_display ~ ~ ~ ${nbt}`,
@@ -488,6 +495,7 @@ function generateNbtStrings(
   entities: Map<string, DisplayEntity>,
   targetGameVersion: string,
   baseTag: string = '',
+  mainNBT: string = '',
 ): string[] {
   const { entityRefs } = useEntityRefStore.getState()
 
@@ -505,7 +513,6 @@ function generateNbtStrings(
   // whether text is represented as SNBT rather than JSON
   const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
 
-  const tagString = baseTag.length > 0 ? `Tags:["${baseTag}"],` : ''
   const passengersStrings = [...entities.values()]
     .map((entity) => {
       // 그룹은 커맨드 생성에 들어가지 않음
@@ -601,7 +608,12 @@ function generateNbtStrings(
         specificData += `,text_opacity:${entity.textOpacity}`
       }
 
-      return `{id:"${idText}",${tagString}${specificData},transformation:[${transformationString}]}`
+      const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]}${entity.nbt.length > 0 ? ',' + entity.nbt : ''}`
+
+      // attempt to inject baseTag
+      const finalString = injectBaseTag(generatedString, baseTag, true)
+
+      return finalString
     })
     .filter((d) => d != null)
 
@@ -619,11 +631,58 @@ function generateNbtStrings(
     }
   }
 
+  const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
+
+  // TODO: remove tagString and replace with tag injection
   const newNbtStrings = groupedPassengersStrings.map(
-    (str) => `{${tagString}Passengers:[${str}]}`,
+    (str) =>
+      `{Passengers:[${str}]${tagInjectedMainNBT.length > 0 ? ',' + tagInjectedMainNBT : ''}}`,
   )
 
   return newNbtStrings
+}
+
+function injectBaseTag(
+  nbtString: string,
+  baseTag: string,
+  wrapWithBraces = false,
+) {
+  // If baseTag is empty, do nothing
+  if (baseTag.length < 1) return nbtString
+  // If nbt string is empty, create a new one
+  if (nbtString.length < 1) {
+    const tagString = `Tags:["${baseTag}"]`
+    return wrapWithBraces ? `{${tagString}}` : tagString
+  }
+
+  // If nbt string does not wrapped with curly brackets, wrap it
+  // This is necesseary to make it parsable with mojangson
+  if (!nbtString.startsWith('{')) nbtString = '{' + nbtString
+  if (!nbtString.endsWith('}')) nbtString += '}'
+
+  const parsedData = mojangson.parse(nbtString)
+  if (parsedData?.type !== 'compound') {
+    logger.warn(
+      'Failed to parse generated entity nbt string, skipping baseTag injection',
+    )
+    return nbtString
+  }
+
+  const tagListNode = parsedData.value['Tags']
+  if (tagListNode?.type !== 'list') {
+    parsedData.value['Tags'] = {
+      type: 'list',
+      value: {
+        type: 'string',
+        value: [baseTag],
+      },
+    } satisfies MojangsonList
+  } else {
+    tagListNode.value.value.push(baseTag)
+  }
+
+  const injected = mojangson.stringify(parsedData)
+  return wrapWithBraces ? injected : injected.slice(1, -1)
 }
 
 function downloadAsMcfunction(commands: string[]) {
