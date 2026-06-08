@@ -1,7 +1,10 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
-import mojangson, { type MojangsonList } from 'mojangson'
+import mojangson, {
+  type MojangsonCompound,
+  type MojangsonList,
+} from 'mojangson'
 import {
   type ComponentPropsWithoutRef,
   type FC,
@@ -9,7 +12,12 @@ import {
   useState,
 } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { LuCircleSlash, LuCopy, LuCopyCheck } from 'react-icons/lu'
+import {
+  LuCircleAlert,
+  LuCircleSlash,
+  LuCopy,
+  LuCopyCheck,
+} from 'react-icons/lu'
 import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
@@ -228,6 +236,7 @@ const ExportToMinecraftDialog: FC = () => {
 
   const [baseTag, setBaseTag] = useState('')
   const [nbtDataGenerated, setNbtDataGenerated] = useState(false)
+  const [nbtDataValid, setNbtDataValid] = useState(true)
   const [nbtStrings, setNbtStrings] = useState<string[]>([])
 
   useEffect(() => {
@@ -243,15 +252,16 @@ const ExportToMinecraftDialog: FC = () => {
 
   useEffect(() => {
     if (!nbtDataGenerated && isOpen) {
-      const newNbtStrings = generateNbtStrings(
+      const { nbtStrings, invalidNBTExist } = generateNbtStrings(
         entities,
         targetGameVersion,
         baseTag,
         mainNBT,
       )
 
-      setNbtStrings(newNbtStrings)
+      setNbtStrings(nbtStrings)
       setNbtDataGenerated(true)
+      setNbtDataValid(!invalidNBTExist)
     }
   }, [nbtDataGenerated, isOpen, baseTag, mainNBT, entities, targetGameVersion])
 
@@ -286,6 +296,13 @@ const ExportToMinecraftDialog: FC = () => {
       <div className="rounded-lg bg-neutral-700 p-2">
         <TagValidatorInput onChange={setBaseTag} />
       </div>
+
+      {!nbtDataValid && (
+        <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+          <LuCircleAlert size={20} /> Some entities or main NBT seems to be
+          invalid. Generated commands may not work.
+        </div>
+      )}
 
       <Tabs defaultValue="command" className="h-full min-h-0">
         <TabsList>
@@ -496,13 +513,17 @@ function generateNbtStrings(
   targetGameVersion: string,
   baseTag: string = '',
   mainNBT: string = '',
-): string[] {
+): {
+  nbtStrings: string[]
+  invalidNBTExist: boolean
+} {
   const { entityRefs } = useEntityRefStore.getState()
+
+  let invalidNBTExist = false
 
   const semveredGameVersion = semverCoerce(targetGameVersion)?.version
   if (semveredGameVersion == null) {
-    console.error('semveredGameVersion is null, this should not happen')
-    return []
+    throw new Error('semveredGameVersion is null, this should not happen')
   }
 
   // whether item uses data component instead of nbt
@@ -612,6 +633,10 @@ function generateNbtStrings(
 
       // attempt to inject baseTag
       const finalString = injectBaseTag(generatedString, baseTag, true)
+      if (finalString == null) {
+        invalidNBTExist = true
+        return generatedString
+      }
 
       return finalString
     })
@@ -632,14 +657,19 @@ function generateNbtStrings(
   }
 
   const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
+  if (tagInjectedMainNBT == null) {
+    invalidNBTExist = true
+  }
 
-  // TODO: remove tagString and replace with tag injection
   const newNbtStrings = groupedPassengersStrings.map(
     (str) =>
-      `{Passengers:[${str}]${tagInjectedMainNBT.length > 0 ? ',' + tagInjectedMainNBT : ''}}`,
+      `{Passengers:[${str}]${(tagInjectedMainNBT?.length ?? 0) > 0 ? ',' + tagInjectedMainNBT : mainNBT}}`,
   )
 
-  return newNbtStrings
+  return {
+    nbtStrings: newNbtStrings,
+    invalidNBTExist,
+  }
 }
 
 function injectBaseTag(
@@ -660,12 +690,18 @@ function injectBaseTag(
   if (!nbtString.startsWith('{')) nbtString = '{' + nbtString
   if (!nbtString.endsWith('}')) nbtString += '}'
 
-  const parsedData = mojangson.parse(nbtString)
-  if (parsedData?.type !== 'compound') {
-    logger.warn(
-      'Failed to parse generated entity nbt string, skipping baseTag injection',
-    )
-    return nbtString
+  let parsedData: MojangsonCompound
+  try {
+    const data = mojangson.parse(nbtString)
+    if (data?.type !== 'compound') {
+      logger.error('Failed to parse entity nbt string')
+      return null
+    }
+
+    parsedData = data
+  } catch (err) {
+    logger.error('Failed to parse entity nbt string with error.', err)
+    return null
   }
 
   const tagListNode = parsedData.value['Tags']
