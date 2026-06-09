@@ -50,6 +50,7 @@
         "command": "Commands",
         "datapack": "Data Pack"
       },
+      "invalidNBTDataExist": "Some entities seems to contain invalid NBT, or main NBT seems invalid. Generated commands may not work, or missing base tag.",
       "result": {
         "noEntities": "No display entities to export",
         "summonCommand": "Summon command {{n}}",
@@ -285,7 +286,8 @@
               "title": "Project Name"
             },
             "mainNBT": {
-              "title": "Main NBT"
+              "title": "Main NBT",
+              "invalid": "The NBT value seems to be invalid."
             }
           }
         },
@@ -317,7 +319,8 @@
           "title": "NBT",
           "properties": {
             "nbt": {
-              "title": "NBT"
+              "title": "NBT",
+              "invalid": "The NBT value seems to be invalid."
             }
           }
         }

@@ -297,8 +297,8 @@ const ExportToMinecraftDialog: FC = () => {
 
       {!nbtDataValid && (
         <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
-          <LuCircleAlert size={20} /> Some entities or main NBT seems to be
-          invalid. Generated commands may not work.
+          <LuCircleAlert size={20} />{' '}
+          {t(($) => $.dialog.exportToMinecraft.invalidNBTDataExist)}
         </div>
       )}
 

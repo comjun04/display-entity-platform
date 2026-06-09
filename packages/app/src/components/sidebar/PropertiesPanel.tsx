@@ -665,8 +665,12 @@ const ProjectProperties: FC = () => {
         />
         {!mainNBTValid && (
           <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
-            <LuCircleAlert size={20} /> The NBT value seems to be invalid.
-            Exported commands may fail.
+            <LuCircleAlert size={20} />{' '}
+            {t(
+              ($) =>
+                $.sidebar.propertiesPanel.sections.project.properties.mainNBT
+                  .invalid,
+            )}
           </div>
         )}
       </div>
@@ -699,7 +703,7 @@ const CommonDisplayProperties: FC = () => {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="">
+        <label>
           {t(
             ($) => $.sidebar.propertiesPanel.sections.nbt.properties.nbt.title,
           )}
@@ -716,8 +720,11 @@ const CommonDisplayProperties: FC = () => {
         />
         {singleSelectedEntity != null && !nbtValid && (
           <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
-            <LuCircleAlert size={20} /> The NBT value seems to be invalid.
-            Exported commands may fail.
+            <LuCircleAlert size={20} />{' '}
+            {t(
+              ($) =>
+                $.sidebar.propertiesPanel.sections.nbt.properties.nbt.invalid,
+            )}
           </div>
         )}
       </div>
