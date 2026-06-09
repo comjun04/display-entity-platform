@@ -1,10 +1,7 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
-import mojangson, {
-  type MojangsonCompound,
-  type MojangsonList,
-} from 'mojangson'
+import mojangson, { type MojangsonList } from 'mojangson'
 import {
   type ComponentPropsWithoutRef,
   type FC,
@@ -24,6 +21,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { GameVersions } from '@/constants'
 import { getLogger } from '@/lib/logger'
+import { validateSNBT } from '@/lib/nbt'
 import { downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -629,12 +627,15 @@ function generateNbtStrings(
         specificData += `,text_opacity:${entity.textOpacity}`
       }
 
-      const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]}${entity.nbt.length > 0 ? ',' + entity.nbt : ''}`
+      const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]${entity.nbt.length > 0 ? ',' + entity.nbt : ''}`
+
+      if (validateSNBT(generatedString) == null) {
+        invalidNBTExist = true
+      }
 
       // attempt to inject baseTag
       const finalString = injectBaseTag(generatedString, baseTag, true)
       if (finalString == null) {
-        invalidNBTExist = true
         return generatedString
       }
 
@@ -656,10 +657,11 @@ function generateNbtStrings(
     }
   }
 
-  const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
-  if (tagInjectedMainNBT == null) {
+  if (validateSNBT(mainNBT) == null) {
     invalidNBTExist = true
   }
+
+  const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
 
   const newNbtStrings = groupedPassengersStrings.map(
     (str) =>
@@ -685,22 +687,11 @@ function injectBaseTag(
     return wrapWithBraces ? `{${tagString}}` : tagString
   }
 
-  // If nbt string does not wrapped with curly brackets, wrap it
-  // This is necesseary to make it parsable with mojangson
-  if (!nbtString.startsWith('{')) nbtString = '{' + nbtString
-  if (!nbtString.endsWith('}')) nbtString += '}'
-
-  let parsedData: MojangsonCompound
-  try {
-    const data = mojangson.parse(nbtString)
-    if (data?.type !== 'compound') {
-      logger.error('Failed to parse entity nbt string')
-      return null
-    }
-
-    parsedData = data
-  } catch (err) {
-    logger.error('Failed to parse entity nbt string with error.', err)
+  const parsedData = validateSNBT(nbtString)
+  if (parsedData?.type !== 'compound') {
+    // logger.error(
+    //   'Failed to parse entity nbt string. Root element type is not `compound`.',
+    // )
     return null
   }
 

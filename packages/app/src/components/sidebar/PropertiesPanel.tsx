@@ -1,4 +1,3 @@
-import mojangson from 'mojangson'
 import { type FC, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -21,6 +20,7 @@ import {
   setIDEntityPlayerHeadProperties,
   setTDEntityProperties,
 } from '@/lib/entities'
+import { validateSNBT } from '@/lib/nbt'
 import { cn, isValidTextureUrl } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -561,7 +561,7 @@ const ProjectProperties: FC = () => {
     })),
   )
 
-  const mainNBTValid = useMemo(() => validateSNBT(mainNBT), [mainNBT])
+  const mainNBTValid = useMemo(() => validateSNBT(mainNBT) != null, [mainNBT])
 
   return (
     <div className="flex flex-col gap-2">
@@ -686,7 +686,7 @@ const CommonDisplayProperties: FC = () => {
   })
 
   const nbtValid = useMemo(
-    () => validateSNBT(singleSelectedEntity?.nbt ?? ''),
+    () => validateSNBT(singleSelectedEntity?.nbt ?? '') != null,
     [singleSelectedEntity?.nbt],
   )
 
@@ -762,13 +762,4 @@ export default PropertiesPanel
 
 function stripWhitespace(input: string) {
   return input.replace(/[\r\n\v]+/g, '')
-}
-
-function validateSNBT(input: string) {
-  try {
-    mojangson.parse(input)
-    return true
-  } catch {
-    return false
-  }
 }
