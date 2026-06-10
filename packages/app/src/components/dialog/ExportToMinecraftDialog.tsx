@@ -637,7 +637,7 @@ function generateNbtStrings(
         specificData += `,text_opacity:${entity.textOpacity}`
       }
 
-      const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]${entity.nbt.length > 0 ? ',' + entity.nbt : ''}`
+      const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]${entity.nbt.length > 0 ? ',' + entity.nbt : ''}}`
 
       if (validateSNBT(generatedString) == null) {
         invalidNBTExist = true
