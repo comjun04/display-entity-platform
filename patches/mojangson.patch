@@ -1,0 +1,13 @@
+diff --git a/index.js b/index.js
+index 653d6d0f9e7e2aeeb872ce306233071917082b4e..61553637bc527d0175bb1f69e1268f9f1c9f3a5a 100644
+--- a/index.js
++++ b/index.js
+@@ -37,6 +37,8 @@ function stringify ({ value, type }) {
+     const prefix = getArrayPrefix(type)
+     const arrayElements = getArrayValues(value)
+     return `[${prefix}${arrayElements}]`
++  } else if (type === 'boolean') {
++    return value.toString()
+   }
+   let str = value + getSuffix(value, type)
+   if (type === 'string') str = normalizeString(str)

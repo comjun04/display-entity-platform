@@ -9,6 +9,9 @@ overrides:
   troika-three-text: ^0.52.4
 
 patchedDependencies:
+  mojangson:
+    hash: gmrzk7uiuu4ga32s3t5fyns5nm
+    path: patches/mojangson.patch
   three-stdlib@2.36.0:
     hash: d5xzmx5evfkaixlnidejtii7zm
     path: patches/three-stdlib@2.36.0.patch
@@ -79,7 +82,7 @@ importers:
         version: 4.17.21
       mojangson:
         specifier: ^2.0.4
-        version: 2.0.4
+        version: 2.0.4(patch_hash=gmrzk7uiuu4ga32s3t5fyns5nm)
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
@@ -5998,7 +6001,7 @@ snapshots:
 
   minipass@7.1.2: {}
 
-  mojangson@2.0.4:
+  mojangson@2.0.4(patch_hash=gmrzk7uiuu4ga32s3t5fyns5nm):
     dependencies:
       nearley: 2.20.1
 
