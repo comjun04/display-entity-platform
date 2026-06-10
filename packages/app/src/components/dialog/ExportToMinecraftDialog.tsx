@@ -22,7 +22,7 @@ import { useShallow } from 'zustand/shallow'
 import { GameVersions } from '@/constants'
 import { getLogger } from '@/lib/logger'
 import { validateSNBT } from '@/lib/nbt'
-import { downloadFile } from '@/lib/utils'
+import { cn, downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
@@ -268,12 +268,13 @@ const ExportToMinecraftDialog: FC = () => {
   const summonCommands = nbtStrings.map(
     (nbt) => `/summon block_display ~ ~ ~ ${nbt}`,
   )
+  const summonCommandsExist = summonCommands.length > 0
   const removeCommand = `/kill @e[${baseTag.length > 0 ? `tag=${baseTag}` : 'type=block_display'},distance=..2]`
 
   const [commandListParentRef, setCommandListParentRef] =
     useState<HTMLDivElement | null>(null)
   const virtualizer = useVirtualizer({
-    count: summonCommands.length + 1,
+    count: summonCommandsExist ? summonCommands.length + 1 : 0,
     getScrollElement: () => commandListParentRef,
     estimateSize: () => 60,
     overscan: 5,
@@ -333,7 +334,7 @@ const ExportToMinecraftDialog: FC = () => {
           )}
 
           <div
-            className="overflow-y-auto"
+            className={cn('overflow-y-auto', summonCommandsExist && 'h-full')}
             ref={(element) => setCommandListParentRef(element)}
           >
             <div
