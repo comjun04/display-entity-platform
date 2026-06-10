@@ -52,6 +52,8 @@ import Dialog from './Dialog'
 
 const logger = getLogger('ExportToMinecraftDialog')
 
+const COMMAND_BLOCK_MAX_COMMAND_LENGTH = 32500
+
 type CopyButtonProps = ComponentPropsWithoutRef<'button'> & {
   valueToCopy: string
 }
@@ -532,6 +534,14 @@ function generateNbtStrings(
   // whether text is represented as SNBT rather than JSON
   const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
 
+  // =====
+
+  // validate mainNBT and inject baseTag first
+  if (validateSNBT(mainNBT) == null) {
+    invalidNBTExist = true
+  }
+  const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
+
   const passengersStrings = [...entities.values()]
     .map((entity) => {
       // 그룹은 커맨드 생성에 들어가지 않음
@@ -644,16 +654,24 @@ function generateNbtStrings(
     .filter((d) => d != null)
 
   let le = Infinity
+  const baseCommandLength =
+    `/summon block_display ~ ~ ~ {${tagInjectedMainNBT},Passengers:[]}`.length
   const groupedPassengersStrings: string[] = []
   for (const passengersStr of passengersStrings) {
-    // 32500 (max command length in command block) - 60 (length of `/summon block_display ~ ~ ~ {Tags:[""],Passengers:[]}` + alpha) - baseTag length
-    if (le + passengersStr.length > 32440 - baseTag.length) {
-      groupedPassengersStrings.push(passengersStr)
-      le = passengersStr.length + 1
-    } else {
+    if (
+      baseCommandLength + le + passengersStr.length <=
+      COMMAND_BLOCK_MAX_COMMAND_LENGTH
+    ) {
+      // split to another summon command if adding up to current entity nbt data
+      // overflows the 32500 command block command max length
       groupedPassengersStrings[groupedPassengersStrings.length - 1] +=
         ',' + passengersStr
-      le += passengersStr.length + 1
+      le += passengersStr.length + 1 // length including leading `,`
+    } else {
+      // if adding up to current entity nbt data does not overflow the limit
+      // then just add to the last summon command
+      groupedPassengersStrings.push(passengersStr)
+      le = passengersStr.length
     }
   }
 
@@ -661,12 +679,12 @@ function generateNbtStrings(
     invalidNBTExist = true
   }
 
-  const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
-
-  const newNbtStrings = groupedPassengersStrings.map(
-    (str) =>
-      `{Passengers:[${str}]${(tagInjectedMainNBT?.length ?? 0) > 0 ? ',' + tagInjectedMainNBT : mainNBT}}`,
-  )
+  const newNbtStrings = groupedPassengersStrings.map((str) => {
+    const inner = [tagInjectedMainNBT, `Passengers:[${str}]`]
+      .filter((str) => str != null && str.length > 0)
+      .join(',')
+    return '{' + inner + '}'
+  })
 
   return {
     nbtStrings: newNbtStrings,
