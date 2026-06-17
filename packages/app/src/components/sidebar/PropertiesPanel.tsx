@@ -1,7 +1,8 @@
-import { type FC, useState } from 'react'
+import { type FC, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   LuBold,
+  LuCircleAlert,
   LuItalic,
   LuShuffle,
   LuStrikethrough,
@@ -13,11 +14,13 @@ import { BackendHost, GameVersions } from '@/constants'
 import useBlockStates from '@/hooks/useBlockStates'
 import {
   setBDEntityBlockstates,
+  setEntityNBT,
   setGroupName,
   setIDEntityDisplayType,
   setIDEntityPlayerHeadProperties,
   setTDEntityProperties,
 } from '@/lib/entities'
+import { validateSNBT } from '@/lib/nbt'
 import { cn, isValidTextureUrl } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -541,13 +544,24 @@ const GroupProperties: FC = () => {
 const ProjectProperties: FC = () => {
   const { t } = useTranslation()
 
-  const { targetGameVersion, projectName, setProjectName } = useProjectStore(
+  const {
+    targetGameVersion,
+    projectName,
+    setProjectName,
+    mainNBT,
+    setMainNBT,
+  } = useProjectStore(
     useShallow((state) => ({
       targetGameVersion: state.targetGameVersion,
       projectName: state.projectName,
       setProjectName: state.setProjectName,
+
+      mainNBT: state.mainNBT,
+      setMainNBT: state.setMainNBT,
     })),
   )
+
+  const mainNBTValid = useMemo(() => validateSNBT(mainNBT) != null, [mainNBT])
 
   return (
     <div className="flex flex-col gap-2">
@@ -633,6 +647,87 @@ const ProjectProperties: FC = () => {
           ))}
         </select>
       </div>
+
+      <div className="flex flex-col gap-2">
+        <label>
+          {t(
+            ($) =>
+              $.sidebar.propertiesPanel.sections.project.properties.mainNBT
+                .title,
+          )}
+        </label>
+        <textarea
+          className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
+          value={mainNBT}
+          onChange={(evt) => {
+            setMainNBT(stripWhitespace(evt.target.value))
+          }}
+        />
+        {!mainNBTValid && (
+          <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+            <LuCircleAlert size={20} />{' '}
+            {t(
+              ($) =>
+                $.sidebar.propertiesPanel.sections.project.properties.mainNBT
+                  .invalid,
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const CommonDisplayProperties: FC = () => {
+  const { t } = useTranslation()
+
+  const singleSelectedEntity = useDisplayEntityStore((state) => {
+    const entity =
+      state.selectedEntityIds.length === 1
+        ? state.entities.get(state.selectedEntityIds[0])!
+        : null
+    return entity
+  })
+
+  const nbtValid = useMemo(
+    () => validateSNBT(singleSelectedEntity?.nbt ?? '') != null,
+    [singleSelectedEntity?.nbt],
+  )
+
+  if (singleSelectedEntity == null) return null
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+        {t(($) => $.sidebar.propertiesPanel.sections.nbt.title)}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label>
+          {t(
+            ($) => $.sidebar.propertiesPanel.sections.nbt.properties.nbt.title,
+          )}
+        </label>
+        <textarea
+          className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
+          value={singleSelectedEntity.nbt}
+          onChange={(evt) => {
+            setEntityNBT(
+              singleSelectedEntity.id,
+              stripWhitespace(evt.target.value),
+            )
+          }}
+        />
+        {singleSelectedEntity != null && !nbtValid && (
+          <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+            <LuCircleAlert size={20} />{' '}
+            {t(
+              ($) =>
+                $.sidebar.propertiesPanel.sections.nbt.properties.nbt.invalid,
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -656,11 +751,13 @@ const PropertiesPanel: FC = () => {
       <SidePanelTitle>
         {t(($) => $.sidebar.propertiesPanel.title)}
       </SidePanelTitle>
-      <SidePanelContent>
+      <SidePanelContent className="flex flex-col gap-2">
         {singleSelectedEntity?.kind === 'block' && <BlockDisplayProperties />}
         {singleSelectedEntity?.kind === 'item' && <ItemDisplayProperties />}
         {singleSelectedEntity?.kind === 'text' && <TextDisplayProperties />}
         {singleSelectedEntity?.kind === 'group' && <GroupProperties />}
+
+        {singleSelectedEntity != null && <CommonDisplayProperties />}
 
         {singleSelectedEntity == null && <ProjectProperties />}
       </SidePanelContent>
@@ -669,3 +766,7 @@ const PropertiesPanel: FC = () => {
 }
 
 export default PropertiesPanel
+
+function stripWhitespace(input: string) {
+  return input.replace(/[\r\n\v]+/g, '')
+}

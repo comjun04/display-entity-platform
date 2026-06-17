@@ -35,6 +35,10 @@ export function importDeplProjectFrom(items: DisplayEntitySaveDataItem[]) {
         tempEuler.z,
       ] satisfies Number3Tuple
 
+      // savedata v6 -> v7
+      // set nbt value to empty string if not exist
+      const nbt = item.nbt ?? ''
+
       if (item.kind === 'group') {
         const children = item.children ?? []
         const childrenIds = f(children, id)
@@ -49,6 +53,7 @@ export function importDeplProjectFrom(items: DisplayEntitySaveDataItem[]) {
           position,
           rotation,
           size: scale,
+          nbt,
           children: childrenIds,
           parent: parentEntityId,
           name: groupName,
@@ -65,6 +70,7 @@ export function importDeplProjectFrom(items: DisplayEntitySaveDataItem[]) {
           position,
           rotation,
           size: scale,
+          nbt,
           parent: parentEntityId,
           blockstates: item.blockstates,
           display: item.display,
@@ -77,6 +83,7 @@ export function importDeplProjectFrom(items: DisplayEntitySaveDataItem[]) {
           position,
           rotation,
           size: scale,
+          nbt,
           parent: parentEntityId,
           display: item.display,
         })
@@ -110,6 +117,7 @@ export function importDeplProjectFrom(items: DisplayEntitySaveDataItem[]) {
           position,
           rotation,
           size: scale,
+          nbt,
           parent: parentEntityId,
           text: item.text,
           textColor: item.textColor,

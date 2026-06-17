@@ -126,6 +126,7 @@ export type BaseDisplayEntity = {
   size: Number3Tuple
   position: Number3Tuple
   rotation: Number3Tuple
+  nbt: string
 }
 
 export type BlockDisplayEntity = BaseDisplayEntity & {
@@ -198,10 +199,13 @@ export type DisplayEntity =
 export type DisplayEntitySaveDataItem = {
   transforms: Matrix4Tuple
 } & (
-  | Pick<BlockDisplayEntity, 'kind' | 'type' | 'blockstates' | 'display'>
+  | Pick<
+      BlockDisplayEntity,
+      'kind' | 'type' | 'blockstates' | 'display' | 'nbt'
+    >
   | Omit<ItemDisplayEntity, 'id' | 'parent' | 'position' | 'rotation' | 'size'>
   | Omit<TextDisplayEntity, 'id' | 'parent' | 'position' | 'rotation' | 'size'>
-  | (Pick<DisplayEntityGroup, 'kind' | 'name'> & {
+  | (Pick<DisplayEntityGroup, 'kind' | 'name' | 'nbt'> & {
       children: DisplayEntitySaveDataItem[]
     })
 )

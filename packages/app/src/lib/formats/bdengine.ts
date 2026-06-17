@@ -71,6 +71,7 @@ export async function importBDEngineProjectFrom(saveData: BDEngineSaveData) {
             position,
             rotation,
             size: scale,
+            nbt: item.nbt,
             children: childrenIds.filter((id) => id != null),
             parent: parentEntityId,
             name: item.name,
@@ -85,6 +86,7 @@ export async function importBDEngineProjectFrom(saveData: BDEngineSaveData) {
             position,
             rotation,
             size: scale,
+            nbt: item.nbt,
             parent: parentEntityId,
             blockstates: extraData,
             display: extraData['display'] as ModelDisplayPositionKey,
@@ -99,6 +101,7 @@ export async function importBDEngineProjectFrom(saveData: BDEngineSaveData) {
             position,
             rotation,
             size: scale,
+            nbt: item.nbt,
             parent: parentEntityId,
             display: extraData['display'] as ModelDisplayPositionKey,
           })
@@ -164,6 +167,7 @@ export async function importBDEngineProjectFrom(saveData: BDEngineSaveData) {
             position,
             rotation,
             size: scale,
+            nbt: item.nbt,
             parent: parentEntityId,
 
             text: item.name,
@@ -234,7 +238,7 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
         name: entity.type + extraDataStr,
         transforms,
         brightness: { sky: 15, block: 15 },
-        nbt: '',
+        nbt: entity.nbt,
       } satisfies BDEngineBlockDisplay
     } else if (entity.kind === 'item') {
       let playerHeadDefaultTextureValue: string | undefined = undefined
@@ -276,7 +280,7 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
         name: entity.type + extraDataStr,
         transforms,
         brightness: { sky: 15, block: 15 },
-        nbt: '',
+        nbt: entity.nbt,
 
         // player_head specific
         defaultTextureValue: playerHeadDefaultTextureValue,
@@ -300,7 +304,7 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
         name: entity.text,
         transforms,
         brightness: { sky: 15, block: 15 },
-        nbt: '',
+        nbt: entity.nbt,
         options: {
           bold: entity.textEffects.bold,
           italic: entity.textEffects.italic,
@@ -328,7 +332,7 @@ export function exportBDEProject(entities: Map<string, DisplayEntity>) {
         transforms,
         children,
         brightness: { sky: 15, block: 15 },
-        nbt: '',
+        nbt: entity.nbt,
       } satisfies BDEngineCollection
     }
 

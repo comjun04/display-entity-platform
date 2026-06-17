@@ -1,6 +1,7 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
+import mojangson, { type MojangsonList } from 'mojangson'
 import {
   type ComponentPropsWithoutRef,
   type FC,
@@ -8,13 +9,19 @@ import {
   useState,
 } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { LuCircleSlash, LuCopy, LuCopyCheck } from 'react-icons/lu'
+import {
+  LuCircleAlert,
+  LuCircleSlash,
+  LuCopy,
+  LuCopyCheck,
+} from 'react-icons/lu'
 import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
 import { GameVersions } from '@/constants'
 import { getLogger } from '@/lib/logger'
+import { validateSNBT } from '@/lib/nbt'
 import { downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -44,6 +51,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import Dialog from './Dialog'
 
 const logger = getLogger('ExportToMinecraftDialog')
+
+const COMMAND_BLOCK_MAX_COMMAND_LENGTH = 32500
 
 type CopyButtonProps = ComponentPropsWithoutRef<'button'> & {
   valueToCopy: string
@@ -218,10 +227,16 @@ const ExportToMinecraftDialog: FC = () => {
     })),
   )
 
-  const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
+  const { targetGameVersion, mainNBT } = useProjectStore(
+    useShallow((state) => ({
+      targetGameVersion: state.targetGameVersion,
+      mainNBT: state.mainNBT,
+    })),
+  )
 
   const [baseTag, setBaseTag] = useState('')
   const [nbtDataGenerated, setNbtDataGenerated] = useState(false)
+  const [nbtDataValid, setNbtDataValid] = useState(true)
   const [nbtStrings, setNbtStrings] = useState<string[]>([])
 
   useEffect(() => {
@@ -233,20 +248,22 @@ const ExportToMinecraftDialog: FC = () => {
   // 엔티티 데이터나 태그가 바뀌었다면 커맨드를 다시 생성해야 함
   useEffect(() => {
     setNbtDataGenerated(false)
-  }, [entities, baseTag, targetGameVersion])
+  }, [entities, baseTag, mainNBT, targetGameVersion])
 
   useEffect(() => {
     if (!nbtDataGenerated && isOpen) {
-      const newNbtStrings = generateNbtStrings(
+      const { nbtStrings, invalidNBTExist } = generateNbtStrings(
         entities,
         targetGameVersion,
         baseTag,
+        mainNBT,
       )
 
-      setNbtStrings(newNbtStrings)
+      setNbtStrings(nbtStrings)
       setNbtDataGenerated(true)
+      setNbtDataValid(!invalidNBTExist)
     }
-  }, [nbtDataGenerated, isOpen, baseTag, entities, targetGameVersion])
+  }, [nbtDataGenerated, isOpen, baseTag, mainNBT, entities, targetGameVersion])
 
   const summonCommands = nbtStrings.map(
     (nbt) => `/summon block_display ~ ~ ~ ${nbt}`,
@@ -279,6 +296,13 @@ const ExportToMinecraftDialog: FC = () => {
       <div className="rounded-lg bg-neutral-700 p-2">
         <TagValidatorInput onChange={setBaseTag} />
       </div>
+
+      {!nbtDataValid && (
+        <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+          <LuCircleAlert size={20} />{' '}
+          {t(($) => $.dialog.exportToMinecraft.invalidNBTDataExist)}
+        </div>
+      )}
 
       <Tabs defaultValue="command" className="h-full min-h-0">
         <TabsList>
@@ -488,13 +512,18 @@ function generateNbtStrings(
   entities: Map<string, DisplayEntity>,
   targetGameVersion: string,
   baseTag: string = '',
-): string[] {
+  mainNBT: string = '',
+): {
+  nbtStrings: string[]
+  invalidNBTExist: boolean
+} {
   const { entityRefs } = useEntityRefStore.getState()
+
+  let invalidNBTExist = false
 
   const semveredGameVersion = semverCoerce(targetGameVersion)?.version
   if (semveredGameVersion == null) {
-    console.error('semveredGameVersion is null, this should not happen')
-    return []
+    throw new Error('semveredGameVersion is null, this should not happen')
   }
 
   // whether item uses data component instead of nbt
@@ -505,7 +534,14 @@ function generateNbtStrings(
   // whether text is represented as SNBT rather than JSON
   const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
 
-  const tagString = baseTag.length > 0 ? `Tags:["${baseTag}"],` : ''
+  // =====
+
+  // validate mainNBT and inject baseTag first
+  if (validateSNBT(mainNBT) == null) {
+    invalidNBTExist = true
+  }
+  const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
+
   const passengersStrings = [...entities.values()]
     .map((entity) => {
       // 그룹은 커맨드 생성에 들어가지 않음
@@ -601,29 +637,97 @@ function generateNbtStrings(
         specificData += `,text_opacity:${entity.textOpacity}`
       }
 
-      return `{id:"${idText}",${tagString}${specificData},transformation:[${transformationString}]}`
+      const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]${entity.nbt.length > 0 ? ',' + entity.nbt : ''}}`
+
+      if (validateSNBT(generatedString) == null) {
+        invalidNBTExist = true
+      }
+
+      // attempt to inject baseTag
+      const finalString = injectBaseTag(generatedString, baseTag, true)
+      if (finalString == null) {
+        return generatedString
+      }
+
+      return finalString
     })
     .filter((d) => d != null)
 
   let le = Infinity
+  const baseCommandLength =
+    `/summon block_display ~ ~ ~ {${tagInjectedMainNBT},Passengers:[]}`.length
   const groupedPassengersStrings: string[] = []
   for (const passengersStr of passengersStrings) {
-    // 32500 (max command length in command block) - 60 (length of `/summon block_display ~ ~ ~ {Tags:[""],Passengers:[]}` + alpha) - baseTag length
-    if (le + passengersStr.length > 32440 - baseTag.length) {
-      groupedPassengersStrings.push(passengersStr)
-      le = passengersStr.length + 1
-    } else {
+    if (
+      baseCommandLength + le + passengersStr.length <=
+      COMMAND_BLOCK_MAX_COMMAND_LENGTH
+    ) {
+      // split to another summon command if adding up to current entity nbt data
+      // overflows the 32500 command block command max length
       groupedPassengersStrings[groupedPassengersStrings.length - 1] +=
         ',' + passengersStr
-      le += passengersStr.length + 1
+      le += passengersStr.length + 1 // length including leading `,`
+    } else {
+      // if adding up to current entity nbt data does not overflow the limit
+      // then just add to the last summon command
+      groupedPassengersStrings.push(passengersStr)
+      le = passengersStr.length
     }
   }
 
-  const newNbtStrings = groupedPassengersStrings.map(
-    (str) => `{${tagString}Passengers:[${str}]}`,
-  )
+  if (validateSNBT(mainNBT) == null) {
+    invalidNBTExist = true
+  }
 
-  return newNbtStrings
+  const newNbtStrings = groupedPassengersStrings.map((str) => {
+    const inner = [tagInjectedMainNBT, `Passengers:[${str}]`]
+      .filter((str) => str != null && str.length > 0)
+      .join(',')
+    return '{' + inner + '}'
+  })
+
+  return {
+    nbtStrings: newNbtStrings,
+    invalidNBTExist,
+  }
+}
+
+function injectBaseTag(
+  nbtString: string,
+  baseTag: string,
+  wrapWithBraces = false,
+) {
+  // If baseTag is empty, do nothing
+  if (baseTag.length < 1) return nbtString
+  // If nbt string is empty, create a new one
+  if (nbtString.length < 1) {
+    const tagString = `Tags:["${baseTag}"]`
+    return wrapWithBraces ? `{${tagString}}` : tagString
+  }
+
+  const parsedData = validateSNBT(nbtString)
+  if (parsedData?.type !== 'compound') {
+    // logger.error(
+    //   'Failed to parse entity nbt string. Root element type is not `compound`.',
+    // )
+    return null
+  }
+
+  const tagListNode = parsedData.value['Tags']
+  if (tagListNode?.type !== 'list') {
+    parsedData.value['Tags'] = {
+      type: 'list',
+      value: {
+        type: 'string',
+        value: [baseTag],
+      },
+    } satisfies MojangsonList
+  } else {
+    tagListNode.value.value.push(baseTag)
+  }
+
+  const injected = mojangson.stringify(parsedData)
+  return wrapWithBraces ? injected : injected.slice(1, -1)
 }
 
 function downloadAsMcfunction(commands: string[]) {
