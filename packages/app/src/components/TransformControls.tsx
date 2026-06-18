@@ -375,12 +375,13 @@ const TransformControls: FC = () => {
           // state를 건드리기 전에 object3d에 먼저 scale 값을 세팅해야 음수 값일 경우 음수 <-> 양수로 계속 바뀌면서 생기는 깜빡거림을 방지할 수 있음
           target.object.scale.fromArray(absoluteScale)
 
+          const pivotQuat = pivot.quaternion.clone()
+          const pivotQuatDelta = pivotQuat
+            .clone()
+            .multiply(pivotInitialQuaternion.current.clone().invert())
+
           const pivotWorldQuat = new Quaternion()
           pivot.getWorldQuaternion(pivotWorldQuat)
-          // pivot quaternion currently moving - pivot quaternion before moving (all in world space)
-          const pivotQuatDeltaWorld = pivotWorldQuat
-            .clone()
-            .multiply(pivotInitialQuaternionWorld.current.clone().invert())
 
           // share objects inside loop instead of creating new one every iteration
           const relativePosFromPivot = new Vector3()
@@ -390,41 +391,33 @@ const TransformControls: FC = () => {
           const alteredScale = new Vector3()
           const scaleToApply = new Vector3()
 
+          const sharedParent =
+            selectedEntityInitialTransformations.current[0].object.parent!
+
           // 1. Get the shared parent's world quaternion
           const parentQuatWorld = new Quaternion()
-          selectedEntityInitialTransformations.current[0].object.parent!.getWorldQuaternion(
-            parentQuatWorld,
-          )
-          // 2. Precompute conversion (used for all children)
-          const parentQuatWorldInv = parentQuatWorld.clone().invert()
+          sharedParent.getWorldQuaternion(parentQuatWorld)
 
+          // 2. Precompute conversion (used for all children)
           for (const transformData of selectedEntityInitialTransformations.current) {
             if (mode !== 'scale') {
               relativePosFromPivot
                 .copy(transformData.position)
                 .sub(pivotInitialPosition.current)
 
-              /**
-               * localQ = parentWorldQ⁻¹ * newWorldQ
-               * newWorldQ = worldDeltaQ * currentWorldQ
-               * currentWorldQ = parentWorldQ * object.localQ
-               *
-               * newLocalQ = parentWorldQ⁻¹ * worldDeltaQ * parentWorldQ * object.localQ
-               */
-              newQuat
-                .copy(parentQuatWorldInv)
-                .multiply(pivotQuatDeltaWorld)
-                .multiply(parentQuatWorld)
-                .multiply(transformData.quaternion)
-              transformData.object.quaternion.copy(newQuat)
+              if (mode === 'rotate') {
+                // apply pivot quaternion delta to object initial quaternion
+                newQuat.copy(pivotQuatDelta).multiply(transformData.quaternion)
+                transformData.object.quaternion.copy(newQuat)
+              }
 
-              // =====
+              // FIXME: rotating an object inside scaled parent makes object stretched when rotated
 
               newPos
                 .copy(relativePosFromPivot)
-                .applyQuaternion(pivotQuatDeltaWorld)
-                .multiply(pivot.scale)
+                .applyQuaternion(pivotQuatDelta)
                 .add(pivot.position)
+
               transformData.object.position.copy(newPos)
             } else {
               alteredScale.copy(transformData.scale).multiply(pivot.scale)
