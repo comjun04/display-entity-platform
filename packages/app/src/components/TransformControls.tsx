@@ -257,7 +257,7 @@ const TransformControls: FC = () => {
         mode={mode}
         space={rotationSpace}
         translationSnap={shiftPressed ? 0.00125 : 0.0625}
-        rotationSnap={Math.PI / 12} // 15도
+        rotationSnap={shiftPressed ? Math.PI / 180 : Math.PI / 12} // 1deg when shift pressed, 15deg otherwise
         scaleSnap={0.0625}
         // visible={selectedEntity != null} // 왜인지 모르겠는데 작동 안함
         showX={selectedEntityIds.length > 0}
