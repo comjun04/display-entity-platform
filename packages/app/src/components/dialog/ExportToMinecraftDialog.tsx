@@ -1,7 +1,7 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
-import mojangson, { type MojangsonList } from 'mojangson'
+import mojangson, { type MojangsonList, type MojangsonNode } from 'mojangson'
 import {
   type ComponentPropsWithoutRef,
   type FC,
@@ -538,10 +538,12 @@ function generateNbtStrings(
   // =====
 
   // validate mainNBT and inject baseTag first
-  if (validateSNBT(mainNBT) == null) {
+  const mainNbtTree = validateSNBT(mainNBT)
+  if (mainNbtTree == null) {
     invalidNBTExist = true
   }
-  const tagInjectedMainNBT = injectBaseTag(mainNBT, baseTag, false)
+  const tagInjectedMainNBT =
+    mainNbtTree != null ? injectBaseTag(mainNbtTree, baseTag, false) : mainNBT
 
   const passengersStrings = [...entities.values()]
     .map((entity) => {
@@ -640,12 +642,14 @@ function generateNbtStrings(
 
       const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]${entity.nbt.length > 0 ? ',' + entity.nbt : ''}}`
 
-      if (validateSNBT(generatedString) == null) {
+      const nbtTree = validateSNBT(generatedString)
+      if (nbtTree == null) {
         invalidNBTExist = true
+        return generatedString
       }
 
       // attempt to inject baseTag
-      const finalString = injectBaseTag(generatedString, baseTag, true)
+      const finalString = injectBaseTag(nbtTree, baseTag, true)
       if (finalString == null) {
         return generatedString
       }
@@ -676,10 +680,6 @@ function generateNbtStrings(
     }
   }
 
-  if (validateSNBT(mainNBT) == null) {
-    invalidNBTExist = true
-  }
-
   const newNbtStrings = groupedPassengersStrings.map((str) => {
     const inner = [tagInjectedMainNBT, `Passengers:[${str}]`]
       .filter((str) => str != null && str.length > 0)
@@ -694,40 +694,33 @@ function generateNbtStrings(
 }
 
 function injectBaseTag(
-  nbtString: string,
+  nbtTree: MojangsonNode,
   baseTag: string,
   wrapWithBraces = false,
 ) {
-  // If baseTag is empty, do nothing
-  if (baseTag.length < 1) return nbtString
-  // If nbt string is empty, create a new one
-  if (nbtString.length < 1) {
-    const tagString = `Tags:["${baseTag}"]`
-    return wrapWithBraces ? `{${tagString}}` : tagString
-  }
-
-  const parsedData = validateSNBT(nbtString)
-  if (parsedData?.type !== 'compound') {
+  if (nbtTree.type !== 'compound') {
     // logger.error(
     //   'Failed to parse entity nbt string. Root element type is not `compound`.',
     // )
     return null
   }
 
-  const tagListNode = parsedData.value['Tags']
-  if (tagListNode?.type !== 'list') {
-    parsedData.value['Tags'] = {
-      type: 'list',
-      value: {
-        type: 'string',
-        value: [baseTag],
-      },
-    } satisfies MojangsonList
-  } else {
-    tagListNode.value.value.push(baseTag)
+  if (baseTag.length > 0) {
+    const tagListNode = nbtTree.value['Tags']
+    if (tagListNode?.type !== 'list') {
+      nbtTree.value['Tags'] = {
+        type: 'list',
+        value: {
+          type: 'string',
+          value: [baseTag],
+        },
+      } satisfies MojangsonList
+    } else {
+      tagListNode.value.value.push(baseTag)
+    }
   }
 
-  const injected = mojangson.stringify(parsedData)
+  const injected = mojangson.stringify(nbtTree)
   return wrapWithBraces ? injected : injected.slice(1, -1)
 }
 
