@@ -24,6 +24,7 @@ import { validateSNBT } from '@/lib/nbt'
 import { cn, isValidTextureUrl } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type {
@@ -560,8 +561,14 @@ const ProjectProperties: FC = () => {
       setMainNBT: state.setMainNBT,
     })),
   )
+  const nbtValidationEnabled = useEditorStore(
+    (state) => state.settings.general.validateNbtInput,
+  )
 
-  const mainNBTValid = useMemo(() => validateSNBT(mainNBT) != null, [mainNBT])
+  const mainNBTValid = useMemo(
+    () => (nbtValidationEnabled ? validateSNBT(mainNBT) != null : true),
+    [mainNBT, nbtValidationEnabled],
+  )
 
   return (
     <div className="flex flex-col gap-2">
@@ -688,10 +695,16 @@ const CommonDisplayProperties: FC = () => {
         : null
     return entity
   })
+  const nbtValidationEnabled = useEditorStore(
+    (state) => state.settings.general.validateNbtInput,
+  )
 
   const nbtValid = useMemo(
-    () => validateSNBT(singleSelectedEntity?.nbt ?? '') != null,
-    [singleSelectedEntity?.nbt],
+    () =>
+      nbtValidationEnabled
+        ? validateSNBT(singleSelectedEntity?.nbt ?? '') != null
+        : true,
+    [singleSelectedEntity?.nbt, nbtValidationEnabled],
   )
 
   if (singleSelectedEntity == null) return null

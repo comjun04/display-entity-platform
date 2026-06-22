@@ -91,7 +91,11 @@
           "options": {
             "language": "Language",
             "showWelcomeOnStartup": "Show Welcome on Startup",
-            "forceUnifont": "Force Unicode font (Unifont)"
+            "forceUnifont": "Force Unicode font (Unifont)",
+            "validateNbtInput": {
+              "title": "Validate NBT Input (Slow)",
+              "desc": "The editor will parse and validate project main NBT and per-entity NBT values, and warn if values are invalid. This may slow down command generation on large projects."
+            }
           }
         },
         "appearance": {
