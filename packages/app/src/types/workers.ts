@@ -1,3 +1,8 @@
+// headBaker
+import type { Matrix4Tuple } from 'three'
+
+import type { DisplayEntity } from './base'
+
 export type HeadBakerJob = {
   jobId?: string
   entityId: string
@@ -64,3 +69,27 @@ export type HeadBakerWorkerResponse =
           }
       ))[]
     }
+
+// exportedNbtGenerator
+export type ExportedNBTGeneratorWorkerMessage_GeneratePayload = {
+  entity: DisplayEntity
+  worldMatrix: Matrix4Tuple // row-major world matrix of that entity
+}
+
+export interface ExportedNBTGeneratorWorkerMessage {
+  cmd: 'generate'
+  data: {
+    payload: Map<string, ExportedNBTGeneratorWorkerMessage_GeneratePayload>
+    targetGameVersion: string
+    baseTag: string
+    mainNBT: string
+  }
+}
+
+export interface ExportedNBTGeneratorWorkerResponse {
+  type: 'data'
+  data: {
+    nbtStrings: string[]
+    invalidNBTExist: boolean
+  }
+}
