@@ -374,7 +374,17 @@ const ExportToMinecraftDialog: FC = () => {
         </TabsList>
 
         <TabsContent value="command" className="flex min-h-0 flex-col gap-2">
-          {nbtStrings.length > 0 && (
+          {nbtDataGenerating &&
+            Array(10)
+              .fill(0)
+              .map((_, idx) => (
+                <div
+                  key={idx}
+                  className="h-8 w-full animate-pulse rounded bg-neutral-800"
+                />
+              ))}
+
+          {!nbtDataGenerating && nbtStrings.length > 0 && (
             <div className="flex gap-2">
               <Button onClick={() => downloadAsMcfunction(summonCommands)}>
                 Download summon .mcfunction
@@ -382,7 +392,7 @@ const ExportToMinecraftDialog: FC = () => {
             </div>
           )}
 
-          {nbtStrings.length < 1 && (
+          {!nbtDataGenerating && nbtStrings.length < 1 && (
             <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
               <LuCircleSlash size={48} className="" />
               <span className="text-center text-lg">
@@ -392,7 +402,11 @@ const ExportToMinecraftDialog: FC = () => {
           )}
 
           <div
-            className={cn('overflow-y-auto', summonCommandsExist && 'h-full')}
+            className={cn(
+              'overflow-y-auto',
+              summonCommandsExist && 'h-full',
+              nbtDataGenerating && 'hidden',
+            )}
             ref={(element) => setCommandListParentRef(element)}
           >
             <div
