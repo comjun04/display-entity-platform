@@ -25,6 +25,7 @@ import { validateSNBT } from '@/lib/nbt'
 import { cn, downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type {
@@ -251,13 +252,17 @@ const ExportToMinecraftDialog: FC = () => {
   }, [entities, baseTag, mainNBT, targetGameVersion])
 
   useEffect(() => {
+    const nbtValidationEnabled =
+      useEditorStore.getState().settings.general.validateNbtInput
+
     if (!nbtDataGenerated && isOpen) {
-      const { nbtStrings, invalidNBTExist } = generateNbtStrings(
+      const { nbtStrings, invalidNBTExist } = generateNbtStrings({
         entities,
         targetGameVersion,
         baseTag,
         mainNBT,
-      )
+        validateNBT: nbtValidationEnabled,
+      })
 
       setNbtStrings(nbtStrings)
       setNbtDataGenerated(true)
@@ -509,12 +514,19 @@ const ExportToMinecraftDialog: FC = () => {
   )
 }
 
-function generateNbtStrings(
-  entities: Map<string, DisplayEntity>,
-  targetGameVersion: string,
-  baseTag: string = '',
-  mainNBT: string = '',
-): {
+function generateNbtStrings({
+  entities,
+  targetGameVersion,
+  baseTag = '',
+  mainNBT = '',
+  validateNBT = false,
+}: {
+  entities: Map<string, DisplayEntity>
+  targetGameVersion: string
+  baseTag: string
+  mainNBT: string
+  validateNBT: boolean
+}): {
   nbtStrings: string[]
   invalidNBTExist: boolean
 } {
@@ -538,12 +550,17 @@ function generateNbtStrings(
   // =====
 
   // validate mainNBT and inject baseTag first
-  const mainNbtTree = validateSNBT(mainNBT)
-  if (mainNbtTree == null) {
-    invalidNBTExist = true
+  let tagInjectedMainNBT = null
+  if (validateNBT) {
+    const mainNbtTree = validateSNBT(mainNBT)
+    if (mainNbtTree == null) {
+      invalidNBTExist = true
+    }
+    tagInjectedMainNBT =
+      mainNbtTree != null ? injectBaseTag(mainNbtTree, baseTag, false) : mainNBT
+  } else {
+    tagInjectedMainNBT = injectBaseTagSimple(mainNBT, baseTag, false)
   }
-  const tagInjectedMainNBT =
-    mainNbtTree != null ? injectBaseTag(mainNbtTree, baseTag, false) : mainNBT
 
   const passengersStrings = [...entities.values()]
     .map((entity) => {
@@ -642,19 +659,24 @@ function generateNbtStrings(
 
       const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]${entity.nbt.length > 0 ? ',' + entity.nbt : ''}}`
 
-      const nbtTree = validateSNBT(generatedString)
-      if (nbtTree == null) {
-        invalidNBTExist = true
-        return generatedString
-      }
+      if (validateNBT) {
+        const nbtTree = validateSNBT(generatedString)
+        if (nbtTree == null) {
+          invalidNBTExist = true
+          return generatedString
+        }
 
-      // attempt to inject baseTag
-      const finalString = injectBaseTag(nbtTree, baseTag, true)
-      if (finalString == null) {
-        return generatedString
-      }
+        // attempt to inject baseTag
+        const finalString = injectBaseTag(nbtTree, baseTag, true)
+        if (finalString == null) {
+          return generatedString
+        }
 
-      return finalString
+        return finalString
+      } else {
+        const finalString = injectBaseTagSimple(generatedString, baseTag, true)
+        return finalString
+      }
     })
     .filter((d) => d != null)
 
@@ -693,6 +715,22 @@ function generateNbtStrings(
   }
 }
 
+function injectBaseTagSimple(
+  nbtString: string,
+  baseTag: string,
+  wrapWithBraces = false,
+) {
+  if (nbtString.startsWith('{')) nbtString = nbtString.slice(1)
+  if (nbtString.endsWith('}')) nbtString = nbtString.slice(0, -1)
+
+  if (baseTag.length < 1) {
+    return wrapWithBraces ? nbtString : nbtString.slice(1, -1)
+  }
+
+  const injected =
+    '{' + (nbtString.length > 0 ? `${nbtString},` : '') + `Tags:["${baseTag}"]}`
+  return wrapWithBraces ? injected : injected.slice(1, -1)
+}
 function injectBaseTag(
   nbtTree: MojangsonNode,
   baseTag: string,
