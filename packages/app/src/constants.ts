@@ -74,3 +74,5 @@ export const GameVersions = [
 ]
 export const LegacyHardcodedGameVersion = '1.21'
 export const LatestGameVersion = GameVersions[0].id
+
+export const CommandBlockMaxCommandLength = 32500

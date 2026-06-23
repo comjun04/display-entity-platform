@@ -1,11 +1,11 @@
 import { useDebouncedEffect } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
-import mojangson, { type MojangsonList, type MojangsonNode } from 'mojangson'
 import {
   type ComponentPropsWithoutRef,
   type FC,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -15,13 +15,11 @@ import {
   LuCopy,
   LuCopyCheck,
 } from 'react-icons/lu'
-import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
 import { GameVersions } from '@/constants'
-import { getLogger } from '@/lib/logger'
-import { validateSNBT } from '@/lib/nbt'
+import { type NbtStringGeneratePayload, generateNbtStrings } from '@/lib/nbt'
 import { cn, downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
@@ -29,11 +27,9 @@ import { useEditorStore } from '@/stores/editorStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type {
-  DisplayEntity,
-  MinimalTextureValue,
-  TextEffects,
-} from '@/types/base'
-import { isItemDisplayPlayerHead } from '@/types/guards'
+  ExportedNBTGeneratorWorkerMessage,
+  ExportedNBTGeneratorWorkerResponse,
+} from '@/types/workers'
 
 import { Button } from '../ui/button'
 import {
@@ -50,10 +46,6 @@ import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import Dialog from './Dialog'
-
-const logger = getLogger('ExportToMinecraftDialog')
-
-const COMMAND_BLOCK_MAX_COMMAND_LENGTH = 32500
 
 type CopyButtonProps = ComponentPropsWithoutRef<'button'> & {
   valueToCopy: string
@@ -227,7 +219,6 @@ const ExportToMinecraftDialog: FC = () => {
       entities: state.entities,
     })),
   )
-
   const { targetGameVersion, mainNBT } = useProjectStore(
     useShallow((state) => ({
       targetGameVersion: state.targetGameVersion,
@@ -236,39 +227,101 @@ const ExportToMinecraftDialog: FC = () => {
   )
 
   const [baseTag, setBaseTag] = useState('')
-  const [nbtDataGenerated, setNbtDataGenerated] = useState(false)
+  const [nbtDataGenerating, setNbtDataGenerating] = useState(false)
   const [nbtDataValid, setNbtDataValid] = useState(true)
   const [nbtStrings, setNbtStrings] = useState<string[]>([])
+
+  const nbtGeneratorWorkerRef = useRef<Worker>()
+  useEffect(() => {
+    const cleanup = () => {
+      nbtGeneratorWorkerRef.current?.terminate()
+    }
+
+    const nbtValidationEnabled =
+      useEditorStore.getState().settings.general.validateNbtInput
+
+    // TODO: make it suspend using `use()` after react v19 upgrade
+    if (isOpen) {
+      if (entities.size < 1) {
+        setNbtStrings([])
+        setNbtDataGenerating(false)
+        return cleanup
+      }
+
+      const { entityRefs } = useEntityRefStore.getState()
+      const payload = [...entities.values()].reduce((acc, cur) => {
+        const refData = entityRefs.get(cur.id)
+        if (refData != null) {
+          const worldMatrix = refData.objectRef.current.matrixWorld
+            .clone()
+            .transpose()
+            .toArray()
+          acc.set(cur.id, {
+            entity: cur,
+            worldMatrix,
+          })
+        }
+
+        return acc
+      }, new Map<string, NbtStringGeneratePayload>())
+
+      if (nbtValidationEnabled) {
+        nbtGeneratorWorkerRef.current = new Worker(
+          new URL(
+            '../../workers/exportedNbtGenerator.worker.ts',
+            import.meta.url,
+          ),
+          { type: 'module' },
+        )
+
+        setNbtDataGenerating(true)
+
+        nbtGeneratorWorkerRef.current?.addEventListener(
+          'message',
+          (evt: MessageEvent<ExportedNBTGeneratorWorkerResponse>) => {
+            const msg = evt.data
+
+            if (msg.type === 'data') {
+              setNbtStrings(msg.data.nbtStrings)
+              setNbtDataGenerating(false)
+              setNbtDataValid(!msg.data.invalidNBTExist)
+            }
+          },
+        )
+
+        nbtGeneratorWorkerRef.current?.postMessage({
+          cmd: 'generate',
+          data: {
+            payload,
+            targetGameVersion,
+            baseTag,
+            mainNBT,
+            validateNBT: true,
+          },
+        } satisfies ExportedNBTGeneratorWorkerMessage)
+      } else {
+        const { nbtStrings, invalidNBTExist } = generateNbtStrings({
+          payload,
+          targetGameVersion,
+          baseTag,
+          mainNBT,
+          validateNBT: false,
+        })
+
+        setNbtStrings(nbtStrings)
+        setNbtDataGenerating(false)
+        setNbtDataValid(!invalidNBTExist)
+      }
+    }
+
+    return cleanup
+  }, [isOpen, entities, targetGameVersion, baseTag, mainNBT]) // 엔티티 데이터나 태그가 바뀌었다면 커맨드를 다시 생성해야 함
 
   useEffect(() => {
     if (isOpen) {
       setBaseTag('')
     }
   }, [isOpen])
-
-  // 엔티티 데이터나 태그가 바뀌었다면 커맨드를 다시 생성해야 함
-  useEffect(() => {
-    setNbtDataGenerated(false)
-  }, [entities, baseTag, mainNBT, targetGameVersion])
-
-  useEffect(() => {
-    const nbtValidationEnabled =
-      useEditorStore.getState().settings.general.validateNbtInput
-
-    if (!nbtDataGenerated && isOpen) {
-      const { nbtStrings, invalidNBTExist } = generateNbtStrings({
-        entities,
-        targetGameVersion,
-        baseTag,
-        mainNBT,
-        validateNBT: nbtValidationEnabled,
-      })
-
-      setNbtStrings(nbtStrings)
-      setNbtDataGenerated(true)
-      setNbtDataValid(!invalidNBTExist)
-    }
-  }, [nbtDataGenerated, isOpen, baseTag, mainNBT, entities, targetGameVersion])
 
   const summonCommands = nbtStrings.map(
     (nbt) => `/summon block_display ~ ~ ~ ${nbt}`,
@@ -512,254 +565,6 @@ const ExportToMinecraftDialog: FC = () => {
       </Tabs>
     </Dialog>
   )
-}
-
-function generateNbtStrings({
-  entities,
-  targetGameVersion,
-  baseTag = '',
-  mainNBT = '',
-  validateNBT = false,
-}: {
-  entities: Map<string, DisplayEntity>
-  targetGameVersion: string
-  baseTag: string
-  mainNBT: string
-  validateNBT: boolean
-}): {
-  nbtStrings: string[]
-  invalidNBTExist: boolean
-} {
-  const { entityRefs } = useEntityRefStore.getState()
-
-  let invalidNBTExist = false
-
-  const semveredGameVersion = semverCoerce(targetGameVersion)?.version
-  if (semveredGameVersion == null) {
-    throw new Error('semveredGameVersion is null, this should not happen')
-  }
-
-  // whether item uses data component instead of nbt
-  const isItemDataComponentEnabled = semverSatisfies(
-    semveredGameVersion,
-    '>=1.20.5',
-  )
-  // whether text is represented as SNBT rather than JSON
-  const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
-
-  // =====
-
-  // validate mainNBT and inject baseTag first
-  let tagInjectedMainNBT = null
-  if (validateNBT) {
-    const mainNbtTree = validateSNBT(mainNBT)
-    if (mainNbtTree == null) {
-      invalidNBTExist = true
-    }
-    tagInjectedMainNBT =
-      mainNbtTree != null ? injectBaseTag(mainNbtTree, baseTag, false) : mainNBT
-  } else {
-    tagInjectedMainNBT = injectBaseTagSimple(mainNBT, baseTag, false)
-  }
-
-  const passengersStrings = [...entities.values()]
-    .map((entity) => {
-      // 그룹은 커맨드 생성에 들어가지 않음
-      // 그룹 안에 있는 엔티티들은 world transform으로 반영됨
-      if (entity.kind === 'group') return
-
-      const refData = entityRefs.get(entity.id)
-      if (refData == null || refData.objectRef.current == null) {
-        logger.warn(`entity ref of entity ${entity.id} not found, ignoring.`)
-        return
-      }
-
-      const worldMatrix = refData.objectRef.current.matrixWorld
-
-      const idText = entity.kind + '_display' // block_display, item_display, text_display
-      const transformationString = worldMatrix
-        .clone()
-        .transpose()
-        .toArray()
-        .map((num) => Math.round(num * 1_0000_0000) / 1_0000_0000 + 'f')
-        .join(',')
-
-      let specificData = ''
-      if (entity.kind === 'block') {
-        const propertiesText = Object.entries(entity.blockstates)
-          .map(([k, v]) => `${k}:"${v}"`)
-          .join(',')
-
-        specificData = `block_state:{Name:"${entity.type}",Properties:{${propertiesText}}}`
-      } else if (entity.kind === 'item') {
-        const displayText =
-          entity.display != null ? `,item_display:"${entity.display}"` : ''
-
-        let itemExtraData = ''
-        if (isItemDisplayPlayerHead(entity)) {
-          const textureData = entity.playerHeadProperties.texture
-          if (textureData?.baked) {
-            const o = {
-              textures: {
-                SKIN: {
-                  url: textureData.url,
-                },
-              },
-            } satisfies MinimalTextureValue
-            const textureValueString = btoa(JSON.stringify(o))
-            itemExtraData = isItemDataComponentEnabled
-              ? `,components:{"minecraft:profile":{properties:[{name:"textures",value:"${textureValueString}"}]}}`
-              : `,SkullOwner:{Properties:{textures:[{Value:"${textureValueString}"}]}}`
-          }
-        }
-        specificData = `item:{id:"${entity.type}"${itemExtraData}}${displayText}`
-      } else if (entity.kind === 'text') {
-        // text
-        const text = entity.text
-          .replaceAll('\\', '\\\\')
-          .replaceAll('\n', isTextFormatSNBT ? '\\n' : '\\\\n')
-          .replaceAll('"', '\\"')
-        const enabledTextEffects = (
-          Object.keys(entity.textEffects) as Array<keyof TextEffects>
-        ).filter((k) => entity.textEffects[k])
-        const enabledTextEffectsString =
-          enabledTextEffects.length > 0
-            ? ',' +
-              enabledTextEffects
-                .map((k) => (isTextFormatSNBT ? `${k}:true` : `"${k}":true`))
-                .join(',')
-            : ''
-        specificData = isTextFormatSNBT
-          ? `text:{text:"${text}"${enabledTextEffectsString},color:"#${entity.textColor.toString(16)}"}`
-          : `text:'{"text":"${text}"${enabledTextEffectsString},"color":"#${entity.textColor.toString(16)}"}'`
-
-        // TODO: omit optional nbt data if data value is default value
-
-        // alignment
-        specificData += `,alignment:"${entity.alignment}"`
-        // background_color
-        specificData += `,background_color:${entity.backgroundColor}`
-        // default_background
-        if (entity.defaultBackground) {
-          specificData += ',default_background:true'
-        }
-        // line_width
-        specificData += `,line_width:${entity.lineWidth}`
-        // see_through
-        if (entity.seeThrough) {
-          specificData += ',see_through:true'
-        }
-        // shadow
-        if (entity.shadow) {
-          specificData += ',shadow:true'
-        }
-        // text_opacity
-        specificData += `,text_opacity:${entity.textOpacity}`
-      }
-
-      const generatedString = `{id:"${idText}",${specificData},transformation:[${transformationString}]${entity.nbt.length > 0 ? ',' + entity.nbt : ''}}`
-
-      if (validateNBT) {
-        const nbtTree = validateSNBT(generatedString)
-        if (nbtTree == null) {
-          invalidNBTExist = true
-          return generatedString
-        }
-
-        // attempt to inject baseTag
-        const finalString = injectBaseTag(nbtTree, baseTag, true)
-        if (finalString == null) {
-          return generatedString
-        }
-
-        return finalString
-      } else {
-        const finalString = injectBaseTagSimple(generatedString, baseTag, true)
-        return finalString
-      }
-    })
-    .filter((d) => d != null)
-
-  let le = Infinity
-  const baseCommandLength =
-    `/summon block_display ~ ~ ~ {${tagInjectedMainNBT},Passengers:[]}`.length
-  const groupedPassengersStrings: string[] = []
-  for (const passengersStr of passengersStrings) {
-    if (
-      baseCommandLength + le + passengersStr.length <=
-      COMMAND_BLOCK_MAX_COMMAND_LENGTH
-    ) {
-      // split to another summon command if adding up to current entity nbt data
-      // overflows the 32500 command block command max length
-      groupedPassengersStrings[groupedPassengersStrings.length - 1] +=
-        ',' + passengersStr
-      le += passengersStr.length + 1 // length including leading `,`
-    } else {
-      // if adding up to current entity nbt data does not overflow the limit
-      // then just add to the last summon command
-      groupedPassengersStrings.push(passengersStr)
-      le = passengersStr.length
-    }
-  }
-
-  const newNbtStrings = groupedPassengersStrings.map((str) => {
-    const inner = [tagInjectedMainNBT, `Passengers:[${str}]`]
-      .filter((str) => str != null && str.length > 0)
-      .join(',')
-    return '{' + inner + '}'
-  })
-
-  return {
-    nbtStrings: newNbtStrings,
-    invalidNBTExist,
-  }
-}
-
-function injectBaseTagSimple(
-  nbtString: string,
-  baseTag: string,
-  wrapWithBraces = false,
-) {
-  if (nbtString.startsWith('{')) nbtString = nbtString.slice(1)
-  if (nbtString.endsWith('}')) nbtString = nbtString.slice(0, -1)
-
-  if (baseTag.length < 1) {
-    return wrapWithBraces ? nbtString : nbtString.slice(1, -1)
-  }
-
-  const injected =
-    '{' + (nbtString.length > 0 ? `${nbtString},` : '') + `Tags:["${baseTag}"]}`
-  return wrapWithBraces ? injected : injected.slice(1, -1)
-}
-function injectBaseTag(
-  nbtTree: MojangsonNode,
-  baseTag: string,
-  wrapWithBraces = false,
-) {
-  if (nbtTree.type !== 'compound') {
-    // logger.error(
-    //   'Failed to parse entity nbt string. Root element type is not `compound`.',
-    // )
-    return null
-  }
-
-  if (baseTag.length > 0) {
-    const tagListNode = nbtTree.value['Tags']
-    if (tagListNode?.type !== 'list') {
-      nbtTree.value['Tags'] = {
-        type: 'list',
-        value: {
-          type: 'string',
-          value: [baseTag],
-        },
-      } satisfies MojangsonList
-    } else {
-      tagListNode.value.value.push(baseTag)
-    }
-  }
-
-  const injected = mojangson.stringify(nbtTree)
-  return wrapWithBraces ? injected : injected.slice(1, -1)
 }
 
 function downloadAsMcfunction(commands: string[]) {
