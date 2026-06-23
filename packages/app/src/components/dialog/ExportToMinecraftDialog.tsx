@@ -1,4 +1,4 @@
-import { useDebouncedEffect } from '@react-hookz/web'
+import { useDebouncedEffect, useDebouncedState } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import JSZip from 'jszip'
 import {
@@ -109,7 +109,12 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
   const { t } = useTranslation()
 
   const [input, setInput] = useState('')
+  const [debouncedInput, setDebouncedInput] = useDebouncedState('', 250)
   const [hasValidationErrors, setHasValidationErrors] = useState(false)
+
+  useEffect(() => {
+    onChange?.(debouncedInput)
+  }, [debouncedInput, onChange])
 
   return (
     <Field data-invalid={hasValidationErrors}>
@@ -124,7 +129,7 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
 
           if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
             setHasValidationErrors(false)
-            onChange?.(text)
+            setDebouncedInput(text)
           } else {
             setHasValidationErrors(true)
           }
