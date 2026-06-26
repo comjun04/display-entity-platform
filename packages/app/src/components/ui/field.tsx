@@ -57,12 +57,37 @@ const fieldVariants = cva(
         vertical: 'flex-col *:w-full [&>.sr-only]:w-auto',
         horizontal:
           'flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
-        responsive:
-          'flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
+        responsive: 'flex-col *:w-full [&>.sr-only]:w-auto',
+      },
+      breakpoint: {
+        sm: '',
+        md: '',
+        lg: '',
       },
     },
+    compoundVariants: [
+      {
+        orientation: 'responsive',
+        breakpoint: 'sm',
+        className:
+          '@sm/field-group:flex-row @sm/field-group:items-center @sm/field-group:*:w-auto @sm/field-group:has-[>[data-slot=field-content]]:items-start @sm/field-group:*:data-[slot=field-label]:flex-auto @sm/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
+      },
+      {
+        orientation: 'responsive',
+        breakpoint: 'md',
+        className:
+          '@md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
+      },
+      {
+        orientation: 'responsive',
+        breakpoint: 'lg',
+        className:
+          '@lg/field-group:flex-row @lg/field-group:items-center @lg/field-group:*:w-auto @lg/field-group:has-[>[data-slot=field-content]]:items-start @lg/field-group:*:data-[slot=field-label]:flex-auto @lg/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
+      },
+    ],
     defaultVariants: {
       orientation: 'vertical',
+      breakpoint: 'md',
     },
   },
 )
@@ -70,6 +95,7 @@ const fieldVariants = cva(
 function Field({
   className,
   orientation = 'vertical',
+  breakpoint = 'md',
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof fieldVariants>) {
   return (
@@ -77,7 +103,7 @@ function Field({
       role="group"
       data-slot="field"
       data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }), className)}
+      className={cn(fieldVariants({ orientation, breakpoint }), className)}
       {...props}
     />
   )
