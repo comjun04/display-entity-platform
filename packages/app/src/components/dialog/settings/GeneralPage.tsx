@@ -4,7 +4,13 @@ import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
 import { Button } from '@/components/ui/button'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Switch } from '@/components/ui/switch'
 import { exportSettings, importSettings } from '@/lib/settings/actions'
@@ -76,6 +82,32 @@ const GeneralPage: FC = () => {
             onCheckedChange={(checked) => {
               setSettings({
                 general: { forceUnifont: checked },
+              })
+            }}
+          />
+        </Field>
+
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor="settings_general_validateNbtInput">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.general.options.validateNbtInput.title,
+              )}
+            </FieldLabel>
+            <FieldDescription>
+              {t(
+                ($) =>
+                  $.dialog.settings.page.general.options.validateNbtInput.desc,
+              )}
+            </FieldDescription>
+          </FieldContent>
+          <Switch
+            id="settings_general_validateNbtInput"
+            checked={settings.general.validateNbtInput}
+            onCheckedChange={(checked) => {
+              setSettings({
+                general: { validateNbtInput: checked },
               })
             }}
           />

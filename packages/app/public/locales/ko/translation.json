@@ -91,7 +91,11 @@
           "options": {
             "language": "언어",
             "showWelcomeOnStartup": "시작 시 환영 메세지 표시",
-            "forceUnifont": "Unicode 폰트 (Unifont)를 강제로 적용"
+            "forceUnifont": "Unicode 폰트 (Unifont)를 강제로 적용",
+            "validateNbtInput": {
+              "title": "NBT 입력값 검사 (느림)",
+              "desc": "프로젝트 메인 NBT와 각 엔티티의 NBT 값을 파싱하고 검사하여, 올바르지 않은 값이 있으면 경고합니다. 대규모 프로젝트에서 명령어 생성 속도가 느려질 수 있습니다."
+            }
           }
         },
         "appearance": {

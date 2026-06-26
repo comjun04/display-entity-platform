@@ -45,6 +45,7 @@ export const settingsSchema = z.object({
       language: z.enum(['en', 'ko']).default('en'),
       showWelcomeOnStartup: z.boolean().default(true),
       forceUnifont: z.boolean().default(false),
+      validateNbtInput: z.boolean().default(false),
     })
     .prefault({}),
   appearance: z
