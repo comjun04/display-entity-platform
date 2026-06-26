@@ -229,7 +229,7 @@ function injectBaseTagSimple(
   if (nbtString.endsWith('}')) nbtString = nbtString.slice(0, -1)
 
   if (baseTag.length < 1) {
-    return wrapWithBraces ? nbtString : nbtString.slice(1, -1)
+    return wrapWithBraces ? `{${nbtString}}` : nbtString
   }
 
   const injected =
