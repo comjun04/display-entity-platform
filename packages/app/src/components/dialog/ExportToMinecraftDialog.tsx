@@ -109,7 +109,7 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
   const { t } = useTranslation()
 
   const [input, setInput] = useState('')
-  const [debouncedInput, setDebouncedInput] = useDebouncedState('', 250)
+  const [debouncedInput, setDebouncedInput] = useDebouncedState('', 200)
   const [hasValidationErrors, setHasValidationErrors] = useState(false)
 
   useEffect(() => {
