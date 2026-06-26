@@ -117,41 +117,49 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
   }, [debouncedInput, onChange])
 
   return (
-    <Field data-invalid={hasValidationErrors}>
-      <FieldLabel>
-        {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
-      </FieldLabel>
-      <Input
-        value={input}
-        onChange={(evt) => {
-          const text = evt.target.value
-          setInput(text)
+    <FieldGroup>
+      <Field data-invalid={hasValidationErrors} orientation="responsive">
+        <FieldContent>
+          <FieldLabel>
+            {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
+          </FieldLabel>
 
-          if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
-            setHasValidationErrors(false)
-            setDebouncedInput(text)
-          } else {
-            setHasValidationErrors(true)
-          }
-        }}
-      />
-      {hasValidationErrors && (
-        <FieldError>
-          <Trans
-            i18nKey={($) => $.dialog.exportToMinecraft.baseTag.invalidTagNotice}
-            ns="translation"
-            components={{
-              codeblock: (
-                <code className="rounded-sm bg-neutral-800 p-1 font-mono" />
-              ),
-            }}
-          />
-        </FieldError>
-      )}
-      <FieldDescription>
-        {t(($) => $.dialog.exportToMinecraft.baseTag.desc)}
-      </FieldDescription>
-    </Field>
+          <FieldDescription>
+            {t(($) => $.dialog.exportToMinecraft.baseTag.desc)}
+          </FieldDescription>
+
+          {hasValidationErrors && (
+            <FieldError>
+              <Trans
+                i18nKey={($) =>
+                  $.dialog.exportToMinecraft.baseTag.invalidTagNotice
+                }
+                ns="translation"
+                components={{
+                  codeblock: (
+                    <code className="rounded-sm bg-neutral-800 p-1 font-mono" />
+                  ),
+                }}
+              />
+            </FieldError>
+          )}
+        </FieldContent>
+        <Input
+          value={input}
+          onChange={(evt) => {
+            const text = evt.target.value
+            setInput(text)
+
+            if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
+              setHasValidationErrors(false)
+              setDebouncedInput(text)
+            } else {
+              setHasValidationErrors(true)
+            }
+          }}
+        />
+      </Field>
+    </FieldGroup>
   )
 }
 
