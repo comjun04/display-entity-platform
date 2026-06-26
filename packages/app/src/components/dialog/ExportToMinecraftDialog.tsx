@@ -379,16 +379,6 @@ const ExportToMinecraftDialog: FC = () => {
         </TabsList>
 
         <TabsContent value="command" className="flex min-h-0 flex-col gap-2">
-          {nbtDataGenerating &&
-            Array(10)
-              .fill(0)
-              .map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-8 w-full animate-pulse rounded bg-neutral-800"
-                />
-              ))}
-
           {!nbtDataGenerating && nbtStrings.length > 0 && (
             <div className="flex gap-2">
               <Button onClick={() => downloadAsMcfunction(summonCommands)}>
@@ -407,15 +397,24 @@ const ExportToMinecraftDialog: FC = () => {
           )}
 
           <div
-            className={cn(
-              'overflow-y-auto',
-              summonCommandsExist && 'h-full',
-              nbtDataGenerating && 'hidden',
-            )}
+            className={cn('overflow-y-auto', summonCommandsExist && 'h-full')}
             ref={(element) => setCommandListParentRef(element)}
           >
+            {nbtDataGenerating && (
+              <div className="flex flex-col gap-2">
+                {Array(10)
+                  .fill(0)
+                  .map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-8 w-full animate-pulse rounded bg-neutral-800"
+                    />
+                  ))}
+              </div>
+            )}
+
             <div
-              className="relative w-full"
+              className={cn('relative w-full', nbtDataGenerating && 'hidden')}
               style={{
                 height: virtualizer.getTotalSize(),
               }}
