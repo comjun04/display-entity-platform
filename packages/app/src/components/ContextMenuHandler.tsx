@@ -112,11 +112,11 @@ const ContextMenuHandler: FC<ContextMenuHandlerProps> = ({
 
   const triggerRef = useRef<HTMLDivElement>(null)
 
-  // disable context menu from triggering when dragging with right mouse button pressed
-  // which acts as canvas panning
+  // disable context menu from triggering when user performs canvas panning action
+  // detect dragging with right mouse button pressed, dragging with multiple touches on mobile
   useEffect(() => {
     const triggerElement = triggerRef.current
-    const handle = (evt: MouseEvent) => {
+    const handleMouseMove = (evt: MouseEvent) => {
       if (evt.buttons === 2) {
         setDisableMenu(true)
       } else {
@@ -124,14 +124,40 @@ const ContextMenuHandler: FC<ContextMenuHandlerProps> = ({
       }
     }
 
-    triggerElement?.addEventListener('mousemove', handle)
+    const handleTouchStart = (evt: TouchEvent) => {
+      if (evt.touches.length >= 2) {
+        setDisableMenu(true)
+      } else {
+        setDisableMenu(false)
+      }
+    }
+    const handleTouchEnd = (evt: TouchEvent) => {
+      if (evt.touches.length < 2) {
+        setDisableMenu(false)
+      }
+    }
+
+    triggerElement?.addEventListener('mousemove', handleMouseMove)
+    triggerElement?.addEventListener('touchstart', handleTouchStart)
+    triggerElement?.addEventListener('touchend', handleTouchEnd)
+    triggerElement?.addEventListener('touchcancel', handleTouchEnd)
     return () => {
-      triggerElement?.removeEventListener('mousemove', handle)
+      triggerElement?.removeEventListener('mousemove', handleMouseMove)
+      triggerElement?.removeEventListener('touchstart', handleTouchStart)
+      triggerElement?.removeEventListener('touchend', handleTouchEnd)
+      triggerElement?.removeEventListener('touchcancel', handleTouchEnd)
     }
   }, [])
 
   return (
-    <ContextMenu disabled={disableMenu}>
+    <ContextMenu
+      disabled={disableMenu}
+      onOpenChange={(open, details) => {
+        if (open && details.reason === 'trigger-press' && disableMenu) {
+          details.cancel()
+        }
+      }}
+    >
       <ContextMenuTrigger className={className} ref={triggerRef}>
         {children}
       </ContextMenuTrigger>
