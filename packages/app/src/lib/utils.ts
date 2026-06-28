@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from 'clsx'
-import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
+import { satisfies as semverSatisfies } from 'compare-versions'
 import { twMerge } from 'tailwind-merge'
 
 import { AssetFileInfosCache } from '../stores/cacheStore'
@@ -255,11 +255,6 @@ export function getTextureColor(
   const isBlockModel = modelResourceLocation.startsWith('block/')
   const modelName = modelResourceLocation.split('/').slice(1).join('/')
 
-  const semveredGameVersion = semverCoerce(gameVersion)?.version
-  if (semveredGameVersion == null) {
-    throw new Error(`Invalid game version ${gameVersion}`)
-  }
-
   if (textureLayer == null && tintindex == null) {
     return 0xffffff
   }
@@ -344,7 +339,7 @@ export function getTextureColor(
   if (
     modelResourceLocation.startsWith('item/') &&
     modelResourceLocation.endsWith('_spawn_egg') &&
-    semverSatisfies(semveredGameVersion, '<1.21.5') // minecraft uses unique textures for spawn eggs since 1.21.5
+    semverSatisfies(gameVersion, '<1.21.5') // minecraft uses unique textures for spawn eggs since 1.21.5
   ) {
     const spawnEggType = modelResourceLocation.slice(5, -10)
     const isOverlay = textureLayer === '1'

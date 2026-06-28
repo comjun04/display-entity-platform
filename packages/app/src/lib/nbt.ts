@@ -1,5 +1,5 @@
+import { satisfies as semverSatisfies } from 'compare-versions'
 import mojangson, { type MojangsonList, type MojangsonNode } from 'mojangson'
-import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
 import type { Matrix4Tuple } from 'three'
 
 import { CommandBlockMaxCommandLength } from '@/constants'
@@ -50,18 +50,13 @@ export function generateNbtStrings({
 } {
   let invalidNBTExist = false
 
-  const semveredGameVersion = semverCoerce(targetGameVersion)?.version
-  if (semveredGameVersion == null) {
-    throw new Error('semveredGameVersion is null, this should not happen')
-  }
-
   // whether item uses data component instead of nbt
   const isItemDataComponentEnabled = semverSatisfies(
-    semveredGameVersion,
+    targetGameVersion,
     '>=1.20.5',
   )
   // whether text is represented as SNBT rather than JSON
-  const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
+  const isTextFormatSNBT = semverSatisfies(targetGameVersion, '>=1.21.5')
 
   // =====
 

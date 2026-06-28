@@ -28,11 +28,7 @@ import {
   fetchVersionData,
 } from './cdn'
 
-import {
-  coerce as semverCoerce,
-  satisfies as semverSatisfies,
-  compare as semverCompare,
-} from 'semver'
+import { satisfies as semverSatisfies, compareVersions } from 'compare-versions'
 import { glob } from 'glob'
 import { parseArgs } from 'util'
 
@@ -66,11 +62,7 @@ if (forceGenerateMode) {
 }
 
 const mcVersion = argsParseResult.positionals[0]
-const semveredMcVersion = semverCoerce(mcVersion)?.version
-if (semveredMcVersion == null) {
-  console.error(`Invalid version ${mcVersion}`)
-  process.exit(1)
-} else if (!semverSatisfies(semveredMcVersion, '>=1.19.4')) {
+if (!semverSatisfies(mcVersion, '>=1.19.4')) {
   console.error(
     `Minimum target version must be 1.19.4 or above, but got ${mcVersion}`,
   )
@@ -102,14 +94,12 @@ if (releaseVersions.find((v) => v.id === mcVersion) == null) {
 
 // 1.19.4 <= versions to process <= targetVersion
 const versions = releaseVersions
-  .filter((v) =>
-    semverSatisfies(semverCoerce(v.id)!, `>=1.19.4 <=${semveredMcVersion}`),
-  )
-  .sort((a, b) => semverCompare(semverCoerce(a.id)!, semverCoerce(b.id)!))
+  .filter((v) => semverSatisfies(v.id, `>=1.19.4 <=${mcVersion}`))
+  .sort((a, b) => compareVersions(a.id, b.id))
 
 const sortedHardcodedDataFolders = (
   await readdir(pathJoin(pathResolve(), 'hardcoded'))
-).sort((a, b) => semverCompare(semverCoerce(a)!, semverCoerce(b)!))
+).sort((a, b) => compareVersions(a, b))
 
 const fileInfos = new Map<
   string,
