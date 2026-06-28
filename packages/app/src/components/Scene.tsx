@@ -6,7 +6,7 @@ import {
 } from '@react-three/drei'
 import { Canvas, invalidate, useThree } from '@react-three/fiber'
 import { type FC, Suspense, lazy, useEffect, useRef } from 'react'
-import { Color, DoubleSide } from 'three'
+import { type AxesHelper, Color, DoubleSide } from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import { useDisplayEntityStore } from '../stores/displayEntityStore'
@@ -15,6 +15,7 @@ import { useHistoryStore } from '../stores/historyStore'
 import CustomCameraControls from './CustomCameraControls'
 import DisplayentitiesRootGroup from './DisplayEntitiesRootGroup'
 import DragSelectControl from './DragSelectControl'
+import { InstancedMeshesRootGroup } from './InstancedMeshesRootGroup'
 import ShortcutHandler from './ShortcutHandler'
 import TransformControls from './TransformControls'
 
@@ -24,6 +25,8 @@ const InsideCanvas: FC = () => {
   const headPainting = useEditorStore((state) => state.headPainter.nowPainting)
 
   const controls = useThree((state) => state.controls)
+  // silence eslint errors due to use of `any`
+  /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
   const oldControlsEnabledRef = useRef<boolean>((controls as any)?.enabled)
 
   useEffect(() => {
@@ -40,6 +43,7 @@ const InsideCanvas: FC = () => {
       }
     }
   }, [headPainting, controls])
+  /* eslint-enable */
 
   useEffect(() => {
     const fn = () => {
@@ -57,6 +61,24 @@ const InsideCanvas: FC = () => {
   }, [])
 
   return null
+}
+
+const AxesColors = [
+  0xdc2626, // tailwind v3 red-600
+  0x16a34a, // tailwind v3 green-600
+  0x2563eb, // tailwind v3 blue-600
+] as const
+interface AxesProps {
+  lineScale: number
+}
+const Axes: FC<AxesProps> = ({ lineScale }) => {
+  const ref = useRef<AxesHelper>(null)
+
+  useEffect(() => {
+    ref.current?.setColors(...AxesColors)
+  }, [])
+
+  return <axesHelper args={[lineScale]} ref={ref} />
 }
 
 const Scene: FC = () => {
@@ -125,42 +147,22 @@ const Scene: FC = () => {
     >
       <InsideCanvas />
 
-      {/* Axis lines */}
-      <line>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={2}
-            array={new Float32Array([-100, 0, 0, 100, 0, 0])}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial color={0xdc2626 /* tailwind v3 red-600 */} />
-      </line>
-      <line>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={2}
-            array={new Float32Array([0, -100, 0, 0, 100, 0])}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial color={0x16a34a /* tailwind v3 green-600 */} />
-      </line>
-      <line>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={2}
-            array={new Float32Array([0, 0, -100, 0, 0, 100])}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial color={0x2563eb /* tailwind v3 blue-600 */} />
-      </line>
+      <Grid
+        visible={!headPainterEnabled}
+        cellSize={1 / 16}
+        cellColor={0x777777}
+        sectionColor={0x333333}
+        sectionSize={1}
+        infiniteGrid
+        side={DoubleSide}
+      />
+
+      <Axes lineScale={500} />
+      {/* negative side */}
+      <Axes lineScale={-500} />
 
       <DisplayentitiesRootGroup />
+      <InstancedMeshesRootGroup />
 
       <TransformControls />
       <DragSelectControl />
@@ -175,15 +177,6 @@ const Scene: FC = () => {
         <CustomCameraControls />
       </PerspectiveCamera>
 
-      <Grid
-        visible={!headPainterEnabled}
-        cellSize={1 / 16}
-        cellColor={0x777777}
-        sectionColor={0x333333}
-        sectionSize={1}
-        infiniteGrid
-        side={DoubleSide}
-      />
       <GizmoHelper
         alignment={gizmoLocation}
         margin={[gizmoMarginWidth, gizmoMarginHeight]}

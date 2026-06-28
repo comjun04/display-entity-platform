@@ -21,6 +21,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { toggleGroup } from '@/lib/actions'
+import {
+  cloneSelectedEntities,
+  createNewEntities,
+  deleteEntities,
+} from '@/lib/entities'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
@@ -41,11 +46,10 @@ const QuickActionPanel: FC = () => {
       setOpenedDialog: state.openDialog,
     })),
   )
-  const { selectedEntityIds, deleteEntities, singleSelectedEntityIsGrouped } =
+  const { selectedEntityIds, singleSelectedEntityIsGrouped } =
     useDisplayEntityStore(
       useShallow((state) => ({
         selectedEntityIds: state.selectedEntityIds,
-        deleteEntities: state.deleteEntities,
         singleSelectedEntityIsGrouped:
           state.selectedEntityIds.length === 1 &&
           state.entities.get(state.selectedEntityIds[0])?.kind === 'group',
@@ -113,9 +117,9 @@ const QuickActionPanel: FC = () => {
               render={
                 <FloatingButton
                   onClick={() => {
-                    useDisplayEntityStore
-                      .getState()
-                      .createNew([{ kind: 'text', text: 'Enter Text' }])
+                    createNewEntities([
+                      { kind: 'text', text: 'Enter Text' },
+                    ]).catch(console.error)
                   }}
                 >
                   <LuType size={24} />
@@ -124,6 +128,25 @@ const QuickActionPanel: FC = () => {
             />
             <TooltipContent side="bottom">
               {t(($) => $.editor.topBar.textDisplay)}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <FloatingButton
+                  onClick={() => {
+                    createNewEntities([
+                      { kind: 'item', type: 'player_head' },
+                    ]).catch(console.error)
+                  }}
+                >
+                  <LuSmile size={24} />
+                </FloatingButton>
+              }
+            />
+            <TooltipContent side="bottom">
+              {t(($) => $.editor.topBar.addPlayerHead)}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -165,38 +188,31 @@ const QuickActionPanel: FC = () => {
             <DropdownMenuItem
               className="flex flex-row items-center gap-2"
               onClick={() => {
-                useDisplayEntityStore
-                  .getState()
-                  .createNew([{ kind: 'text', text: 'Enter Text' }])
+                createNewEntities([{ kind: 'text', text: 'Enter Text' }]).catch(
+                  console.error,
+                )
               }}
             >
               <LuType />
 
               {t(($) => $.editor.topBar.textDisplay)}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex flex-row items-center gap-2"
+              onClick={() => {
+                createNewEntities([
+                  { kind: 'item', type: 'player_head' },
+                ]).catch(console.error)
+              }}
+            >
+              <LuSmile />
+
+              {t(($) => $.editor.topBar.addPlayerHead)}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <div className="my-2 border-l border-gray-700" />
-
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <FloatingButton
-                onClick={() => {
-                  useDisplayEntityStore
-                    .getState()
-                    .createNew([{ kind: 'item', type: 'player_head' }])
-                }}
-              >
-                <LuSmile size={24} />
-              </FloatingButton>
-            }
-          />
-          <TooltipContent side="bottom">
-            {t(($) => $.editor.topBar.addPlayerHead)}
-          </TooltipContent>
-        </Tooltip>
 
         <Tooltip>
           <TooltipTrigger
@@ -228,9 +244,7 @@ const QuickActionPanel: FC = () => {
             render={
               <FloatingButton
                 disabled={selectedEntityIds.length < 1}
-                onClick={() =>
-                  useDisplayEntityStore.getState().duplicateSelected()
-                }
+                onClick={() => cloneSelectedEntities()}
               >
                 <LuCopyPlus size={24} />
               </FloatingButton>

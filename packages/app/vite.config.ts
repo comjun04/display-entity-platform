@@ -1,5 +1,5 @@
 import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react'
 import { execSync } from 'child_process'
 import { resolve } from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -24,6 +24,11 @@ if (process.env.GENERATE_BUILD_STATS) {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins,
+  server: {
+    watch: {
+      ignored: ['**/public/locales/**/*'],
+    },
+  },
   resolve: {
     alias: [
       {
@@ -38,12 +43,23 @@ export default defineConfig({
     __IS_DEV__: isDevelopmentMode,
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          threejs: ['three'],
-          r3f: ['@react-three/fiber', '@react-three/drei'],
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules\/(react|react-dom)\//,
+            },
+            {
+              name: 'three',
+              test: /node_modules\/three\//,
+            },
+            {
+              name: 'r3f',
+              test: /node_modules\/@react-three\//,
+            },
+          ],
         },
       },
     },

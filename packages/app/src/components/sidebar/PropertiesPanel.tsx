@@ -1,7 +1,8 @@
-import { type FC, useState } from 'react'
+import { type FC, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   LuBold,
+  LuCircleAlert,
   LuItalic,
   LuShuffle,
   LuStrikethrough,
@@ -11,9 +12,19 @@ import { useShallow } from 'zustand/shallow'
 
 import { BackendHost, GameVersions } from '@/constants'
 import useBlockStates from '@/hooks/useBlockStates'
+import {
+  setBDEntityBlockstates,
+  setEntityNBT,
+  setGroupName,
+  setIDEntityDisplayType,
+  setIDEntityPlayerHeadProperties,
+  setTDEntityProperties,
+} from '@/lib/entities'
+import { validateSNBT } from '@/lib/nbt'
 import { cn, isValidTextureUrl } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type {
@@ -71,8 +82,6 @@ const BlockDisplayProperties: FC = () => {
               className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
               value={singleSelectedEntity.blockstates[key]}
               onChange={(evt) => {
-                const { setBDEntityBlockstates } =
-                  useDisplayEntityStore.getState()
                 setBDEntityBlockstates(singleSelectedEntity.id, {
                   [key]: evt.target.value,
                 })
@@ -123,8 +132,7 @@ const ItemDisplayProperties: FC = () => {
           className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={singleSelectedEntity.display ?? 'none'}
           onChange={(evt) => {
-            const { setEntityDisplayType } = useDisplayEntityStore.getState()
-            setEntityDisplayType(
+            setIDEntityDisplayType(
               singleSelectedEntity.id,
               evt.target.value === 'none'
                 ? null
@@ -174,14 +182,12 @@ const ItemDisplayProperties: FC = () => {
                   return
                 }
 
-                useDisplayEntityStore
-                  .getState()
-                  .setItemDisplayPlayerHeadProperties(singleSelectedEntity.id, {
-                    texture: {
-                      baked: true,
-                      url: tempPlayerHeadTextureUrl,
-                    },
-                  })
+                setIDEntityPlayerHeadProperties(singleSelectedEntity.id, {
+                  texture: {
+                    baked: true,
+                    url: tempPlayerHeadTextureUrl,
+                  },
+                })
               }}
             >
               {t(
@@ -238,17 +244,12 @@ const ItemDisplayProperties: FC = () => {
                   }
 
                   setTempPlayerHeadTextureUrl(textureUrl)
-                  useDisplayEntityStore
-                    .getState()
-                    .setItemDisplayPlayerHeadProperties(
-                      singleSelectedEntity.id,
-                      {
-                        texture: {
-                          baked: true,
-                          url: textureUrl,
-                        },
-                      },
-                    )
+                  setIDEntityPlayerHeadProperties(singleSelectedEntity.id, {
+                    texture: {
+                      baked: true,
+                      url: textureUrl,
+                    },
+                  })
                 }
 
                 asyncFn().catch(console.error)
@@ -294,11 +295,9 @@ const TextDisplayProperties: FC = () => {
           className="min-h-24 min-w-0 flex-1 rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.text}
           onChange={(evt) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                text: evt.target.value,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              text: evt.target.value,
+            })
           }}
         />
       </div>
@@ -309,11 +308,9 @@ const TextDisplayProperties: FC = () => {
           mode="rgb"
           value={singleSelectedEntity.textColor}
           onValueChange={(num) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textColor: num,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textColor: num,
+            })
           }}
         />
       </div>
@@ -328,11 +325,9 @@ const TextDisplayProperties: FC = () => {
             const value = parseInt(evt.target.value)
             if (!isFinite(value) || value < 0) return
 
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                lineWidth: value,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              lineWidth: value,
+            })
           }}
         />
       </div>
@@ -342,11 +337,9 @@ const TextDisplayProperties: FC = () => {
           className="flex-1 rounded-sm bg-neutral-800 px-2 py-1"
           value={singleSelectedEntity.alignment}
           onChange={(evt) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                alignment: evt.target.value as TextDisplayAlignment,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              alignment: evt.target.value as TextDisplayAlignment,
+            })
           }}
         >
           <option>left</option>
@@ -362,11 +355,9 @@ const TextDisplayProperties: FC = () => {
           mode="argb"
           value={singleSelectedEntity.backgroundColor}
           onValueChange={(num) => {
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                backgroundColor: num,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              backgroundColor: num,
+            })
           }}
         />
       </div>
@@ -376,11 +367,9 @@ const TextDisplayProperties: FC = () => {
           <Switch
             checked={singleSelectedEntity.defaultBackground}
             onCheckedChange={(value) => {
-              useDisplayEntityStore
-                .getState()
-                .setTextDisplayProperties(singleSelectedEntity.id, {
-                  defaultBackground: value,
-                })
+              setTDEntityProperties(singleSelectedEntity.id, {
+                defaultBackground: value,
+              })
             }}
           />
         </div>
@@ -391,11 +380,9 @@ const TextDisplayProperties: FC = () => {
           <Switch
             checked={singleSelectedEntity.seeThrough}
             onCheckedChange={(value) => {
-              useDisplayEntityStore
-                .getState()
-                .setTextDisplayProperties(singleSelectedEntity.id, {
-                  seeThrough: value,
-                })
+              setTDEntityProperties(singleSelectedEntity.id, {
+                seeThrough: value,
+              })
             }}
           />
         </div>
@@ -406,11 +393,9 @@ const TextDisplayProperties: FC = () => {
           <Switch
             checked={singleSelectedEntity.shadow}
             onCheckedChange={(value) => {
-              useDisplayEntityStore
-                .getState()
-                .setTextDisplayProperties(singleSelectedEntity.id, {
-                  shadow: value,
-                })
+              setTDEntityProperties(singleSelectedEntity.id, {
+                shadow: value,
+              })
             }}
           />
         </div>
@@ -427,11 +412,9 @@ const TextDisplayProperties: FC = () => {
             const value = parseInt(evt.target.value)
             if (!isFinite(value) || value < 0 || value > 255) return
 
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textOpacity: value,
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textOpacity: value,
+            })
           }}
         />
       </div>
@@ -446,13 +429,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.bold && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  bold: !textEffects.bold,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                bold: !textEffects.bold,
+              },
+            })
           }
         >
           <LuBold size={24} />
@@ -463,13 +444,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.italic && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  italic: !textEffects.italic,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                italic: !textEffects.italic,
+              },
+            })
           }
         >
           <LuItalic size={24} />
@@ -480,13 +459,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.underlined && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  underlined: !textEffects.underlined,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                underlined: !textEffects.underlined,
+              },
+            })
           }
         >
           <LuUnderline size={24} />
@@ -497,13 +474,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.strikethrough && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  strikethrough: !textEffects.strikethrough,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                strikethrough: !textEffects.strikethrough,
+              },
+            })
           }
         >
           <LuStrikethrough size={24} />
@@ -514,13 +489,11 @@ const TextDisplayProperties: FC = () => {
             textEffects.obfuscated && 'bg-white/30',
           )}
           onClick={() =>
-            useDisplayEntityStore
-              .getState()
-              .setTextDisplayProperties(singleSelectedEntity.id, {
-                textEffects: {
-                  obfuscated: !textEffects.obfuscated,
-                },
-              })
+            setTDEntityProperties(singleSelectedEntity.id, {
+              textEffects: {
+                obfuscated: !textEffects.obfuscated,
+              },
+            })
           }
         >
           <LuShuffle size={24} />
@@ -561,9 +534,7 @@ const GroupProperties: FC = () => {
           className="min-w-0 flex-1 shrink rounded-sm bg-neutral-800 py-1 pl-1 text-xs outline-hidden"
           value={singleSelectedEntity.name}
           onChange={(evt) => {
-            useDisplayEntityStore
-              .getState()
-              .setGroupName(singleSelectedEntity.id, evt.target.value)
+            setGroupName(singleSelectedEntity.id, evt.target.value)
           }}
         />
       </div>
@@ -574,12 +545,29 @@ const GroupProperties: FC = () => {
 const ProjectProperties: FC = () => {
   const { t } = useTranslation()
 
-  const { targetGameVersion, projectName, setProjectName } = useProjectStore(
+  const {
+    targetGameVersion,
+    projectName,
+    setProjectName,
+    mainNBT,
+    setMainNBT,
+  } = useProjectStore(
     useShallow((state) => ({
       targetGameVersion: state.targetGameVersion,
       projectName: state.projectName,
       setProjectName: state.setProjectName,
+
+      mainNBT: state.mainNBT,
+      setMainNBT: state.setMainNBT,
     })),
+  )
+  const nbtValidationEnabled = useEditorStore(
+    (state) => state.settings.general.validateNbtInput,
+  )
+
+  const mainNBTValid = useMemo(
+    () => (nbtValidationEnabled ? validateSNBT(mainNBT) != null : true),
+    [mainNBT, nbtValidationEnabled],
   )
 
   return (
@@ -666,6 +654,93 @@ const ProjectProperties: FC = () => {
           ))}
         </select>
       </div>
+
+      <div className="flex flex-col gap-2">
+        <label>
+          {t(
+            ($) =>
+              $.sidebar.propertiesPanel.sections.project.properties.mainNBT
+                .title,
+          )}
+        </label>
+        <textarea
+          className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
+          value={mainNBT}
+          onChange={(evt) => {
+            setMainNBT(stripWhitespace(evt.target.value))
+          }}
+        />
+        {!mainNBTValid && (
+          <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+            <LuCircleAlert size={20} />{' '}
+            {t(
+              ($) =>
+                $.sidebar.propertiesPanel.sections.project.properties.mainNBT
+                  .invalid,
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const CommonDisplayProperties: FC = () => {
+  const { t } = useTranslation()
+
+  const singleSelectedEntity = useDisplayEntityStore((state) => {
+    const entity =
+      state.selectedEntityIds.length === 1
+        ? state.entities.get(state.selectedEntityIds[0])!
+        : null
+    return entity
+  })
+  const nbtValidationEnabled = useEditorStore(
+    (state) => state.settings.general.validateNbtInput,
+  )
+
+  const nbtValid = useMemo(
+    () =>
+      nbtValidationEnabled
+        ? validateSNBT(singleSelectedEntity?.nbt ?? '') != null
+        : true,
+    [singleSelectedEntity?.nbt, nbtValidationEnabled],
+  )
+
+  if (singleSelectedEntity == null) return null
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">
+        {t(($) => $.sidebar.propertiesPanel.sections.nbt.title)}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label>
+          {t(
+            ($) => $.sidebar.propertiesPanel.sections.nbt.properties.nbt.title,
+          )}
+        </label>
+        <textarea
+          className="min-h-12 min-w-0 rounded-sm bg-neutral-800 p-1 text-xs outline-hidden"
+          value={singleSelectedEntity.nbt}
+          onChange={(evt) => {
+            setEntityNBT(
+              singleSelectedEntity.id,
+              stripWhitespace(evt.target.value),
+            )
+          }}
+        />
+        {singleSelectedEntity != null && !nbtValid && (
+          <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+            <LuCircleAlert size={20} />{' '}
+            {t(
+              ($) =>
+                $.sidebar.propertiesPanel.sections.nbt.properties.nbt.invalid,
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -689,11 +764,13 @@ const PropertiesPanel: FC = () => {
       <SidePanelTitle>
         {t(($) => $.sidebar.propertiesPanel.title)}
       </SidePanelTitle>
-      <SidePanelContent>
+      <SidePanelContent className="flex flex-col gap-2">
         {singleSelectedEntity?.kind === 'block' && <BlockDisplayProperties />}
         {singleSelectedEntity?.kind === 'item' && <ItemDisplayProperties />}
         {singleSelectedEntity?.kind === 'text' && <TextDisplayProperties />}
         {singleSelectedEntity?.kind === 'group' && <GroupProperties />}
+
+        {singleSelectedEntity != null && <CommonDisplayProperties />}
 
         {singleSelectedEntity == null && <ProjectProperties />}
       </SidePanelContent>
@@ -702,3 +779,7 @@ const PropertiesPanel: FC = () => {
 }
 
 export default PropertiesPanel
+
+function stripWhitespace(input: string) {
+  return input.replace(/[\r\n\v]+/g, '')
+}

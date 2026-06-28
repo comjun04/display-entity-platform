@@ -33,8 +33,10 @@ const FileDropzone: FC = () => {
   })
 
   useEffect(() => {
-    const enableShowingOverlay = () => {
-      if (!isAnyDialogOpen) {
+    const enableShowingOverlay = (evt: DragEvent) => {
+      // ensure that dialogs are not open
+      // and the item user is dragging is actually a file (not a string)
+      if (!isAnyDialogOpen && evt.dataTransfer?.items[0]?.kind === 'file') {
         setShowOverlay(true)
       }
     }
@@ -45,6 +47,21 @@ const FileDropzone: FC = () => {
       document.removeEventListener('dragenter', enableShowingOverlay)
     }
   }, [isAnyDialogOpen])
+
+  // hide overlay when escape key pressed
+  // this rescues user from file drop indicator showed by bug
+  useEffect(() => {
+    const listener = (evt: KeyboardEvent) => {
+      if (evt.key.toLowerCase() === 'escape') {
+        setShowOverlay(false)
+      }
+    }
+
+    document.addEventListener('keydown', listener)
+    return () => {
+      document.removeEventListener('keydown', listener)
+    }
+  }, [])
 
   return (
     <div

@@ -2,8 +2,8 @@
   "branding": {
     "desc": "Minecraft 디스플레이 엔티티 편집 프로그램",
     "disclaimer": "이 앱은 공식 Minecraft 제품이 아닙니다. Minecraft는 Mojang AB의 상표입니다. Minecraft 및 그 지적 재산권과 관련된 모든 권리는 Mojang AB가 소유합니다.",
-    "specialThanks": "초기 Minecraft 디스플레이 엔티티 편집기를 제작하고, 이 프로젝트에 영감을 준 <6>BDStudio</6>를 만든 <2>Eszes Bálint</2>에게 특별히 감사드립니다.",
-    "openSourceNotice": "이 앱은 무료이며 오픈 소스입니다. <1>전체 소스코드는 <1 /> GitHub에서 확인할 수 있습니다.</1>"
+    "specialThanks": "초기 Minecraft 디스플레이 엔티티 편집기를 제작하고, 이 프로젝트에 영감을 준 <bdstudio />를 만든 <user />에게 특별히 감사드립니다.",
+    "openSourceNotice": "이 앱은 무료이며 오픈 소스입니다. <projectLink>전체 소스코드는 <githubIcon /> GitHub에서 확인할 수 있습니다.</projectLink>"
   },
   "dialog": {
     "welcome": {
@@ -17,14 +17,16 @@
       },
       "showWelcomeOnStartup": "시작 시 환영 메세지 표시",
       "changeLogs": [
-        "이제 마인크래프트 1.21.11을 지원합니다!",
-        "플레이어 헤드 페인터를 추가했습니다! 이제 자신만의 플레이어 헤드를 칠하고 인게임에서 사용할 수 있도록 변환할 수 있습니다!",
-        "이제 단축키를 변경할 수 있습니다. 원하는 대로 설정하세요!",
-        "리소스를 병렬로 로드하도록 개선되었습니다.",
-        "Toast 시스템을 추가했습니다. 더 많은 알림이 추가될 예정입니다.",
-        "이제 사이드바의 최대 크기를 화면 가로 크기의 80%로 제한합니다.",
-        "이제 사이드바의 크기를 저장하여, 매번 앱을 켤 때마다 사이드바 크기를 조절하지 않아도 됩니다.",
-        "...그 외 앱을 개선하기 위해 몇몇 버그를 수정했습니다!"
+        "우클릭 메뉴를 추가했습니다.",
+        "이제 엔티티를 단축키로 복사(Ctrl+C), 붙여넣기(Ctrl+V)할 수 있습니다!",
+        "모든 디스플레이 엔티티들에 NBT 필드를 추가하여, 디스플레이 엔티티의 NBT 데이터를 커스텀할 수 있습니다.",
+        "프로젝트를 마인크래프트 데이터팩으로 내보내는 기능과, 모든 엔티티 생성 명령어들을 하나의 .mcfunction 파일로 다운받는 기능을 추가했습니다!",
+        "Shift를 누르고 디스플레이 엔티티를 회전할 때 15도 단위가 아닌 1도 단위로 정밀 회전하는 기능을 추가했습니다.",
+        "여러 디스플레이 엔티티들을 선택하고 회전할 때 이상하게 회전되는 버그를 수정했습니다.",
+        "텍스트 디스플레이 배경 alpha 값이 프로젝트를 bdengine으로 내보낼 때 정상적으로 반영되지 않던 버그를 수정했습니다.",
+        "`마인크래프트로 내보내기` 화면에서의 성능을 개선했습니다.",
+        "모바일 환경에서의 레이아웃과 디자인을 개선했습니다.",
+        "마지막으로, 몇 가지 사소한 버그를 수정했고, 내부 구조를 개선했습니다."
       ]
     },
     "blockDisplaySelect": {
@@ -43,15 +45,44 @@
       "title": "Minecraft로 내보내기",
       "baseTag": {
         "title": "기본 태그",
-        "invalidTagNotice": "태그는 반드시 영문자, 숫자, <2>_</2>, <5>-</5>, <8>.</8>, 그리고 <11>+</11> 글자만 포함되어야 합니다."
+        "desc": "기본 태그는 모든 디스플레이 엔티티들에 추가되어, 엔티티들의 수정, 이동, 제거를 쉽게 할 수 있도록 합니다.",
+        "invalidTagNotice": "태그는 반드시 영문자, 숫자, <codeblock>_</codeblock>, <codeblock>-</codeblock>, <codeblock>.</codeblock>, 그리고 <codeblock>+</codeblock> 글자만 포함되어야 합니다."
       },
+      "tabs": {
+        "command": "명령어",
+        "datapack": "데이터 팩"
+      },
+      "invalidNBTDataExist": "일부 엔티티에 올바르지 않은 NBT가 포함되어 있거나, 메인 NBT가 올바르지 않은 것 같습니다. 생성된 명령어가 작동하지 않거나, 기본 태그가 빠져있을 수 있습니다.",
       "result": {
+        "noEntities": "내보낼 디스플레이 엔티티가 없습니다",
         "summonCommand": "소환 명령어 {{n}}",
         "removeCommand": "제거 명령어",
         "copyBtn": {
           "normal": "복사",
           "copied": "복사 완료!"
         }
+      },
+      "datapack": {
+        "options": {
+          "title": "데이터 팩 내보내기 설정",
+          "namespace": {
+            "name": "네임스페이스",
+            "desc": "생성된 mcfunction 파일들의 네임스페이스를 정합니다",
+            "invalidValue": "네임스페이스는 영소문자, 숫자, <codeblock>_</codeblock>, <codeblock>-</codeblock>, and <codeblock>.</codeblock> 문자만 포함해야 하며, <codeblock>..</codeblock>이(가) 될 수 없습니다."
+          },
+          "compress": {
+            "name": "데이터 팩 압축",
+            "desc": "최종 데이터 팩 .zip 파일에 압축을 적용합니다"
+          }
+        },
+        "howToUse": {
+          "title": "데이터 팩 사용 방법",
+          "desc": "함수를 사용하여 이 프로젝트에 있는 디스플레이 엔티티들을 소환하고 제거할 수 있습니다.",
+          "summonCommand": "이 프로젝트에 있는 엔티티들을 소환하려면 <codeblock>{{command}}</codeblock> 을(를) 실행합니다.",
+          "removeCommand": "기존에 소환한 엔티티들을 제거하려면 <codeblock>{{command}}</codeblock> 을(를) 실행합니다."
+        },
+        "downloadButton": "데이터 팩으로 다운로드",
+        "exportSuccess": "프로젝트를 데이터 팩으로 내보냈습니다"
       }
     },
     "settings": {
@@ -62,7 +93,11 @@
           "options": {
             "language": "언어",
             "showWelcomeOnStartup": "시작 시 환영 메세지 표시",
-            "forceUnifont": "Unicode 폰트 (Unifont)를 강제로 적용"
+            "forceUnifont": "Unicode 폰트 (Unifont)를 강제로 적용",
+            "validateNbtInput": {
+              "title": "NBT 입력값 검사 (느림)",
+              "desc": "프로젝트 메인 NBT와 각 엔티티의 NBT 값을 파싱하고 검사하여, 올바르지 않은 값이 있으면 경고합니다. 대규모 프로젝트에서 명령어 생성 속도가 느려질 수 있습니다."
+            }
           }
         },
         "appearance": {
@@ -121,6 +156,8 @@
             "general": {
               "title": "일반",
               "items": {
+                "copy": "복사",
+                "paste": "붙여넣기",
                 "openFromFile": "파일에서 열기",
                 "saveToFile": "파일로 저장",
                 "openSettings": "설정 열기",
@@ -161,9 +198,6 @@
         "debugOptions": {
           "title": "디버그 옵션",
           "options": {
-            "testOption": {
-              "title": "테스트 옵션"
-            },
             "minLogLevel": {
               "title": "Minimum Log Level"
             },
@@ -172,6 +206,9 @@
             },
             "alertUncaughtError": {
               "title": "Notify uncaught errors with window.alert()"
+            },
+            "showPivotIndicator": {
+              "title": "기준점 위치 표시"
             }
           }
         }
@@ -258,6 +295,10 @@
             },
             "projectName": {
               "title": "프로젝트 이름"
+            },
+            "mainNBT": {
+              "title": "메인 NBT",
+              "invalid": "NBT 값이 올바르지 않은 것 같습니다."
             }
           }
         },
@@ -284,6 +325,15 @@
               "title": "그룹 이름"
             }
           }
+        },
+        "nbt": {
+          "title": "NBT",
+          "properties": {
+            "nbt": {
+              "title": "NBT",
+              "invalid": "NBT 값이 올바르지 않은 것 같습니다."
+            }
+          }
         }
       }
     }
@@ -292,9 +342,18 @@
     "loadingProject": "프로젝트를 로드하는 중...",
     "importingBDEProject": "BDEngine 프로젝트를 가져오는 중...",
     "unsupportedFile": "지원되지 않는 파일입니다",
-    "projectSaved": "프로젝트를 저장했습니다"
+    "projectSaved": "프로젝트를 저장했습니다",
+    "exportedToBDEngineFile": "프로젝트를 bdengine 파일로 내보냈습니다"
   },
   "dropzone": {
     "text": "여기에 프로젝트 파일을 드롭하여 열기"
+  },
+  "contextMenu": {
+    "copy": "복사",
+    "paste": "붙여넣기",
+    "duplicate": "복제",
+    "group": "그룹",
+    "selectAll": "전체 선택",
+    "delete": "삭제"
   }
 }

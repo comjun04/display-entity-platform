@@ -1,13 +1,27 @@
-import type { ThreeEvent } from '@react-three/fiber'
-import { type FC, type MutableRefObject, memo, useEffect } from 'react'
+import { type ThreeEvent, extend } from '@react-three/fiber'
+import { type FC, type MutableRefObject, memo, useMemo } from 'react'
 import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import useBlockStates from '@/hooks/useBlockStates'
+import { getMatchingBlockstateModel } from '@/lib/resources/blockstates'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import type { BlockstatesData } from '@/types/base'
 
-import BoundingBox from './BoundingBox'
-import Model from './Model'
+import { BoundingBoxForInstanced } from './BoundingBox'
+import { InstancedModel } from './instanced'
+import { ZeroScaledGroup } from './zero-scaled-group'
+
+extend({ ZeroScaledGroup })
+
+const useMatchingBlockstatesModel = (data: {
+  blockstatesData?: BlockstatesData
+  blockstates: Record<string, string>
+}) => {
+  if (data.blockstatesData == null) return []
+
+  return getMatchingBlockstateModel(data.blockstatesData, data.blockstates)
+}
 
 type BlockDisplayProps = {
   id: string
@@ -20,7 +34,7 @@ type BlockDisplayProps = {
   objectRef?: MutableRefObject<Group>
 }
 
-const MemoizedModel = memo(Model)
+const MemoizedInstancedModel = memo(InstancedModel)
 
 const BlockDisplay: FC<BlockDisplayProps> = ({
   id,
@@ -31,93 +45,69 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
   onClick,
   objectRef: ref,
 }) => {
-  const { thisEntity, thisEntitySelected } = useDisplayEntityStore(
-    useShallow((state) => ({
-      thisEntity: state.entities.get(id),
-      thisEntitySelected: state.selectedEntityIds.includes(id),
-    })),
-  )
+  const { thisEntity, thisEntitySelected, thisEntityBlockstates } =
+    useDisplayEntityStore(
+      useShallow((state) => {
+        const entity = state.entities.get(id)
+        return {
+          thisEntity: entity,
+          thisEntitySelected: state.selectedEntityIds.includes(id),
+          thisEntityBlockstates:
+            entity?.kind === 'block' ? entity.blockstates : undefined,
+        }
+      }),
+    )
 
   // =====
 
   const { data: blockstatesData } = useBlockStates(type)
+  const matchingBlockstatesModels = useMatchingBlockstatesModel({
+    blockstatesData,
+    blockstates: thisEntity?.kind === 'block' ? thisEntity.blockstates : {},
+  })
 
-  // blockstates 데이터가 변경되었을 경우 현재 block display에 적용되어 있는 값을 확인 후
-  // 새 blockstates key 값 목록에 있다면 그대로 두고, 없다면 기본값을 적용
-  useEffect(() => {
-    if (blockstatesData == null) return
+  const modelList = useMemo(() => {
+    if (blockstatesData == null) return []
 
-    const thisEntity = useDisplayEntityStore.getState().entities.get(id)
-    if (thisEntity?.kind !== 'block') return
-
-    const newBlockstateObject: Record<string, string> = {}
-    for (const [
-      blockstateKey,
-      blockstateValues,
-    ] of blockstatesData.blockstates.entries()) {
-      const existingValue = thisEntity.blockstates[blockstateKey]
-      if (existingValue == null) {
-        newBlockstateObject[blockstateKey] = blockstateValues.states.has(
-          blockstateValues.default,
-        )
-          ? blockstateValues.default
-          : [...blockstateValues.states.values()][0]
-      }
-    }
-
-    useDisplayEntityStore
-      .getState()
-      .setBDEntityBlockstates(id, newBlockstateObject, true)
-  }, [blockstatesData, id])
+    const matchingBlockstateModels = getMatchingBlockstateModel(
+      blockstatesData,
+      thisEntityBlockstates ?? {},
+    )
+    return matchingBlockstateModels.map((modelData) => ({
+      resourceLocation: modelData.model,
+      xRotation: modelData.x,
+      yRotation: modelData.y,
+    }))
+  }, [blockstatesData, thisEntityBlockstates])
 
   if (thisEntity?.kind !== 'block') return null
 
   return (
-    <group ref={ref}>
-      <BoundingBox
-        object={ref?.current}
+    <zeroScaledGroup ref={ref} name={`BlockDisplay ${id} ${type}`}>
+      <BoundingBoxForInstanced
+        modelList={modelList}
         visible={thisEntitySelected}
         color="gold"
       />
 
-      <group name="base2" onClick={onClick}>
-        {(blockstatesData?.models ?? []).map((model, idx) => {
-          let shouldRender = model.when.length < 1 // when 배열 안에 조건이 정의되어 있지 않다면 무조건 렌더링
-          for (const conditionObject of model.when) {
-            let andConditionCheckSuccess = true
-            for (const conditionKey in conditionObject) {
-              if (
-                thisEntity.blockstates[conditionKey] == null ||
-                !conditionObject[conditionKey].includes(
-                  thisEntity.blockstates[conditionKey],
-                )
-              ) {
-                andConditionCheckSuccess = false
-                break
-              }
-            }
+      <group onClick={onClick}>
+        {matchingBlockstatesModels.map((modelToApply, idx) => {
+          const resourceLocation = modelToApply.model
+          const modelId = `${id}|${resourceLocation}|x:${modelToApply.x}|y:${modelToApply.y}|${idx}`
 
-            if (andConditionCheckSuccess) {
-              shouldRender = true
-              break
-            }
-          }
-
-          if (!shouldRender) return null
-
-          // apply가 여러 개 있는 경우(랜덤), 맨 처음 것만 고정으로 사용
-          const modelToApply = model.apply[0]
           return (
-            <MemoizedModel
-              key={idx}
-              initialResourceLocation={modelToApply.model}
+            <MemoizedInstancedModel
+              key={modelId}
+              entityId={id}
+              modelId={modelId}
+              resourceLocation={resourceLocation}
               xRotation={modelToApply.x}
               yRotation={modelToApply.y}
             />
           )
         })}
       </group>
-    </group>
+    </zeroScaledGroup>
   )
 }
 

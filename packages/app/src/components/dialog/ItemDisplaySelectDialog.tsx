@@ -4,9 +4,9 @@ import { type FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
+import { createNewEntities } from '@/lib/entities'
 import { getItemListQueryFn } from '@/lib/queries/getItemList'
 import { useDialogStore } from '@/stores/dialogStore'
-import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useProjectStore } from '@/stores/projectStore'
 
 import { Input } from '../ui/input'
@@ -20,7 +20,6 @@ const VirtualList: FC<VirtualListProps> = ({
   items: virtualItemList,
   isLoading,
 }) => {
-  const createNewEntity = useDisplayEntityStore((state) => state.createNew)
   const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
 
   // virtualizing
@@ -55,7 +54,9 @@ const VirtualList: FC<VirtualListProps> = ({
                 transform: `translateY(${virtualItem.start}px)`,
               }}
               onClick={() => {
-                createNewEntity([{ kind: 'item', type: item }])
+                createNewEntities([{ kind: 'item', type: item }]).catch(
+                  console.error,
+                )
                 closeActiveDialog()
               }}
             >
@@ -119,7 +120,9 @@ const ItemDisplaySelectDialog: FC = () => {
       onClose={closeActiveDialog}
     >
       <div className="flex flex-row items-center gap-4">
-        <span>{t(($) => $.dialog.itemDisplaySelect.search.label)}</span>
+        <span className="flex-none">
+          {t(($) => $.dialog.itemDisplaySelect.search.label)}
+        </span>
         <Input
           value={searchQuery}
           onChange={(evt) => setSearchQuery(evt.target.value)}

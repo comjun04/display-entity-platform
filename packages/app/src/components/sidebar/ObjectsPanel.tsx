@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { type FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoCubeOutline } from 'react-icons/io5'
 import { LuChevronRight, LuSmile, LuType } from 'react-icons/lu'
@@ -7,6 +7,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { cn } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 
@@ -50,6 +51,10 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
     state.selectedEntityIdsIncludingParent.has(id),
   )
 
+  const showEntityIdFirst = useEditorStore(
+    (state) => state.settings.debug.showEntityIdOnObjectPanel,
+  )
+
   const blockstateArr: string[] = []
   if (kind === 'block') {
     for (const key in blockstates!) {
@@ -57,8 +62,21 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
     }
   }
 
+  const itemName =
+    kind === 'group'
+      ? groupName || 'Group'
+      : kind === 'text'
+        ? textDisplayText
+        : type
+
+  const [manuallyExpandGroup, setManuallyExpandGroup] = useState(false)
+  const expandGroupChildren =
+    kind === 'group' &&
+    children != null &&
+    (thisOrChildSelected || manuallyExpandGroup)
+
   return (
-    <div>
+    <div className="border-l-2 border-neutral-700 pl-1">
       <div
         className={cn(
           'flex cursor-pointer flex-row items-center gap-1',
@@ -98,8 +116,8 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
       >
         <span
           className={cn(
-            'flex-none transition-transform duration-200',
-            kind === 'group' && thisOrChildSelected && 'rotate-90',
+            'flex flex-none items-center transition-transform duration-200',
+            expandGroupChildren && 'rotate-90',
           )}
         >
           {kind === 'block' && <IoCubeOutline size={16} />}
@@ -110,14 +128,28 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
               <TbDiamondFilled size={16} />
             ))}
           {kind === 'text' && <LuType size={16} />}
-          {kind === 'group' && <LuChevronRight size={16} />}
+          {kind === 'group' && (
+            <button
+              onClick={(evt) => {
+                evt.stopPropagation()
+                setManuallyExpandGroup((state) => !state)
+              }}
+            >
+              <LuChevronRight size={16} />
+            </button>
+          )}
         </span>
-        <span>
-          {kind === 'group'
-            ? groupName || 'Group'
-            : kind === 'text'
-              ? textDisplayText
-              : type}
+        <span className="flex flex-none gap-1">
+          {showEntityIdFirst && <span className="font-mono">{id}</span>}
+          {itemName}
+          {blockstateArr.length > 0 && (
+            <span className="truncate opacity-50">
+              [{blockstateArr.join(',')}]
+            </span>
+          )}
+          {kind === 'item' && display != null && (
+            <span className="truncate opacity-50">[display={display}]</span>
+          )}
         </span>
 
         {playerHeadProperties?.texture?.baked === false && (
@@ -125,18 +157,9 @@ const ObjectItem: FC<ObjectItemProps> = ({ id }) => {
             Painted
           </div>
         )}
-
-        {blockstateArr.length > 0 && (
-          <span className="truncate opacity-50">
-            [{blockstateArr.join(',')}]
-          </span>
-        )}
-        {kind === 'item' && display != null && (
-          <span className="truncate opacity-50">[display={display}]</span>
-        )}
       </div>
 
-      {kind === 'group' && children != null && thisOrChildSelected && (
+      {expandGroupChildren && (
         <div className="pl-4">
           {children.map((entityId) => (
             <ObjectItem key={entityId} id={entityId} />
@@ -159,7 +182,7 @@ const ObjectsPanel: FC = () => {
   )
 
   return (
-    <SidePanel className="max-h-[50vh]">
+    <SidePanel className="max-h-[50vh] overflow-x-auto">
       <SidePanelTitle>{t(($) => $.sidebar.objectsPanel.title)}</SidePanelTitle>
       <SidePanelContent>
         {rootEntityIds.map((id) => (

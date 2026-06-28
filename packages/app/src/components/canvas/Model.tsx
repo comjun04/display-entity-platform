@@ -15,7 +15,7 @@ import {
 import useModelData from '@/hooks/useModelData'
 import { getLogger } from '@/lib/logger'
 import { makeMaterial } from '@/lib/resources/material'
-import { loadModelMesh } from '@/lib/resources/modelMesh'
+import { generateModelMeshIngredients } from '@/lib/resources/modelMesh'
 import { stripMinecraftPrefix } from '@/lib/utils'
 import { useProjectStore } from '@/stores/projectStore'
 import type {
@@ -181,24 +181,31 @@ const Model: FC<ModelNewProps> = ({
 
       setMeshLoaded(false)
 
-      const loadedMesh = await loadModelMesh({
+      const meshIngredients = await generateModelMeshIngredients({
         modelResourceLocation: initialResourceLocation,
         elements: modelData.elements,
         textures: modelData.textures,
         isItemModel,
         isBlockShapedItemModel,
         playerHeadData,
-      })
-
-      if (loadedMesh == null) {
+      }).catch((err) => {
         logger.error(`Failed to load model mesh for ${initialResourceLocation}`)
+        logger.error(err)
+        return
+      })
+      if (meshIngredients == null) {
         return
       }
+
+      const newMesh = new Mesh(
+        meshIngredients.geometry,
+        meshIngredients.materials,
+      )
 
       if (mergedMeshRef.current != null) {
         mergedMeshRef.current.geometry.dispose()
       }
-      mergedMeshRef.current = loadedMesh
+      mergedMeshRef.current = newMesh
       prevResourceLocationRef.current = initialResourceLocation
       prevPlayerHeadTextureDataRef.current = playerHeadData?.textureData
 

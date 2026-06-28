@@ -2,8 +2,8 @@
   "branding": {
     "desc": "Graphical editor for Minecraft Display entities",
     "disclaimer": "This app is not an official Minecraft product. Minecraft is a trademark of Mojang AB. All rights related to Minecraft and its intellectual property are owned by Mojang AB.",
-    "specialThanks": "Special Thanks to <2>Eszes Bálint</2> for creating <6>BDStudio</6>, the initial editor of Minecraft display entities, and inspiration of this project",
-    "openSourceNotice": "This app is free and open source. <1>Full source code is available on <1 /> GitHub.</1>"
+    "specialThanks": "Special Thanks to <user /> for creating <bdstudio />, the initial editor of Minecraft display entities, and inspiration of this project",
+    "openSourceNotice": "This app is free and open source. <projectLink>Full source code is available on <githubIcon /> GitHub.</projectLink>"
   },
   "dialog": {
     "welcome": {
@@ -17,14 +17,16 @@
       },
       "showWelcomeOnStartup": "Show Welcome on Startup",
       "changeLogs": [
-        "Now supports Minecraft 1.21.11!",
-        "Added Player Head Painter, where you can now paint your own player head and bake it to use in-game!",
-        "Now you can change shortcuts. Configure as you want!",
-        "Improved asset loading by load them parallel.",
-        "Added toast system. More notifications will be added soon.",
-        "Sidebar width is now limited to 80% of window width.",
-        "Now changed sidebar width will be saved, no need to resize each time when opening the app.",
-        "...and several fixes to improve the app!"
+        "Added context menu (right-click menu).",
+        "Now you can copy-paste entities with shortcuts (Ctrl+C, Ctrl+V)!",
+        "Added NBT field to every display entities, allowing you to customize NBT data of display entity.",
+        "Added exporting project to minecraft datapack, also download all entity summon commands to a single .mcfunction file!",
+        "Enabled precise rotation by 1 degree unit by pressing Shift while rotating display entity.",
+        "Fixed rotation with multiple display entities selected weirdly.",
+        "Fixed text display background alpha values not correctly applied when exporting to bdengine file.",
+        "Improved performance on `Export to Minecraft` dialog.",
+        "Improved layout and design on mobile environments.",
+        "Finally, fixed some minor bugs and improved internal structure."
       ]
     },
     "blockDisplaySelect": {
@@ -43,15 +45,44 @@
       "title": "Export to Minecraft",
       "baseTag": {
         "title": "Base Tag",
-        "invalidTagNotice": "Tag must contain only alphabets, numbers, <2>_</2>, <5>-</5>, <8>.</8>, and <11>+</11> characters."
+        "desc": "The base tag will be added to every display entity, allowing you to edit, move, or remove entities easily.",
+        "invalidTagNotice": "Tag must contain only alphabets, numbers, <codeblock>_</codeblock>, <codeblock>-</codeblock>, <codeblock>.</codeblock>, and <codeblock>+</codeblock> characters."
       },
+      "tabs": {
+        "command": "Commands",
+        "datapack": "Data Pack"
+      },
+      "invalidNBTDataExist": "Some entities seems to contain invalid NBT, or main NBT seems invalid. Generated commands may not work, or missing base tag.",
       "result": {
+        "noEntities": "No display entities to export",
         "summonCommand": "Summon command {{n}}",
         "removeCommand": "Remove command",
         "copyBtn": {
           "normal": "Copy",
           "copied": "Copied!"
         }
+      },
+      "datapack": {
+        "options": {
+          "title": "Datapack Export Options",
+          "namespace": {
+            "name": "Namespace",
+            "desc": "Set the namespace of generated mcfunction files",
+            "invalidValue": "Namespace can only contain lowercase alphabets, digits, <codeblock>_</codeblock>, <codeblock>-</codeblock>, and <codeblock>.</codeblock> characters, and cannot be <codeblock>..</codeblock>."
+          },
+          "compress": {
+            "name": "Compress datapack",
+            "desc": "Apply compression to the final datapack .zip file"
+          }
+        },
+        "howToUse": {
+          "title": "How to use datapack",
+          "desc": "You can use functions to spawn and remove display entities in this project.",
+          "summonCommand": "Run <codeblock>{{command}}</codeblock> to summon entities in this project",
+          "removeCommand": "Run <codeblock>{{command}}</codeblock> to remove previously spawned entities"
+        },
+        "downloadButton": "Download as Datapack",
+        "exportSuccess": "Exported project to datapack"
       }
     },
     "settings": {
@@ -62,7 +93,11 @@
           "options": {
             "language": "Language",
             "showWelcomeOnStartup": "Show Welcome on Startup",
-            "forceUnifont": "Force Unicode font (Unifont)"
+            "forceUnifont": "Force Unicode font (Unifont)",
+            "validateNbtInput": {
+              "title": "Validate NBT Input (Slow)",
+              "desc": "The editor will parse and validate project main NBT and per-entity NBT values, and warn if values are invalid. This may slow down command generation on large projects."
+            }
           }
         },
         "appearance": {
@@ -121,6 +156,8 @@
             "general": {
               "title": "General",
               "items": {
+                "copy": "Copy",
+                "paste": "Paste",
                 "openFromFile": "Open from file",
                 "saveToFile": "Save to file",
                 "openSettings": "Open Settings",
@@ -161,9 +198,6 @@
         "debugOptions": {
           "title": "Debug Options",
           "options": {
-            "testOption": {
-              "title": "Test Option"
-            },
             "minLogLevel": {
               "title": "Minimum Log Level"
             },
@@ -172,6 +206,12 @@
             },
             "alertUncaughtError": {
               "title": "Notify uncaught errors with window.alert()"
+            },
+            "showPivotIndicator": {
+              "title": "Show Pivot Location"
+            },
+            "showEntityIdOnObjectPanel": {
+              "title": "Show Entity internal ID on ObjectPanel"
             }
           }
         }
@@ -250,6 +290,10 @@
             },
             "projectName": {
               "title": "Project Name"
+            },
+            "mainNBT": {
+              "title": "Main NBT",
+              "invalid": "The NBT value seems to be invalid."
             }
           }
         },
@@ -276,6 +320,15 @@
               "title": "Group Name"
             }
           }
+        },
+        "nbt": {
+          "title": "NBT",
+          "properties": {
+            "nbt": {
+              "title": "NBT",
+              "invalid": "The NBT value seems to be invalid."
+            }
+          }
         }
       }
     }
@@ -284,9 +337,18 @@
     "loadingProject": "Loading project file...",
     "importingBDEProject": "Importing BDEngine project...",
     "unsupportedFile": "Unsupported file",
-    "projectSaved": "Saved project"
+    "projectSaved": "Saved project",
+    "exportedToBDEngineFile": "Exported project to bdengine file"
   },
   "dropzone": {
     "text": "Drop project file to open"
+  },
+  "contextMenu": {
+    "copy": "Copy",
+    "paste": "Paste",
+    "duplicate": "Duplicate",
+    "group": "Group",
+    "selectAll": "Select All",
+    "delete": "Delete"
   }
 }

@@ -9,7 +9,7 @@ import { useEditorStore } from '@/stores/editorStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type { Number3Tuple } from '@/types/base'
 
-import BoundingBox from './BoundingBox'
+import { BoundingBox } from './BoundingBox'
 
 type TextDisplayProps = {
   id: string
@@ -97,7 +97,7 @@ const TextDisplay: FC<TextDisplayProps> = ({
   ])
 
   return (
-    <object3D ref={ref}>
+    <object3D ref={ref} name={`TextDisplay ${id}`}>
       <BoundingBox
         object={ref?.current}
         visible={thisEntitySelected}

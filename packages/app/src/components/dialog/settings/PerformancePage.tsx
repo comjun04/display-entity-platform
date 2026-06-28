@@ -2,6 +2,8 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
+import { Field, FieldLabel } from '@/components/ui/field'
+import { Switch } from '@/components/ui/switch'
 import { useEditorStore } from '@/stores/editorStore'
 
 const PerformancePage: FC = () => {
@@ -16,26 +18,26 @@ const PerformancePage: FC = () => {
 
   return (
     <>
-      <h3 className="text-xl font-bold">
+      <h3 className="mb-4 text-xl font-bold">
         {t(($) => $.dialog.settings.page.performance.title)}
       </h3>
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_performance_reducePixelRatio"
-          checked={settings.performance.reducePixelRatio}
-          onChange={(evt) => {
-            setSettings({
-              performance: { reducePixelRatio: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_performance_reducePixelRatio">
+
+      <Field orientation="horizontal">
+        <FieldLabel htmlFor="settings_performance_reducePixelRatio">
           {t(
             ($) => $.dialog.settings.page.performance.options.reducePixelRatio,
           )}
-        </label>
-      </div>
+        </FieldLabel>
+        <Switch
+          id="settings_performance_reducePixelRatio"
+          checked={settings.performance.reducePixelRatio}
+          onCheckedChange={(checked) => {
+            setSettings({
+              performance: { reducePixelRatio: checked },
+            })
+          }}
+        />
+      </Field>
     </>
   )
 }

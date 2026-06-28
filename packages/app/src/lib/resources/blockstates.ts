@@ -38,6 +38,8 @@ export function getMatchingBlockstateModel(
         }
       }
 
+      // when there are several `apply`s, (minecraft then randomly selects what to render)
+      // then just return the first one (hardcoded for display entities)
       return shouldRender ? model.apply[0] : null
     })
     .filter((d) => d != null)
@@ -272,4 +274,28 @@ export async function loadBlockstates(
     useCacheStore.getState().setBlockstateData(key, newBlockstatesData)
     return { blockstates: blockstateMap, models }
   })
+}
+
+export function calculateDefaultBlockstates(
+  blockstatesData: BlockstatesData,
+  override: Record<string, string> = {},
+) {
+  const newBlockstateObject: Record<string, string> = {}
+  for (const [
+    blockstateKey,
+    blockstateValues,
+  ] of blockstatesData.blockstates.entries()) {
+    const existingValue = override[blockstateKey]
+    if (existingValue == null) {
+      newBlockstateObject[blockstateKey] = blockstateValues.states.has(
+        blockstateValues.default,
+      )
+        ? blockstateValues.default
+        : [...blockstateValues.states.values()][0]
+    } else {
+      newBlockstateObject[blockstateKey] = existingValue
+    }
+  }
+
+  return newBlockstateObject
 }

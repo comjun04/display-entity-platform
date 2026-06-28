@@ -1,31 +1,57 @@
-import { useDebouncedEffect } from '@react-hookz/web'
-import { type FC, type JSX, useEffect, useState } from 'react'
+import { useDebouncedEffect, useDebouncedState } from '@react-hookz/web'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import JSZip from 'jszip'
+import {
+  type ComponentPropsWithoutRef,
+  type FC,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { LuCopy, LuCopyCheck } from 'react-icons/lu'
-import { coerce as semverCoerce, satisfies as semverSatisfies } from 'semver'
+import {
+  LuCircleAlert,
+  LuCircleSlash,
+  LuCopy,
+  LuCopyCheck,
+} from 'react-icons/lu'
+import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
-import { getLogger } from '@/lib/logger'
-import { cn } from '@/lib/utils'
+import { GameVersions } from '@/constants'
+import { type NbtStringGeneratePayload, generateNbtStrings } from '@/lib/nbt'
+import { cn, downloadFile } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
+import { useEditorStore } from '@/stores/editorStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
 import { useProjectStore } from '@/stores/projectStore'
-import type { MinimalTextureValue, TextEffects } from '@/types/base'
-import { isItemDisplayPlayerHead } from '@/types/guards'
+import type {
+  ExportedNBTGeneratorWorkerMessage,
+  ExportedNBTGeneratorWorkerResponse,
+} from '@/types/workers'
 
+import { Button } from '../ui/button'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '../ui/field'
 import { Input } from '../ui/input'
-import { Textarea } from '../ui/textarea'
+import { Switch } from '../ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import Dialog from './Dialog'
 
-const logger = getLogger('ExportToMinecraftDialog')
-
-type CopyButtonProps = JSX.IntrinsicElements['button'] & {
+type CopyButtonProps = ComponentPropsWithoutRef<'button'> & {
   valueToCopy: string
 }
 
 const CopyButton: FC<CopyButtonProps> = ({
-  className,
   valueToCopy,
   onClick,
   ...props
@@ -51,11 +77,8 @@ const CopyButton: FC<CopyButtonProps> = ({
   }, [clicked])
 
   return (
-    <button
-      className={cn(
-        'flex flex-row items-center gap-2 rounded-lg bg-white/10 px-3 py-1 transition hover:bg-white/5',
-        className,
-      )}
+    <Button
+      variant="outline"
       onClick={(evt) => {
         onClick?.(evt)
         void navigator.clipboard.writeText(valueToCopy)
@@ -74,7 +97,7 @@ const CopyButton: FC<CopyButtonProps> = ({
           {t(($) => $.dialog.exportToMinecraft.result.copyBtn.normal)}
         </>
       )}
-    </button>
+    </Button>
   )
 }
 
@@ -86,20 +109,104 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
   const { t } = useTranslation()
 
   const [input, setInput] = useState('')
+  const [debouncedInput, setDebouncedInput] = useDebouncedState('', 200)
+  const [hasValidationErrors, setHasValidationErrors] = useState(false)
+
+  useEffect(() => {
+    onChange?.(debouncedInput)
+  }, [debouncedInput, onChange])
+
+  return (
+    <FieldGroup>
+      <Field data-invalid={hasValidationErrors} orientation="responsive">
+        <FieldContent>
+          <FieldLabel>
+            {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
+          </FieldLabel>
+
+          <FieldDescription>
+            {t(($) => $.dialog.exportToMinecraft.baseTag.desc)}
+          </FieldDescription>
+
+          {hasValidationErrors && (
+            <FieldError>
+              <Trans
+                i18nKey={($) =>
+                  $.dialog.exportToMinecraft.baseTag.invalidTagNotice
+                }
+                ns="translation"
+                components={{
+                  codeblock: (
+                    <code className="rounded-sm bg-neutral-800 p-1 font-mono" />
+                  ),
+                }}
+              />
+            </FieldError>
+          )}
+        </FieldContent>
+        <Input
+          value={input}
+          onChange={(evt) => {
+            const text = evt.target.value
+            setInput(text)
+
+            if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
+              setHasValidationErrors(false)
+              setDebouncedInput(text)
+            } else {
+              setHasValidationErrors(true)
+            }
+          }}
+        />
+      </Field>
+    </FieldGroup>
+  )
+}
+
+interface DatapackNamespaceFieldProps {
+  onChange: (text: string) => void
+}
+const DatapackNamespaceField: FC<DatapackNamespaceFieldProps> = ({
+  onChange,
+}) => {
+  const { t } = useTranslation()
+
+  const [input, setInput] = useState('minecraft')
   const [hasValidationErrors, setHasValidationErrors] = useState(false)
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <span className="flex-none">
-        {t(($) => $.dialog.exportToMinecraft.baseTag.title)}
-      </span>
+    <Field orientation="responsive" data-invalid={hasValidationErrors}>
+      <FieldContent>
+        <FieldLabel>
+          {t(($) => $.dialog.exportToMinecraft.datapack.options.namespace.name)}
+        </FieldLabel>
+        {hasValidationErrors && (
+          <FieldError>
+            <Trans
+              i18nKey={($) =>
+                $.dialog.exportToMinecraft.datapack.options.namespace
+                  .invalidValue
+              }
+              components={{
+                codeblock: (
+                  <code className="rounded-sm bg-neutral-800 p-1 font-mono" />
+                ),
+              }}
+            />
+          </FieldError>
+        )}
+        <FieldDescription>
+          {t(($) => $.dialog.exportToMinecraft.datapack.options.namespace.desc)}
+        </FieldDescription>
+      </FieldContent>
       <Input
+        className="w-auto"
         value={input}
         onChange={(evt) => {
           const text = evt.target.value
           setInput(text)
 
-          if (/^[a-z0-9_\-.+]*$/gi.test(text)) {
+          if (/^[a-z0-9_\-.]*$/g.test(text) && text !== '..') {
             setHasValidationErrors(false)
             onChange?.(text)
           } else {
@@ -107,23 +214,7 @@ const TagValidatorInput: FC<TagValidatorInputProps> = ({ onChange }) => {
           }
         }}
       />
-      {hasValidationErrors && (
-        <span className="text-sm text-red-500">
-          <Trans
-            i18nKey={($) => $.dialog.exportToMinecraft.baseTag.invalidTagNotice}
-            ns="translation"
-          >
-            Tag must contain only alphabets, numbers,{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">_</code>,{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">-</code>,{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">.</code>,
-            and{' '}
-            <code className="rounded-sm bg-neutral-800 p-1 font-mono">+</code>{' '}
-            characters.
-          </Trans>
-        </span>
-      )}
-    </div>
+    </Field>
   )
 }
 
@@ -141,12 +232,103 @@ const ExportToMinecraftDialog: FC = () => {
       entities: state.entities,
     })),
   )
-
-  const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
+  const { targetGameVersion, mainNBT } = useProjectStore(
+    useShallow((state) => ({
+      targetGameVersion: state.targetGameVersion,
+      mainNBT: state.mainNBT,
+    })),
+  )
 
   const [baseTag, setBaseTag] = useState('')
-  const [nbtDataGenerated, setNbtDataGenerated] = useState(false)
+  const [nbtDataGenerating, setNbtDataGenerating] = useState(false)
+  const [nbtDataValid, setNbtDataValid] = useState(true)
   const [nbtStrings, setNbtStrings] = useState<string[]>([])
+
+  const nbtGeneratorWorkerRef = useRef<Worker>()
+  useEffect(() => {
+    const cleanup = () => {
+      nbtGeneratorWorkerRef.current?.terminate()
+    }
+
+    const nbtValidationEnabled =
+      useEditorStore.getState().settings.general.validateNbtInput
+
+    // TODO: make it suspend using `use()` after react v19 upgrade
+    if (isOpen) {
+      if (entities.size < 1) {
+        setNbtStrings([])
+        setNbtDataGenerating(false)
+        return cleanup
+      }
+
+      const { entityRefs } = useEntityRefStore.getState()
+      const payload = [...entities.values()].reduce((acc, cur) => {
+        const refData = entityRefs.get(cur.id)
+        if (refData != null) {
+          const worldMatrix = refData.objectRef.current.matrixWorld
+            .clone()
+            .transpose()
+            .toArray()
+          acc.set(cur.id, {
+            entity: cur,
+            worldMatrix,
+          })
+        }
+
+        return acc
+      }, new Map<string, NbtStringGeneratePayload>())
+
+      if (nbtValidationEnabled) {
+        nbtGeneratorWorkerRef.current = new Worker(
+          new URL(
+            '../../workers/exportedNbtGenerator.worker.ts',
+            import.meta.url,
+          ),
+          { type: 'module' },
+        )
+
+        setNbtDataGenerating(true)
+
+        nbtGeneratorWorkerRef.current?.addEventListener(
+          'message',
+          (evt: MessageEvent<ExportedNBTGeneratorWorkerResponse>) => {
+            const msg = evt.data
+
+            if (msg.type === 'data') {
+              setNbtStrings(msg.data.nbtStrings)
+              setNbtDataGenerating(false)
+              setNbtDataValid(!msg.data.invalidNBTExist)
+            }
+          },
+        )
+
+        nbtGeneratorWorkerRef.current?.postMessage({
+          cmd: 'generate',
+          data: {
+            payload,
+            targetGameVersion,
+            baseTag,
+            mainNBT,
+            validateNBT: true,
+          },
+        } satisfies ExportedNBTGeneratorWorkerMessage)
+      } else {
+        const { nbtStrings, invalidNBTExist } = generateNbtStrings({
+          payload,
+          targetGameVersion,
+          baseTag,
+          mainNBT,
+          validateNBT: false,
+        })
+
+        setNbtStrings(nbtStrings)
+        setNbtDataGenerating(false)
+        setNbtDataValid(!invalidNBTExist)
+      }
+    }
+
+    return cleanup
+  }, [isOpen, entities, targetGameVersion, baseTag, mainNBT]) // 엔티티 데이터나 태그가 바뀌었다면 커맨드를 다시 생성해야 함
 
   useEffect(() => {
     if (isOpen) {
@@ -154,157 +336,28 @@ const ExportToMinecraftDialog: FC = () => {
     }
   }, [isOpen])
 
-  // 엔티티 데이터나 태그가 바뀌었다면 커맨드를 다시 생성해야 함
-  useEffect(() => {
-    setNbtDataGenerated(false)
-  }, [entities, baseTag, targetGameVersion])
-
-  useEffect(() => {
-    if (!nbtDataGenerated && isOpen) {
-      const { entityRefs } = useEntityRefStore.getState()
-
-      const semveredGameVersion = semverCoerce(targetGameVersion)?.version
-      if (semveredGameVersion == null) {
-        console.error('semveredGameVersion is null, this should not happen')
-        return
-      }
-
-      // whether item uses data component instead of nbt
-      const isItemDataComponentEnabled = semverSatisfies(
-        semveredGameVersion,
-        '>=1.20.5',
-      )
-      // whether text is represented as SNBT rather than JSON
-      const isTextFormatSNBT = semverSatisfies(semveredGameVersion, '>=1.21.5')
-
-      const tagString = baseTag.length > 0 ? `Tags:["${baseTag}"],` : ''
-      const passengersStrings = [...entities.values()]
-        .map((entity) => {
-          // 그룹은 커맨드 생성에 들어가지 않음
-          // 그룹 안에 있는 엔티티들은 world transform으로 반영됨
-          if (entity.kind === 'group') return
-
-          const refData = entityRefs.get(entity.id)
-          if (refData == null || refData.objectRef.current == null) {
-            logger.warn(
-              `entity ref of entity ${entity.id} not found, ignoring.`,
-            )
-            return
-          }
-
-          const worldMatrix = refData.objectRef.current.matrixWorld
-
-          const idText = entity.kind + '_display' // block_display, item_display, text_display
-          const transformationString = worldMatrix
-            .clone()
-            .transpose()
-            .toArray()
-            .map((num) => Math.round(num * 1_0000_0000) / 1_0000_0000 + 'f')
-            .join(',')
-
-          let specificData = ''
-          if (entity.kind === 'block') {
-            const propertiesText = Object.entries(entity.blockstates)
-              .map(([k, v]) => `${k}:"${v}"`)
-              .join(',')
-
-            specificData = `block_state:{Name:"${entity.type}",Properties:{${propertiesText}}}`
-          } else if (entity.kind === 'item') {
-            const displayText =
-              entity.display != null ? `,item_display:"${entity.display}"` : ''
-
-            let itemExtraData = ''
-            if (isItemDisplayPlayerHead(entity)) {
-              const textureData = entity.playerHeadProperties.texture
-              if (textureData?.baked) {
-                const o = {
-                  textures: {
-                    SKIN: {
-                      url: textureData.url,
-                    },
-                  },
-                } satisfies MinimalTextureValue
-                const textureValueString = btoa(JSON.stringify(o))
-                itemExtraData = isItemDataComponentEnabled
-                  ? `,components:{"minecraft:profile":{properties:[{name:"textures",value:"${textureValueString}"}]}}`
-                  : `,SkullOwner:{Properties:{textures:[{Value:"${textureValueString}"}]}}`
-              }
-            }
-            specificData = `item:{id:"${entity.type}"${itemExtraData}}${displayText}`
-          } else if (entity.kind === 'text') {
-            // text
-            const text = entity.text
-              .replaceAll('\\', '\\\\')
-              .replaceAll('\n', isTextFormatSNBT ? '\\n' : '\\\\n')
-              .replaceAll('"', '\\"')
-            const enabledTextEffects = (
-              Object.keys(entity.textEffects) as Array<keyof TextEffects>
-            ).filter((k) => entity.textEffects[k])
-            const enabledTextEffectsString =
-              enabledTextEffects.length > 0
-                ? ',' +
-                  enabledTextEffects
-                    .map((k) =>
-                      isTextFormatSNBT ? `${k}:true` : `"${k}":true`,
-                    )
-                    .join(',')
-                : ''
-            specificData = isTextFormatSNBT
-              ? `text:{text:"${text}"${enabledTextEffectsString},color:"#${entity.textColor.toString(16)}"}`
-              : `text:'{"text":"${text}"${enabledTextEffectsString},"color":"#${entity.textColor.toString(16)}"}'`
-
-            // TODO: omit optional nbt data if data value is default value
-
-            // alignment
-            specificData += `,alignment:"${entity.alignment}"`
-            // background_color
-            specificData += `,background_color:${entity.backgroundColor}`
-            // default_background
-            if (entity.defaultBackground) {
-              specificData += ',default_background:true'
-            }
-            // line_width
-            specificData += `,line_width:${entity.lineWidth}`
-            // see_through
-            if (entity.seeThrough) {
-              specificData += ',see_through:true'
-            }
-            // shadow
-            if (entity.shadow) {
-              specificData += ',shadow:true'
-            }
-            // text_opacity
-            specificData += `,text_opacity:${entity.textOpacity}`
-          }
-
-          return `{id:"${idText}",${tagString}${specificData},transformation:[${transformationString}]}`
-        })
-        .filter((d) => d != null)
-
-      let le = Infinity
-      const groupedPassengersStrings: string[] = []
-      for (const passengersStr of passengersStrings) {
-        // 32500 (max command length in command block) - 60 (length of `/summon block_display ~ ~ ~ {Tags:[""],Passengers:[]}` + alpha) - baseTag length
-        if (le + passengersStr.length > 32440 - baseTag.length) {
-          groupedPassengersStrings.push(passengersStr)
-          le = passengersStr.length + 1
-        } else {
-          groupedPassengersStrings[groupedPassengersStrings.length - 1] +=
-            ',' + passengersStr
-          le += passengersStr.length + 1
-        }
-      }
-
-      const newNbtStrings = groupedPassengersStrings.map(
-        (str) => `{${tagString}Passengers:[${str}]}`,
-      )
-      setNbtStrings(newNbtStrings)
-
-      setNbtDataGenerated(true)
-    }
-  }, [nbtDataGenerated, isOpen, baseTag, entities, targetGameVersion])
-
+  const summonCommands = nbtStrings.map(
+    (nbt) => `/summon block_display ~ ~ ~ ${nbt}`,
+  )
+  const summonCommandsExist = summonCommands.length > 0
   const removeCommand = `/kill @e[${baseTag.length > 0 ? `tag=${baseTag}` : 'type=block_display'},distance=..2]`
+
+  const [commandListParentRef, setCommandListParentRef] =
+    useState<HTMLDivElement | null>(null)
+  const virtualizer = useVirtualizer({
+    count: summonCommandsExist ? summonCommands.length + 1 : 0,
+    getScrollElement: () => commandListParentRef,
+    estimateSize: () => 60,
+    overscan: 5,
+    gap: 8,
+  })
+
+  const [namespace, setNamespace] = useState('minecraft')
+  const [compressDatapack, setCompressDatapack] = useState(true)
+  const datapackOptions = {
+    namespace: namespace.length > 0 ? namespace : 'minecraft',
+    compress: compressDatapack,
+  }
 
   return (
     <Dialog
@@ -312,56 +365,288 @@ const ExportToMinecraftDialog: FC = () => {
       open={isOpen}
       onClose={closeActiveDialog}
     >
-      <div className="mt-2 rounded-lg bg-neutral-700 p-2">
+      <div className="rounded-lg bg-neutral-700 p-2">
         <TagValidatorInput onChange={setBaseTag} />
       </div>
 
-      <hr className="my-2 border-gray-600" />
-
-      <div className="overflow-y-auto">
-        {nbtStrings.map((nbt, idx) => {
-          const summonCommand = `/summon block_display ~ ~ ~ ${nbt}`
-          return (
-            <div key={idx}>
-              <div className="flex flex-row items-center">
-                <span className="grow">
-                  {t(($) => $.dialog.exportToMinecraft.result.summonCommand, {
-                    n: idx + 1,
-                  })}
-                </span>
-                <CopyButton valueToCopy={summonCommand} />
-              </div>
-              <Textarea
-                className="resize-none"
-                readOnly
-                value={summonCommand}
-                onFocus={(evt) => {
-                  evt.target.select()
-                }}
-              />
-            </div>
-          )
-        })}
-
-        <div>
-          <div className="flex flex-row items-center">
-            <span className="grow">
-              {t(($) => $.dialog.exportToMinecraft.result.removeCommand)}
-            </span>
-            <CopyButton valueToCopy={removeCommand} />
-          </div>
-          <Textarea
-            className="resize-none"
-            readOnly
-            value={removeCommand}
-            onFocus={(evt) => {
-              evt.target.select()
-            }}
-          />
+      {!nbtDataValid && (
+        <div className="flex flex-row items-center gap-2 rounded bg-amber-950 p-2 text-amber-50">
+          <LuCircleAlert size={20} />{' '}
+          {t(($) => $.dialog.exportToMinecraft.invalidNBTDataExist)}
         </div>
-      </div>
+      )}
+
+      <Tabs defaultValue="command" className="h-full min-h-0">
+        <TabsList>
+          <TabsTrigger value="command">
+            {t(($) => $.dialog.exportToMinecraft.tabs.command)}
+          </TabsTrigger>
+          <TabsTrigger value="datapack">
+            {t(($) => $.dialog.exportToMinecraft.tabs.datapack)}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="command" className="flex min-h-0 flex-col gap-2">
+          {!nbtDataGenerating && nbtStrings.length > 0 && (
+            <div className="flex gap-2">
+              <Button onClick={() => downloadAsMcfunction(summonCommands)}>
+                Download summon .mcfunction
+              </Button>
+            </div>
+          )}
+
+          {!nbtDataGenerating && nbtStrings.length < 1 && (
+            <div className="flex grow flex-col items-center justify-center gap-1 text-neutral-600">
+              <LuCircleSlash size={48} className="" />
+              <span className="text-center text-lg">
+                {t(($) => $.dialog.exportToMinecraft.result.noEntities)}
+              </span>
+            </div>
+          )}
+
+          <div
+            className={cn('overflow-y-auto', summonCommandsExist && 'h-full')}
+            ref={(element) => setCommandListParentRef(element)}
+          >
+            {nbtDataGenerating && (
+              <div className="flex flex-col gap-2">
+                {Array(10)
+                  .fill(0)
+                  .map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-8 w-full animate-pulse rounded bg-neutral-800"
+                    />
+                  ))}
+              </div>
+            )}
+
+            <div
+              className={cn('relative w-full', nbtDataGenerating && 'hidden')}
+              style={{
+                height: virtualizer.getTotalSize(),
+              }}
+            >
+              {virtualizer.getVirtualItems().map((item) => {
+                if (item.index < summonCommands.length) {
+                  // summon command
+                  const command = summonCommands[item.index]
+                  return (
+                    <div
+                      key={item.key}
+                      className="absolute top-0 left-0 w-full"
+                      style={{
+                        height: item.size,
+                        transform: `translateY(${item.start}px)`,
+                      }}
+                    >
+                      <div className="flex flex-row items-center">
+                        <span className="grow">
+                          {t(
+                            ($) =>
+                              $.dialog.exportToMinecraft.result.summonCommand,
+                            {
+                              n: item.index + 1,
+                            },
+                          )}
+                        </span>
+                        <CopyButton valueToCopy={command} />
+                      </div>
+                      <Input
+                        disabled
+                        value={command.slice(0, 500)}
+                        onFocus={(evt) => {
+                          evt.target.select()
+                        }}
+                      />
+                    </div>
+                  )
+                } else {
+                  // remove command
+                  return (
+                    <div
+                      key={item.key}
+                      className="absolute top-0 left-0 w-full"
+                      style={{
+                        height: item.size,
+                        transform: `translateY(${item.start}px)`,
+                      }}
+                    >
+                      <div className="flex flex-row items-center">
+                        <span className="grow">
+                          {t(
+                            ($) =>
+                              $.dialog.exportToMinecraft.result.removeCommand,
+                          )}
+                        </span>
+                        <CopyButton valueToCopy={removeCommand} />
+                      </div>
+                      <Input
+                        disabled
+                        value={removeCommand.slice(0, 500)}
+                        onFocus={(evt) => {
+                          evt.target.select()
+                        }}
+                      />
+                    </div>
+                  )
+                }
+              })}
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="datapack" className="flex flex-col gap-2">
+          <FieldSet>
+            <FieldLegend>
+              {t(($) => $.dialog.exportToMinecraft.datapack.options.title)}
+            </FieldLegend>
+
+            <FieldGroup>
+              <DatapackNamespaceField
+                onChange={(newNamespace) => setNamespace(newNamespace)}
+              />
+
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <FieldLabel>
+                    {t(
+                      ($) =>
+                        $.dialog.exportToMinecraft.datapack.options.compress
+                          .name,
+                    )}
+                  </FieldLabel>
+                  <FieldDescription>
+                    {t(
+                      ($) =>
+                        $.dialog.exportToMinecraft.datapack.options.compress
+                          .desc,
+                    )}
+                  </FieldDescription>
+                </FieldContent>
+                <Switch
+                  checked={compressDatapack}
+                  onCheckedChange={(checked) => setCompressDatapack(checked)}
+                />
+              </Field>
+            </FieldGroup>
+          </FieldSet>
+
+          <div>
+            <FieldLegend>
+              {t(($) => $.dialog.exportToMinecraft.datapack.howToUse.title)}
+            </FieldLegend>
+            <div>
+              {t(($) => $.dialog.exportToMinecraft.datapack.howToUse.desc)}
+            </div>
+            <ul className="list-disc pl-4">
+              <li>
+                <Trans
+                  i18nKey={($) =>
+                    $.dialog.exportToMinecraft.datapack.howToUse.summonCommand
+                  }
+                  components={{
+                    codeblock: <code className="text-neutral-500" />,
+                  }}
+                  values={{
+                    command: `/function ${datapackOptions.namespace}:summon`,
+                  }}
+                />
+              </li>
+              <li>
+                <Trans
+                  i18nKey={($) =>
+                    $.dialog.exportToMinecraft.datapack.howToUse.removeCommand
+                  }
+                  components={{
+                    codeblock: <code className="text-neutral-500" />,
+                  }}
+                  values={{
+                    command: `/function ${datapackOptions.namespace}:remove`,
+                  }}
+                />
+              </li>
+            </ul>
+          </div>
+
+          <Button
+            onClick={() => {
+              downloadAsDatapack(
+                {
+                  summon: summonCommands,
+                  remove: [removeCommand],
+                },
+                { ...datapackOptions, gameVersion: targetGameVersion },
+              )
+                .then(() => {
+                  toast.success(
+                    t(($) => $.dialog.exportToMinecraft.datapack.exportSuccess),
+                  )
+                })
+                .catch(console.error)
+            }}
+          >
+            {t(($) => $.dialog.exportToMinecraft.datapack.downloadButton)}
+          </Button>
+        </TabsContent>
+      </Tabs>
     </Dialog>
   )
+}
+
+function downloadAsMcfunction(commands: string[]) {
+  const fullstr = commands.join('\n')
+  const blob = new Blob([fullstr], { type: 'application/octet-stream' }) // prevent chrome mobile from downloading as `filename.mcfunction.txt`
+
+  downloadFile(blob, 'summon.mcfunction')
+}
+
+async function downloadAsDatapack(
+  commands: {
+    summon: string[]
+    remove: string[]
+  },
+  options: {
+    namespace: string
+    compress: boolean
+    gameVersion: string
+  },
+) {
+  const gameVersionData = GameVersions.find(
+    (ver) => ver.id === options.gameVersion,
+  )
+  if (gameVersionData == null) {
+    throw new Error('Invalid game version id')
+  }
+
+  const zip = new JSZip()
+  zip.file(
+    'pack.mcmeta',
+    JSON.stringify(
+      {
+        pack: {
+          description: '',
+          pack_format: gameVersionData.datapackVersion,
+        },
+      },
+      null,
+      2,
+    ),
+  )
+
+  zip.file(
+    `data/function/${options.namespace}/summon.mcfunction`,
+    commands.summon.join('\n'),
+  )
+  zip.file(
+    `data/function/${options.namespace}/remove.mcfunction`,
+    commands.remove.join('\n'),
+  )
+
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    compression: options.compress ? 'DEFLATE' : 'STORE',
+  })
+  downloadFile(blob, 'datapack.zip')
 }
 
 export default ExportToMinecraftDialog

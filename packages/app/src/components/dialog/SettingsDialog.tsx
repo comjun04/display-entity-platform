@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/shallow'
 import { cn } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 
+import { NativeSelect, NativeSelectOption } from '../ui/native-select'
 import Dialog from './Dialog'
 import AboutPage from './settings/AboutPage'
 import AppearancePage from './settings/AppearancePage'
@@ -42,7 +43,7 @@ const SettingsDialog: FC = () => {
       onClose={closeActiveDialog}
       className={cn(selectedPage === 'appearance' && 'bg-background/60')}
       backdropClassName={cn(
-        selectedPage === 'appearance' && 'sm:backdrop-blur-none',
+        selectedPage === 'appearance' && 'backdrop-blur-none!',
       )}
     >
       <div className="flex h-full w-full flex-col overflow-auto sm:flex-row">
@@ -135,36 +136,36 @@ const SettingsDialog: FC = () => {
         </div>
         {/* Mobile - submenu <select> element on top */}
         <div className="sm:hidden">
-          <select
-            className="w-full rounded-sm bg-neutral-900 p-2"
+          <NativeSelect
+            className="w-full"
             value={selectedPage}
             onChange={(evt) =>
               setSelectedPage(evt.target.value as SettingsPageType)
             }
           >
-            <option value="general">
+            <NativeSelectOption value="general">
               {t(($) => $.dialog.settings.page.general.title)}
-            </option>
-            <option value="appearance">
+            </NativeSelectOption>
+            <NativeSelectOption value="appearance">
               {t(($) => $.dialog.settings.page.appearance.title)}
-            </option>
-            <option value="performance">
+            </NativeSelectOption>
+            <NativeSelectOption value="performance">
               {t(($) => $.dialog.settings.page.performance.title)}
-            </option>
-            <option value="shortcuts">
+            </NativeSelectOption>
+            <NativeSelectOption value="shortcuts">
               {t(($) => $.dialog.settings.page.shortcuts.title)}
-            </option>
-            <option value="headPainter">
+            </NativeSelectOption>
+            <NativeSelectOption value="headPainter">
               {t(($) => $.dialog.settings.page.headPainter.title)}
-            </option>
-            <option disabled>----------</option>
-            <option value="about">
+            </NativeSelectOption>
+            <NativeSelectOption disabled>----------</NativeSelectOption>
+            <NativeSelectOption value="about">
               {t(($) => $.dialog.settings.page.about.title)}
-            </option>
-            <option value="debug">
+            </NativeSelectOption>
+            <NativeSelectOption value="debug">
               {t(($) => $.dialog.settings.page.debugOptions.title)}
-            </option>
-          </select>
+            </NativeSelectOption>
+          </NativeSelect>
         </div>
 
         <div className="h-full w-full overflow-auto pt-4 sm:px-4 sm:pt-0">

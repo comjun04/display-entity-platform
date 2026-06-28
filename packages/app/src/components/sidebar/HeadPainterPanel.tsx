@@ -4,11 +4,12 @@ import { useShallow } from 'zustand/shallow'
 import { cn } from '@/lib/utils'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
-import { useEditorStore } from '@/stores/editorStore'
+import { type HeadPainterLayer, useEditorStore } from '@/stores/editorStore'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
 import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import { ColorPickerInput } from '../ui/ColorPicker'
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
 
 const HeadPainterPanel: FC = () => {
   const { brushColor, layer, mineskinApiKeyFilled } = useEditorStore(
@@ -55,32 +56,20 @@ const HeadPainterPanel: FC = () => {
 
           <div className="flex flex-row items-center gap-2">
             <label className="flex-1 text-end">Layer</label>
-            <div className="flex-1">
-              <div className="flex w-fit flex-row gap-1 rounded-sm bg-neutral-700 p-1">
-                <button
-                  className={cn(
-                    'rounded-sm px-3 py-1',
-                    layer === 'base' && 'bg-blue-500',
-                  )}
-                  onClick={() => {
-                    useEditorStore.getState().headPainter.setLayer('base')
-                  }}
-                >
-                  Base
-                </button>
-                <button
-                  className={cn(
-                    'rounded-sm px-3 py-1',
-                    layer === 'second' && 'bg-blue-500',
-                  )}
-                  onClick={() => {
-                    useEditorStore.getState().headPainter.setLayer('second')
-                  }}
-                >
-                  Second
-                </button>
-              </div>
-            </div>
+            <Tabs
+              value={layer}
+              onValueChange={(tabId) => {
+                useEditorStore
+                  .getState()
+                  .headPainter.setLayer(tabId as HeadPainterLayer)
+              }}
+              className="flex-1"
+            >
+              <TabsList>
+                <TabsTrigger value="base">Base</TabsTrigger>
+                <TabsTrigger value="second">Second</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className="rounded-sm bg-neutral-700 p-1 px-2 text-xs font-bold text-neutral-400">

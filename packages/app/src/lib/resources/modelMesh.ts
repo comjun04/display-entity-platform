@@ -4,7 +4,6 @@ import {
   type GeometryGroup,
   Material,
   MathUtils,
-  Mesh,
   PlaneGeometry,
   Vector3,
 } from 'three'
@@ -149,7 +148,7 @@ export type LoadModelMeshArgs = {
     showSecondLayer: boolean
   }
 }
-export async function loadModelMesh({
+export async function generateModelMeshIngredients({
   modelResourceLocation,
   elements,
   textures,
@@ -476,9 +475,8 @@ export async function loadModelMesh({
     finalMergedGeometry.addGroup(0, fullGeometryGroups.length * 6, 0)
   }
 
-  const mesh = new Mesh(
-    finalMergedGeometry,
-    fullMaterials.map((d) => d.material),
-  )
-  return mesh
+  return {
+    geometry: finalMergedGeometry,
+    materials: fullMaterials.map((d) => d.material),
+  }
 }

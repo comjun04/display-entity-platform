@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import type { Settings } from '@/lib/settings'
+import type { Settings } from '@/lib/settings/prelude'
 import { cn, getFormattedShortcutKeyString } from '@/lib/utils'
 import { useEditorStore } from '@/stores/editorStore'
 
@@ -36,6 +36,21 @@ const ShortcutSettingsContext = createContext<{
   currentlyEditingKeyId: null,
   setCurrentlyEditingKeyId: () => {},
 })
+
+interface ShortcutKeyTextProps {
+  id: keyof Settings['shortcuts']
+}
+const ShortcutKeyText: FC<ShortcutKeyTextProps> = ({ id }) => {
+  const rawKeysStr = useEditorStore(
+    (state) => state.settings.shortcuts[id] ?? '',
+  )
+
+  return (
+    <div className="w-full max-w-48 px-2 py-1 text-neutral-300">
+      {getFormattedShortcutKeyString(rawKeysStr)}
+    </div>
+  )
+}
 
 interface ShortcutKeyInputProps {
   id: keyof Settings['shortcuts']
@@ -260,6 +275,26 @@ const ShortcutsPage: FC = () => {
           {t(($) => $.dialog.settings.page.shortcuts.categories.general.title)}
         </div>
         <div className="flex flex-col">
+          <div className="mt-1 flex flex-row items-center gap-2">
+            <span className="grow px-3">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.shortcuts.categories.general.items
+                    .copy,
+              )}
+            </span>
+            <ShortcutKeyText id="general.copy" />
+          </div>
+          <div className="mt-1 flex flex-row items-center gap-2">
+            <span className="grow px-3">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.shortcuts.categories.general.items
+                    .paste,
+              )}
+            </span>
+            <ShortcutKeyText id="general.paste" />
+          </div>
           <div className="mt-1 flex flex-row items-center gap-2">
             <span className="grow px-3">
               {t(
