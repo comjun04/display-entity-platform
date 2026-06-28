@@ -9,6 +9,9 @@ interface ProjectStoreState {
 
   projectName: string
   setProjectName: (name: string) => void
+
+  mainNBT: string
+  setMainNBT: (nbt: string) => void
 }
 
 export const useProjectStore = create(
@@ -24,6 +27,12 @@ export const useProjectStore = create(
     setProjectName: (name) =>
       set((state) => {
         state.projectName = name
+      }),
+
+    mainNBT: '',
+    setMainNBT: (nbt) =>
+      set((state) => {
+        state.mainNBT = nbt
       }),
   })),
 )

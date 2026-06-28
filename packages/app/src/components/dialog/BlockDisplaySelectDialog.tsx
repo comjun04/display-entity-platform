@@ -119,7 +119,9 @@ const BlockDisplaySelectDialog: FC = () => {
       onClose={closeActiveDialog}
     >
       <div className="flex flex-row items-center gap-4">
-        <span>{t(($) => $.dialog.blockDisplaySelect.search.label)}</span>
+        <span className="flex-none">
+          {t(($) => $.dialog.blockDisplaySelect.search.label)}
+        </span>
         <Input
           value={searchQuery}
           onChange={(evt) => setSearchQuery(evt.target.value)}

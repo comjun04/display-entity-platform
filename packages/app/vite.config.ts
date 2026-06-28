@@ -24,6 +24,11 @@ if (process.env.GENERATE_BUILD_STATS) {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins,
+  server: {
+    watch: {
+      ignored: ['**/public/locales/**/*'],
+    },
+  },
   resolve: {
     alias: [
       {
@@ -44,15 +49,15 @@ export default defineConfig({
           groups: [
             {
               name: 'react',
-              test: /node_modules\/(react|react-dom)/,
+              test: /node_modules\/(react|react-dom)\//,
             },
             {
               name: 'three',
-              test: /node_modules\/three/,
+              test: /node_modules\/three\//,
             },
             {
               name: 'r3f',
-              test: /node_modules\/@react-three/,
+              test: /node_modules\/@react-three\//,
             },
           ],
         },

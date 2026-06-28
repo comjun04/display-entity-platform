@@ -131,6 +131,34 @@ export function batchSetEntityTransformation(
   }
 }
 
+export function setEntityNBT(
+  entityId: string,
+  nbt: string,
+  skipHistoryAdd = false,
+) {
+  const { entities } = useDisplayEntityStore.getState()
+  const entity = entities.get(entityId)
+  if (entity == null) {
+    logger.error(`Invalid entity id ${entityId}`)
+    return
+  }
+
+  useDisplayEntityStore.getState().setEntityNBT(entityId, nbt)
+
+  if (!skipHistoryAdd) {
+    useHistoryStore.getState().addHistory({
+      type: 'changeProperties',
+      entities: [
+        {
+          id: entity.id,
+          beforeState: { kind: entity.kind, nbt: entity.nbt },
+          afterState: { kind: entity.kind, nbt },
+        },
+      ],
+    })
+  }
+}
+
 export function setIDEntityDisplayType(
   entityId: string,
   displayType: ModelDisplayPositionKey | null,

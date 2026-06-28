@@ -4,6 +4,7 @@ import { LuEye, LuEyeClosed } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
+import { Button } from '@/components/ui/button'
 import { useEditorStore } from '@/stores/editorStore'
 
 const HeadPainterPage: FC = () => {
@@ -62,8 +63,7 @@ const HeadPainterPage: FC = () => {
           </div>
         </div>
         <div className="flex flex-row gap-2">
-          <button
-            className="rounded-sm bg-blue-500 px-3 py-1"
+          <Button
             onClick={() => {
               setSettings({
                 headPainter: { mineskinApiKey: tempApiKeyInput },
@@ -82,7 +82,7 @@ const HeadPainterPage: FC = () => {
                 $.dialog.settings.page.headPainter.options.mineskinApiKey
                   .buttons.save,
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </>

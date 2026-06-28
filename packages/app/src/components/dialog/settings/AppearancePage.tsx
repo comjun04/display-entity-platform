@@ -2,6 +2,8 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
+import { Input } from '@/components/ui/input'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import type { Settings } from '@/lib/settings/prelude'
 import { useEditorStore } from '@/stores/editorStore'
 
@@ -17,11 +19,11 @@ const AppearancePage: FC = () => {
 
   return (
     <>
-      <h3 className="text-xl font-bold">
+      <h3 className="mb-4 text-xl font-bold">
         {t(($) => $.dialog.settings.page.appearance.title)}
       </h3>
 
-      <div className="mt-4 flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <div className="text-lg font-semibold">
           {t(
             ($) =>
@@ -37,9 +39,8 @@ const AppearancePage: FC = () => {
                     .options.location.title,
               )}
             </label>
-            <select
+            <NativeSelect
               id="settings_appearance_quickActionPanel_location"
-              className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
               value={settings.appearance.quickActionPanel.location}
               onChange={(evt) => {
                 setSettings({
@@ -52,21 +53,21 @@ const AppearancePage: FC = () => {
                 })
               }}
             >
-              <option value="top">
+              <NativeSelectOption value="top">
                 {t(
                   ($) =>
                     $.dialog.settings.page.appearance.sections.quickActionPanel
                       .options.location.values.top,
                 )}
-              </option>
-              <option value="bottom">
+              </NativeSelectOption>
+              <NativeSelectOption value="bottom">
                 {t(
                   ($) =>
                     $.dialog.settings.page.appearance.sections.quickActionPanel
                       .options.location.values.bottom,
                 )}
-              </option>
-            </select>
+              </NativeSelectOption>
+            </NativeSelect>
           </div>
 
           <div className="flex flex-row items-center gap-2">
@@ -77,9 +78,10 @@ const AppearancePage: FC = () => {
                     .options.margin.title,
               )}
             </label>
-            <input
+            <Input
+              id="settings_appearance_quickActionPanel_margin"
               type="number"
-              className="w-16 shrink rounded-sm bg-neutral-900 py-2 pl-2 text-xs outline-hidden"
+              className="w-16"
               value={settings.appearance.quickActionPanel.margin}
               onChange={(evt) => {
                 const newMargin = parseInt(evt.target.value)
@@ -108,9 +110,8 @@ const AppearancePage: FC = () => {
                     .options.location.title,
               )}
             </label>
-            <select
+            <NativeSelect
               id="settings_appearance_gizmo_location"
-              className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
               value={settings.appearance.gizmo.location}
               onChange={(evt) => {
                 setSettings({
@@ -123,9 +124,13 @@ const AppearancePage: FC = () => {
                 })
               }}
             >
-              <option value="bottom-left">bottom-left</option>
-              <option value="bottom-right">bottom-right</option>
-            </select>
+              <NativeSelectOption value="bottom-left">
+                bottom-left
+              </NativeSelectOption>
+              <NativeSelectOption value="bottom-right">
+                bottom-right
+              </NativeSelectOption>
+            </NativeSelect>
           </div>
 
           <div className="flex flex-row items-center gap-2">
@@ -145,10 +150,10 @@ const AppearancePage: FC = () => {
                     .margin.subOptions.width,
               )}
             </label>
-            <input
+            <Input
               type="number"
               id="settings_appearance_gizmo_marginHeight"
-              className="w-16 shrink rounded-sm bg-neutral-900 py-2 pl-2 text-xs outline-hidden"
+              className="w-16"
               value={settings.appearance.gizmo.marginWidth}
               onChange={(evt) => {
                 const newMargin = parseInt(evt.target.value)
@@ -171,10 +176,10 @@ const AppearancePage: FC = () => {
                     .margin.subOptions.height,
               )}
             </label>
-            <input
+            <Input
               type="number"
               id="settings_appearance_gizmo_marginWidth"
-              className="w-16 shrink rounded-sm bg-neutral-900 py-2 pl-2 text-xs outline-hidden"
+              className="w-16"
               value={settings.appearance.gizmo.marginHeight}
               onChange={(evt) => {
                 const newMargin = parseInt(evt.target.value)

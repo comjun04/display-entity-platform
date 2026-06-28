@@ -4,6 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
+import { Button } from '@/components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Switch } from '@/components/ui/switch'
 import { useEditorStore } from '@/stores/editorStore'
 import type { LogLevel } from '@/types/base'
 
@@ -19,129 +23,127 @@ const DebugOptionsPage: FC = () => {
 
   return (
     <>
-      <h3 className="text-xl font-bold">
+      <h3 className="mb-4 text-xl font-bold">
         {t(($) => $.dialog.settings.page.debugOptions.title)}
       </h3>
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_debug_testoption"
-          checked={settings.debug.testOption}
-          onChange={(evt) => {
-            setSettings({
-              debug: { testOption: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_debug_testoption">
-          {t(
-            ($) => $.dialog.settings.page.debugOptions.options.testOption.title,
-          )}
-        </label>
-      </div>
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <label htmlFor="settings_debug_minloglevel">
-          {t(
-            ($) =>
-              $.dialog.settings.page.debugOptions.options.minLogLevel.title,
-          )}
-        </label>
-        <select
-          id="settings_debug_minloglevel"
-          className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
-          value={settings.debug.minLogLevel}
-          onChange={(evt) => {
-            setSettings({
-              debug: { minLogLevel: evt.target.value as LogLevel },
-            })
-          }}
-        >
-          <option>error</option>
-          <option>warn</option>
-          <option>info</option>
-          <option>debug</option>
-        </select>
-      </div>
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_debug_perfMonitorEnabled"
-          checked={settings.debug.perfMonitorEnabled}
-          onChange={(evt) => {
-            setSettings({
-              debug: { perfMonitorEnabled: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_debug_perfMonitorEnabled">
-          {t(
-            ($) =>
-              $.dialog.settings.page.debugOptions.options.perfMonitorEnabled
-                .title,
-          )}
-        </label>
-      </div>
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_debug_alertUncaughtError"
-          checked={settings.debug.alertUncaughtError}
-          onChange={(evt) => {
-            setSettings({
-              debug: { alertUncaughtError: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_debug_alertUncaughtError">
-          {t(
-            ($) =>
-              $.dialog.settings.page.debugOptions.options.alertUncaughtError
-                .title,
-          )}
-        </label>
-      </div>
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_debug_showPivotIndicator"
-          checked={settings.debug.showPivotIndicator}
-          onChange={(evt) => {
-            setSettings({
-              debug: { showPivotIndicator: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_debug_showPivotIndicator">
-          {t(
-            ($) =>
-              $.dialog.settings.page.debugOptions.options.showPivotIndicator
-                .title,
-          )}
-        </label>
-      </div>
 
-      <hr />
+      <FieldGroup>
+        <FieldGroup>
+          <Field orientation="horizontal">
+            <FieldLabel htmlFor="settings_debug_minloglevel">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.debugOptions.options.minLogLevel.title,
+              )}
+            </FieldLabel>
+            <NativeSelect
+              id="settings_debug_minloglevel"
+              value={settings.debug.minLogLevel}
+              onChange={(evt) => {
+                setSettings({
+                  debug: { minLogLevel: evt.target.value as LogLevel },
+                })
+              }}
+            >
+              <NativeSelectOption>error</NativeSelectOption>
+              <NativeSelectOption>warn</NativeSelectOption>
+              <NativeSelectOption>info</NativeSelectOption>
+              <NativeSelectOption>debug</NativeSelectOption>
+            </NativeSelect>
+          </Field>
 
-      <div>
-        <button
-          className="rounded-sm bg-neutral-700 p-2"
-          onClick={() => toast.info('This is a test toast')}
-        >
-          Show Toast
-        </button>
-      </div>
-      <div>
-        <button
-          className="rounded-sm bg-neutral-700 p-2"
-          onClick={() => {
-            reloadResources()
-              .then(() => toast.success('Reloaded translations'))
-              .catch(console.error)
-          }}
-        >
-          Reload translations
-        </button>
-      </div>
+          <Field orientation="horizontal">
+            <FieldLabel htmlFor="settings_debug_perfMonitorEnabled">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.debugOptions.options.perfMonitorEnabled
+                    .title,
+              )}
+            </FieldLabel>
+            <Switch
+              id="settings_debug_perfMonitorEnabled"
+              checked={settings.debug.perfMonitorEnabled}
+              onCheckedChange={(checked) => {
+                setSettings({
+                  debug: { perfMonitorEnabled: checked },
+                })
+              }}
+            />
+          </Field>
+
+          <Field orientation="horizontal">
+            <FieldLabel htmlFor="settings_debug_alertUncaughtError">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.debugOptions.options.alertUncaughtError
+                    .title,
+              )}
+            </FieldLabel>
+            <Switch
+              id="settings_debug_alertUncaughtError"
+              checked={settings.debug.alertUncaughtError}
+              onCheckedChange={(checked) => {
+                setSettings({
+                  debug: { alertUncaughtError: checked },
+                })
+              }}
+            />
+          </Field>
+
+          <Field orientation="horizontal">
+            <FieldLabel htmlFor="settings_debug_showPivotIndicator">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.debugOptions.options.showPivotIndicator
+                    .title,
+              )}
+            </FieldLabel>
+            <Switch
+              id="settings_debug_showPivotIndicator"
+              checked={settings.debug.showPivotIndicator}
+              onCheckedChange={(checked) => {
+                setSettings({
+                  debug: { showPivotIndicator: checked },
+                })
+              }}
+            />
+          </Field>
+
+          <Field orientation="horizontal">
+            <FieldLabel htmlFor="settings_debug_showEntityIdOnObjectPanel">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.debugOptions.options
+                    .showEntityIdOnObjectPanel.title,
+              )}
+            </FieldLabel>
+            <Switch
+              id="settings_debug_showEntityIdOnObjectPanel"
+              checked={settings.debug.showEntityIdOnObjectPanel}
+              onCheckedChange={(checked) => {
+                setSettings({
+                  debug: { showEntityIdOnObjectPanel: checked },
+                })
+              }}
+            />
+          </Field>
+        </FieldGroup>
+
+        <div className="flex gap-2">
+          <Button onClick={() => toast.info('This is a test toast')}>
+            Show Toast
+          </Button>
+          <Button
+            onClick={() => {
+              reloadResources()
+                .then(() => toast.success('Reloaded translations'))
+                .catch(console.error)
+            }}
+          >
+            Reload translations
+          </Button>
+        </div>
+      </FieldGroup>
     </>
   )
 }

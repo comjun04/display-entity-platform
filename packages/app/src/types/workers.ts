@@ -1,3 +1,7 @@
+import type { NbtStringGeneratePayload } from '@/lib/nbt'
+
+// headBaker
+
 export type HeadBakerJob = {
   jobId?: string
   entityId: string
@@ -64,3 +68,24 @@ export type HeadBakerWorkerResponse =
           }
       ))[]
     }
+
+// exportedNbtGenerator
+
+export interface ExportedNBTGeneratorWorkerMessage {
+  cmd: 'generate'
+  data: {
+    payload: Map<string, NbtStringGeneratePayload>
+    targetGameVersion: string
+    baseTag: string
+    mainNBT: string
+    validateNBT: boolean
+  }
+}
+
+export interface ExportedNBTGeneratorWorkerResponse {
+  type: 'data'
+  data: {
+    nbtStrings: string[]
+    invalidNBTExist: boolean
+  }
+}

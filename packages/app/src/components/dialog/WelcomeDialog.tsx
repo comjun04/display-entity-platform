@@ -15,6 +15,8 @@ import AutosaveService from '@/lib/services/autosave.service'
 import { useDialogStore } from '@/stores/dialogStore'
 import { useEditorStore } from '@/stores/editorStore'
 
+import { Field, FieldLabel } from '../ui/field'
+import { Switch } from '../ui/switch'
 import Dialog from './Dialog'
 
 const WelcomeDialog: FC = () => {
@@ -65,7 +67,7 @@ const WelcomeDialog: FC = () => {
             </div>
             <div className="flex flex-1 flex-col gap-2">
               <button
-                className="flex flex-row items-center gap-2 rounded-sm bg-neutral-900 px-4 py-2"
+                className="flex flex-row items-center gap-2 rounded-sm bg-neutral-800 px-4 py-2"
                 onClick={() => {
                   closeDialog()
                   clearProject().catch(console.error)
@@ -75,7 +77,7 @@ const WelcomeDialog: FC = () => {
                 <span>{t(($) => $.dialog.welcome.action.new)}</span>
               </button>
               <button
-                className="flex flex-row items-center gap-2 rounded-sm bg-neutral-900 px-4 py-2"
+                className="flex flex-row items-center gap-2 rounded-sm bg-neutral-800 px-4 py-2"
                 onClick={() => {
                   openFileFromUserSelect()
                   closeDialog()
@@ -89,7 +91,7 @@ const WelcomeDialog: FC = () => {
                   <div>{t(($) => $.dialog.welcome.recoverProject.desc)}</div>
 
                   <button
-                    className="flex flex-row items-center gap-2 rounded-sm bg-neutral-900 px-4 py-2"
+                    className="flex flex-row items-center gap-2 rounded-sm bg-neutral-800 px-4 py-2"
                     onClick={() => {
                       closeDialog()
                       autosaveService.loadSave().catch(console.error)
@@ -114,21 +116,20 @@ const WelcomeDialog: FC = () => {
             </div>
           </div>
 
-          <div className="mt-4 flex flex-row items-center gap-2">
-            <input
-              type="checkbox"
+          <Field orientation="horizontal" className="mt-4">
+            <Switch
               id="settings_showWelcomeOnStartup"
               checked={showWelcomeOnStartup}
-              onChange={(evt) => {
+              onCheckedChange={(checked) => {
                 setSettings({
-                  general: { showWelcomeOnStartup: evt.target.checked },
+                  general: { showWelcomeOnStartup: checked },
                 })
               }}
             />
-            <label htmlFor="settings_showWelcomeOnStartup">
+            <FieldLabel htmlFor="settings_showWelcomeOnStartup">
               {t(($) => $.dialog.welcome.showWelcomeOnStartup)}
-            </label>
-          </div>
+            </FieldLabel>
+          </Field>
           <Disclaimer />
           <SpecialThanks />
           <OpenSourceNotice />

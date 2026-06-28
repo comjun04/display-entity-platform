@@ -4,6 +4,15 @@ import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
 import { Button } from '@/components/ui/button'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Switch } from '@/components/ui/switch'
 import { exportSettings, importSettings } from '@/lib/settings/actions'
 import { type Settings } from '@/lib/settings/prelude'
 import { useEditorStore } from '@/stores/editorStore'
@@ -20,97 +29,123 @@ const GeneralPage: FC = () => {
 
   return (
     <>
-      <h3 className="text-xl font-bold">
+      <h3 className="mb-4 text-xl font-bold">
         {t(($) => $.dialog.settings.page.general.title)}
       </h3>
 
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <label htmlFor="settings_general_language">
-          {t(($) => $.dialog.settings.page.general.options.language)}
-        </label>
-        <select
-          id="settings_general_language"
-          className="flex-none rounded-sm bg-neutral-900 px-2 py-1"
-          value={settings.general.language}
-          onChange={(evt) => {
-            setSettings({
-              general: {
-                language: evt.target.value as Settings['general']['language'],
-              },
-            })
-          }}
-        >
-          <option value="en">English</option>
-          <option value="ko">한국어</option>
-        </select>
-      </div>
+      <FieldGroup>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="settings_general_language">
+            {t(($) => $.dialog.settings.page.general.options.language)}
+          </FieldLabel>
+          <NativeSelect
+            id="settings_general_language"
+            value={settings.general.language}
+            onChange={(evt) => {
+              setSettings({
+                general: {
+                  language: evt.target.value as Settings['general']['language'],
+                },
+              })
+            }}
+          >
+            <NativeSelectOption value="en">English</NativeSelectOption>
+            <NativeSelectOption value="ko">한국어</NativeSelectOption>
+          </NativeSelect>
+        </Field>
 
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_general_showWelcomeOnStartup"
-          checked={settings.general.showWelcomeOnStartup}
-          onChange={(evt) => {
-            setSettings({
-              general: { showWelcomeOnStartup: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_general_showWelcomeOnStartup">
-          {t(
-            ($) => $.dialog.settings.page.general.options.showWelcomeOnStartup,
-          )}
-        </label>
-      </div>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="settings_general_showWelcomeOnStartup">
+            {t(
+              ($) =>
+                $.dialog.settings.page.general.options.showWelcomeOnStartup,
+            )}
+          </FieldLabel>
+          <Switch
+            id="settings_general_showWelcomeOnStartup"
+            checked={settings.general.showWelcomeOnStartup}
+            onCheckedChange={(checked) => {
+              setSettings({
+                general: { showWelcomeOnStartup: checked },
+              })
+            }}
+          />
+        </Field>
 
-      <div className="mt-4 flex flex-row items-center gap-2">
-        <input
-          type="checkbox"
-          id="settings_general_forceUnifont"
-          checked={settings.general.forceUnifont}
-          onChange={(evt) => {
-            setSettings({
-              general: { forceUnifont: evt.target.checked },
-            })
-          }}
-        />
-        <label htmlFor="settings_general_forceUnifont">
-          {t(($) => $.dialog.settings.page.general.options.forceUnifont)}
-        </label>
-      </div>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="settings_general_forceUnifont">
+            {t(($) => $.dialog.settings.page.general.options.forceUnifont)}
+          </FieldLabel>
+          <Switch
+            id="settings_general_forceUnifont"
+            checked={settings.general.forceUnifont}
+            onCheckedChange={(checked) => {
+              setSettings({
+                general: { forceUnifont: checked },
+              })
+            }}
+          />
+        </Field>
 
-      <div className="mt-4 flex gap-2">
-        <Button
-          onClick={() => {
-            const inputElement = document.createElement('input')
-            inputElement.type = 'file'
-            inputElement.accept = 'application/json'
-            inputElement.click()
-            inputElement.onchange = (evt) => {
-              const file = (evt.target as HTMLInputElement).files?.[0]
-              if (file == null) return
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor="settings_general_validateNbtInput">
+              {t(
+                ($) =>
+                  $.dialog.settings.page.general.options.validateNbtInput.title,
+              )}
+            </FieldLabel>
+            <FieldDescription>
+              {t(
+                ($) =>
+                  $.dialog.settings.page.general.options.validateNbtInput.desc,
+              )}
+            </FieldDescription>
+          </FieldContent>
+          <Switch
+            id="settings_general_validateNbtInput"
+            checked={settings.general.validateNbtInput}
+            onCheckedChange={(checked) => {
+              setSettings({
+                general: { validateNbtInput: checked },
+              })
+            }}
+          />
+        </Field>
 
-              file
-                .text()
-                .then((text) => {
-                  importSettings(text)
-                  toast.success('Successfully imported settings from file')
-                })
-                .catch(console.error)
-            }
-          }}
-        >
-          Import Settings from file
-        </Button>
-        <Button
-          onClick={() => {
-            exportSettings()
-            toast.success('Successfully exported settings to file')
-          }}
-        >
-          Export Settings to file
-        </Button>
-      </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              const inputElement = document.createElement('input')
+              inputElement.type = 'file'
+              inputElement.accept = 'application/json'
+              inputElement.click()
+              inputElement.onchange = (evt) => {
+                const file = (evt.target as HTMLInputElement).files?.[0]
+                if (file == null) return
+
+                file
+                  .text()
+                  .then((text) => {
+                    importSettings(text)
+                    toast.success('Successfully imported settings from file')
+                  })
+                  .catch(console.error)
+              }
+            }}
+          >
+            Import Settings from file
+          </Button>
+          <Button
+            onClick={() => {
+              exportSettings()
+              toast.success('Successfully exported settings to file')
+            }}
+          >
+            Export Settings to file
+          </Button>
+        </div>
+      </FieldGroup>
     </>
   )
 }

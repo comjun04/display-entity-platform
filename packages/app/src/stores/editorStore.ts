@@ -1,4 +1,4 @@
-import { merge } from 'lodash-es'
+import { merge } from 'es-toolkit'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
@@ -7,6 +7,7 @@ import { getLogger } from '@/lib/logger'
 import { type Settings, getStoredSettings } from '@/lib/settings/prelude'
 import type {
   DeepPartial,
+  DisplayEntity,
   Number3Tuple,
   PartialNumber3Tuple,
 } from '@/types/base'
@@ -75,6 +76,11 @@ type EditorState = {
 
   settings: Settings
   setSettings: (newSettings: DeepPartial<Settings>) => void
+
+  clipboard: {
+    data: DisplayEntity[]
+    setData: (entities: DisplayEntity[]) => void
+  }
 
   resetProject: () => void
 }
@@ -223,6 +229,15 @@ export const useEditorStore = create(
             logger.error(err)
           }
         }),
+
+      clipboard: {
+        data: [],
+        setData: (entities) =>
+          set((state) => {
+            state.clipboard.data = entities
+            console.log(entities)
+          }),
+      },
 
       resetProject: () =>
         set((state) => {

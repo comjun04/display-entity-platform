@@ -126,6 +126,7 @@ export type BaseDisplayEntity = {
   size: Number3Tuple
   position: Number3Tuple
   rotation: Number3Tuple
+  nbt: string
 }
 
 export type BlockDisplayEntity = BaseDisplayEntity & {
@@ -198,10 +199,13 @@ export type DisplayEntity =
 export type DisplayEntitySaveDataItem = {
   transforms: Matrix4Tuple
 } & (
-  | Pick<BlockDisplayEntity, 'kind' | 'type' | 'blockstates' | 'display'>
+  | Pick<
+      BlockDisplayEntity,
+      'kind' | 'type' | 'blockstates' | 'display' | 'nbt'
+    >
   | Omit<ItemDisplayEntity, 'id' | 'parent' | 'position' | 'rotation' | 'size'>
   | Omit<TextDisplayEntity, 'id' | 'parent' | 'position' | 'rotation' | 'size'>
-  | (Pick<DisplayEntityGroup, 'kind' | 'name'> & {
+  | (Pick<DisplayEntityGroup, 'kind' | 'name' | 'nbt'> & {
       children: DisplayEntitySaveDataItem[]
     })
 )
@@ -214,7 +218,10 @@ export type BDEngineSaveData = {
   transforms: Matrix4Tuple
   children: BDEngineSaveDataItem[]
   settings: { defaultBrightness: boolean }
+  // root group nbt
   mainNBT: string
+  // common nbt injected into all display entities
+  nbt: string
 }[]
 
 export type BDEngineSaveDataItem =
@@ -256,7 +263,7 @@ export type BDEngineTextDisplay = BDEngineDisplayEntityBase & {
     color: string // text color, #abcdef
     alpha: number // text color alpha, 0 ~ 1
     backgroundColor: string // #abcdef
-    backgroundColorAlpha: number // 0 ~ 1
+    backgroundAlpha: number // 0 ~ 1
     bold: boolean
     italic: boolean
     underline: boolean
