@@ -17,14 +17,16 @@
       },
       "showWelcomeOnStartup": "Show Welcome on Startup",
       "changeLogs": [
-        "Fixed an issue where the app cannot open .bdengine files saved with newer format.",
-        "Added a feature to export project to .bdengine file!",
-        "Now you can press Esc key to cancel when dragging and dropping to open file.",
-        "Fixed a bug where drag-and-drop ui shows and never get hidden when dragging text instead of file.",
-        "Fixed some unintended bugs when clone entity group and undo/redo it.",
-        "Added group name changes to history for undo/redoing.",
-        "Now you can export and import settings via file.",
-        "...and improved internal structure and fixed some bugs."
+        "Added context menu (right-click menu).",
+        "Now you can copy-paste entities with shortcuts (Ctrl+C, Ctrl+V)!",
+        "Added NBT field to every display entities, allowing you to customize NBT data of display entity.",
+        "Added exporting project to minecraft datapack, also download all entity summon commands to a single .mcfunction file!",
+        "Enabled precise rotation by 1 degree unit by pressing Shift while rotating display entity.",
+        "Fixed rotation with multiple display entities selected weirdly.",
+        "Fixed text display background alpha values not correctly applied when exporting to bdengine file.",
+        "Improved performance on `Export to Minecraft` dialog.",
+        "Improved layout and design on mobile environments.",
+        "Finally, fixed some minor bugs and improved internal structure."
       ]
     },
     "blockDisplaySelect": {
