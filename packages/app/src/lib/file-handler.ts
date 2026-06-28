@@ -256,6 +256,7 @@ export async function saveAsBDEngineFile() {
       children: rootEntities,
       transforms: new Matrix4().toArray(),
       mainNBT,
+      nbt: '',
       settings: { defaultBrightness: true },
     },
   ]

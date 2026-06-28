@@ -218,7 +218,10 @@ export type BDEngineSaveData = {
   transforms: Matrix4Tuple
   children: BDEngineSaveDataItem[]
   settings: { defaultBrightness: boolean }
+  // root group nbt
   mainNBT: string
+  // common nbt injected into all display entities
+  nbt: string
 }[]
 
 export type BDEngineSaveDataItem =
