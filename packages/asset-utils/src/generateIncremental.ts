@@ -197,9 +197,11 @@ for (const versionToDownload of versions) {
 
   const filesToExtract = zip.files.filter(
     (f) =>
-      /^assets\/minecraft\/(blockstates|models|font|textures\/(block|colormap|entity\/player|font|item))\//.test(
-        f.path,
-      ) || renderableBlockEntityModelTextures.includes(f.path),
+      (f.type === 'File' &&
+        /^assets\/minecraft\/(blockstates|models|font|textures\/(block|colormap|entity\/player|font|item))\//.test(
+          f.path,
+        )) ||
+      renderableBlockEntityModelTextures.includes(f.path),
   )
   let fileExtractSkipCount = 0
   for (const file of filesToExtract) {
@@ -291,7 +293,7 @@ for (const versionToDownload of versions) {
   // generate server resource reports file to get blocks.json and items.json
   console.log('Generating server.jar resource reports...')
   const serverJarfilePath = pathJoin(workdirFolderPath, 'server.jar')
-  spawnSync(
+  const spawnResult = spawnSync(
     'java',
     [
       '-DbundlerMainClass=net.minecraft.data.Main',
@@ -303,6 +305,11 @@ for (const versionToDownload of versions) {
       cwd: workdirFolderPath,
     },
   )
+  if (spawnResult.status !== 0) {
+    throw new Error(
+      `server.jar resource report generation failed with error: ${spawnResult.stderr}`,
+    )
+  }
 
   const reportsPath = pathJoin(workdirFolderPath, 'generated', 'reports')
 
