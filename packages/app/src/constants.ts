@@ -9,6 +9,7 @@ export const GameVersions = [
   {
     id: '26.1',
     label: '26.1',
+    datapackVersion: 101,
   },
   {
     id: '1.21.11',
