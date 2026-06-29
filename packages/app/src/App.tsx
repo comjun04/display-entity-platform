@@ -1,5 +1,11 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { type FC, useEffect } from 'react'
+import {
+  ErrorBoundary,
+  type FallbackProps,
+  getErrorMessage,
+} from 'react-error-boundary'
+import { LuAmbulance, LuCircleX, LuRotateCcw } from 'react-icons/lu'
 
 import ContextMenuHandler from './components/ContextMenuHandler'
 import FileDropzone from './components/FileDropzone'
@@ -16,6 +22,7 @@ import Modal from './components/dialog/Modal.tsx'
 import PlayerHeadBakingDialog from './components/dialog/PlayerHeadBakingDialog'
 import SettingsDialog from './components/dialog/SettingsDialog'
 import WelcomeDialog from './components/dialog/WelcomeDialog'
+import { Button } from './components/ui/button'
 import { TooltipProvider } from './components/ui/tooltip'
 import { queryClient } from './lib/query.ts'
 import AutosaveService from './lib/services/autosave.service.ts'
@@ -32,6 +39,30 @@ const BrowserTitleHandler: FC = () => {
   }, [projectName, projectDirty])
 
   return null
+}
+
+const CrashFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 text-center">
+      <LuCircleX size={128} />
+      <p className="text-2xl">DEPL just crashed by an unexpected error</p>
+      <pre className="max-h-[50dvh] overflow-auto text-wrap">
+        {getErrorMessage(error)}
+      </pre>
+      <div className="flex w-full flex-col justify-center gap-2 sm:flex-row">
+        <Button size="lg" onClick={resetErrorBoundary}>
+          <LuAmbulance /> Try Recover
+        </Button>
+        <Button
+          size="lg"
+          variant="secondary"
+          onClick={() => window.location.reload()}
+        >
+          <LuRotateCcw /> Reload App
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 function App() {
@@ -59,40 +90,42 @@ function App() {
   }, [])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider delay={300}>
-        <div className="relative flex h-full w-full overflow-hidden">
-          <div className="relative h-full flex-1 overflow-hidden">
-            {/* overflow-hidden is required to prevent child canvas width height from affecting parent div
+    <ErrorBoundary fallbackRender={(props) => <CrashFallback {...props} />}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider delay={300}>
+          <div className="relative flex h-full w-full overflow-hidden">
+            <div className="relative h-full flex-1 overflow-hidden">
+              {/* overflow-hidden is required to prevent child canvas width height from affecting parent div
               and correctly measure parent container size for canvas resizing */}
-            <ContextMenuHandler triggerClassName="h-full w-full">
-              <Scene />
-            </ContextMenuHandler>
+              <ContextMenuHandler triggerClassName="h-full w-full">
+                <Scene />
+              </ContextMenuHandler>
 
-            {/* floating buttons */}
-            <LeftButtonPanel />
-            <QuickActionPanel />
-            <MobileBottomButtonPanel />
+              {/* floating buttons */}
+              <LeftButtonPanel />
+              <QuickActionPanel />
+              <MobileBottomButtonPanel />
+            </div>
+
+            <Sidebar />
+
+            <WelcomeDialog />
+            <Modal />
+            <SettingsDialog />
+            <BlockDisplaySelectDialog />
+            <ItemDisplaySelectDialog />
+            <ExportToMinecraftDialog />
+            <PlayerHeadBakingDialog />
+
+            <FileDropzone />
           </div>
 
-          <Sidebar />
+          <BrowserTitleHandler />
 
-          <WelcomeDialog />
-          <Modal />
-          <SettingsDialog />
-          <BlockDisplaySelectDialog />
-          <ItemDisplaySelectDialog />
-          <ExportToMinecraftDialog />
-          <PlayerHeadBakingDialog />
-
-          <FileDropzone />
-        </div>
-
-        <BrowserTitleHandler />
-
-        <ToastContainer />
-      </TooltipProvider>
-    </QueryClientProvider>
+          <ToastContainer />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 
