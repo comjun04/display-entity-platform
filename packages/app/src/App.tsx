@@ -5,6 +5,7 @@ import {
   type FallbackProps,
   getErrorMessage,
 } from 'react-error-boundary'
+import { useTranslation } from 'react-i18next'
 import { LuAmbulance, LuCircleX, LuDownload, LuRotateCcw } from 'react-icons/lu'
 
 import ContextMenuHandler from './components/ContextMenuHandler'
@@ -43,23 +44,25 @@ const BrowserTitleHandler: FC = () => {
 }
 
 const CrashFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
+  const { t } = useTranslation()
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 text-center">
       <LuCircleX size={128} />
-      <p className="text-2xl">DEPL just crashed by an unexpected error</p>
+      <p className="text-2xl">{t(($) => $.crashFallback.title)}</p>
       <pre className="max-h-[50dvh] overflow-auto text-wrap">
         {getErrorMessage(error)}
       </pre>
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
         <Button size="lg" onClick={resetErrorBoundary}>
-          <LuAmbulance /> Try Recover
+          <LuAmbulance /> {t(($) => $.crashFallback.tryRecover)}
         </Button>
         <Button
           size="lg"
           variant="secondary"
           onClick={() => window.location.reload()}
         >
-          <LuRotateCcw /> Reload App
+          <LuRotateCcw /> {t(($) => $.crashFallback.reloadApp)}
         </Button>
       </div>
 
@@ -73,7 +76,7 @@ const CrashFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
           }
         }}
       >
-        <LuDownload /> Download the latest autosave
+        <LuDownload /> {t(($) => $.crashFallback.downloadAutosave)}
       </Button>
     </div>
   )

@@ -350,5 +350,11 @@
     "group": "Group",
     "selectAll": "Select All",
     "delete": "Delete"
+  },
+  "crashFallback": {
+    "title": "DEPL just crashed by an unexpected error",
+    "tryRecover": "Try Recover",
+    "reloadApp": "Reload App",
+    "downloadAutosave": "Download the latest autosave"
   }
 }
