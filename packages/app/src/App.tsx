@@ -5,7 +5,7 @@ import {
   type FallbackProps,
   getErrorMessage,
 } from 'react-error-boundary'
-import { LuAmbulance, LuCircleX, LuRotateCcw } from 'react-icons/lu'
+import { LuAmbulance, LuCircleX, LuDownload, LuRotateCcw } from 'react-icons/lu'
 
 import ContextMenuHandler from './components/ContextMenuHandler'
 import FileDropzone from './components/FileDropzone'
@@ -26,6 +26,7 @@ import { Button } from './components/ui/button'
 import { TooltipProvider } from './components/ui/tooltip'
 import { queryClient } from './lib/query.ts'
 import AutosaveService from './lib/services/autosave.service.ts'
+import { downloadFile } from './lib/utils'
 import { useDialogStore } from './stores/dialogStore'
 import { useEditorStore } from './stores/editorStore'
 import { useProjectStore } from './stores/projectStore.ts'
@@ -49,7 +50,7 @@ const CrashFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
       <pre className="max-h-[50dvh] overflow-auto text-wrap">
         {getErrorMessage(error)}
       </pre>
-      <div className="flex w-full flex-col justify-center gap-2 sm:flex-row">
+      <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
         <Button size="lg" onClick={resetErrorBoundary}>
           <LuAmbulance /> Try Recover
         </Button>
@@ -61,6 +62,19 @@ const CrashFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
           <LuRotateCcw /> Reload App
         </Button>
       </div>
+
+      <Button
+        variant="outline"
+        className="w-full sm:w-auto"
+        onClick={() => {
+          const saveDataBlob = AutosaveService.instance.getSave()
+          if (saveDataBlob != null) {
+            downloadFile(saveDataBlob, `depl-autosave-${Date.now()}.depl`)
+          }
+        }}
+      >
+        <LuDownload /> Download the latest autosave
+      </Button>
     </div>
   )
 }
