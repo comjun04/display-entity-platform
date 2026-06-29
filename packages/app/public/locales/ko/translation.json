@@ -355,5 +355,11 @@
     "group": "그룹",
     "selectAll": "전체 선택",
     "delete": "삭제"
+  },
+  "crashFallback": {
+    "title": "DEPL이 예기치 못한 오류로 인해 다운되었습니다",
+    "tryRecover": "복구 시도",
+    "reloadApp": "앱 다시 로드",
+    "downloadAutosave": "가장 최신의 자동저장 데이터 다운로드"
   }
 }
