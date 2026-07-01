@@ -78,7 +78,7 @@ const Axes: FC<AxesProps> = ({ lineScale }) => {
     ref.current?.setColors(...AxesColors)
   }, [])
 
-  return <axesHelper args={[lineScale]} ref={ref} />
+  return <axesHelper args={[lineScale]} ref={ref} matrixAutoUpdate={false} />
 }
 
 const Scene: FC = () => {
@@ -123,6 +123,7 @@ const Scene: FC = () => {
       frameloop="demand"
       scene={{
         background: new Color(0x222222),
+        matrixAutoUpdate: false,
       }}
       gl={{
         antialias: false,
