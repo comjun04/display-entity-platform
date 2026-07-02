@@ -27,6 +27,7 @@ const OriginVec = new Vector3()
 const DisplayTranslationMinVec = new Vector3(-80, -80, -80)
 const DisplayTranslationMaxVec = new Vector3(80, 80, 80)
 
+const IdentityMatrix = new Matrix4()
 const HalfBlockTranslatedMatrix = new Matrix4().makeTranslation(0.5, 0.5, 0.5)
 const ReverseHalfBlockTranslatedMatrix = new Matrix4().makeTranslation(
   -0.5,
@@ -61,13 +62,13 @@ export const BoundingBox: FC<BoundingBoxProps> = ({
 
     // BoxHelper가 object의 transformation이 초기 상태일 때만 위치와 크기를 제대로 계산하는 것으로 보임
     // 따라서 초기 상태로 만든 다음 setFromObject() 호출 후 되돌리기
-    const m = object.matrix.clone()
-    const freshMatrix = new Matrix4()
-    freshMatrix.decompose(object.position, object.quaternion, object.scale)
+    const matrixBackup = object.matrix.clone()
+    IdentityMatrix.decompose(object.position, object.quaternion, object.scale)
+    object.updateMatrix()
 
     boxHelperRef.current.setFromObject(object)
 
-    m.decompose(object.position, object.quaternion, object.scale)
+    matrixBackup.decompose(object.position, object.quaternion, object.scale)
     object.updateMatrix()
 
     // Prevent the helpers from blocking rays
@@ -80,7 +81,7 @@ export const BoundingBox: FC<BoundingBoxProps> = ({
       parent.add(object)
     }
 
-    object.updateMatrixWorld() // needed to correctly calculate world matrix after all jobs
+    object.updateWorldMatrix(true, true) // needed to correctly calculate world matrix after all jobs
   })
 
   return (
@@ -90,6 +91,7 @@ export const BoundingBox: FC<BoundingBoxProps> = ({
       ref={boxHelperRef}
       // disable click detection for BoxHelper (r3f automatically enables it by default)
       raycast={() => {}}
+      matrixAutoUpdate={false}
     />
   )
 }
