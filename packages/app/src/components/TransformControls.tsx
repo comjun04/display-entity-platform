@@ -444,6 +444,9 @@ const TransformControls: FC = () => {
 
               transformData.object.scale.copy(scaleToApply)
             }
+
+            // manually update matrix since matrixAutoUpdate is disabled on entities
+            transformData.object.updateMatrix()
           }
 
           if (selectedEntityIds.length > 0) {
