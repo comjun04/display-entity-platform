@@ -89,6 +89,8 @@ export class InstancedMeshManager {
       )
       dummyMesh.instanceMatrix.needsUpdate = true
 
+      dummyMesh.matrixAutoUpdate = false
+
       const newBatch: InstancedMeshBatchData = {
         key: resourceLocation,
         status: 'loading', // indicate as loading
@@ -132,6 +134,8 @@ export class InstancedMeshManager {
           newMesh.instanceMatrix.needsUpdate = true
           newMesh.geometry.computeBoundingBox()
 
+          newMesh.matrixAutoUpdate = false
+
           batch.mesh.dispose()
 
           batch.mesh = newMesh
@@ -170,6 +174,8 @@ export class InstancedMeshManager {
           batch.capacity * 16,
         )
         newMesh.instanceMatrix.needsUpdate = true
+
+        newMesh.matrixAutoUpdate = false
 
         batch.mesh = newMesh
         batch.capacity *= 2
