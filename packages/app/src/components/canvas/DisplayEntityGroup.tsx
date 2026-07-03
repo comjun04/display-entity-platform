@@ -1,7 +1,8 @@
-import { type ThreeEvent, useFrame } from '@react-three/fiber'
-import { type FC, type MutableRefObject, useEffect } from 'react'
+import type { Number3Tuple } from '@depl/shared'
+import { type ThreeEvent, invalidate, useFrame } from '@react-three/fiber'
+import { type FC, type MutableRefObject, useEffect, useRef } from 'react'
 import { Group } from 'three'
-import { useShallow } from 'zustand/shallow'
+import { shallow, useShallow } from 'zustand/shallow'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 
@@ -43,17 +44,54 @@ const DisplayEntityGroup: FC<DisplayEntityGroupProps> = ({
 
     const { position, rotation, size } = thisEntity
 
-    ref?.current?.position.set(...position)
-    ref?.current?.rotation.set(...rotation)
-    ref?.current?.scale.set(...size)
+    if (ref?.current != null) {
+      ref.current.position.set(...position)
+      ref.current.rotation.set(...rotation)
+      ref.current.scale.set(...size)
+
+      ref.current.updateMatrix()
+      ref.current.matrixWorldNeedsUpdate = true
+      invalidate()
+    }
   }, [id, ref])
+
+  const prevTransformRef = useRef<{
+    position: Number3Tuple
+    rotation: Number3Tuple
+    scale: Number3Tuple
+  }>({
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: [1, 1, 1],
+  })
 
   // 매 프레임 렌더링 시마다 선택되어 있지 않을 경우 transformation 설정
   useFrame(() => {
-    if (!thisEntitySelected) {
-      ref?.current?.position.set(...position)
-      ref?.current?.rotation.set(...rotation)
-      ref?.current?.scale.set(...size)
+    const {
+      position: prevPosition,
+      rotation: prevRotation,
+      scale: prevScale,
+    } = prevTransformRef.current
+    if (
+      shallow(prevPosition, position) &&
+      shallow(prevRotation, rotation) &&
+      shallow(prevScale, size)
+    ) {
+      // transform data is unchanged
+      return
+    }
+
+    if (!thisEntitySelected && ref?.current != null) {
+      ref.current.position.set(...position)
+      ref.current.rotation.set(...rotation)
+      ref.current.scale.set(...size)
+
+      ref.current.updateMatrix()
+      invalidate()
+
+      prevTransformRef.current.position = position
+      prevTransformRef.current.rotation = rotation
+      prevTransformRef.current.scale = size
     }
   })
 
@@ -62,6 +100,7 @@ const DisplayEntityGroup: FC<DisplayEntityGroupProps> = ({
       ref={ref as MutableRefObject<Group>}
       name={`DisplayEntityGroup ${id}`}
       onClick={onClick}
+      matrixAutoUpdate={false}
     >
       {/* 그룹 안에 들어가야 할 display entity들은 portal을 사용해서 이 안에서 렌더링됨 */}
       <BoundingBox

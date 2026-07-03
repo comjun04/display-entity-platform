@@ -1,3 +1,4 @@
+import { useRafCallback } from '@react-hookz/web'
 import { TransformControls as TransformControlsImpl } from '@react-three/drei'
 import { invalidate } from '@react-three/fiber'
 import {
@@ -21,7 +22,7 @@ import {
   Quaternion,
   Vector3,
 } from 'three'
-import { TransformControls as OriginalTransformControls } from 'three/examples/jsm/Addons.js'
+import type { TransformControls as OriginalTransformControls } from 'three/examples/jsm/Addons.js'
 import { useShallow } from 'zustand/shallow'
 
 import { batchSetEntityTransformation } from '@/lib/entities'
@@ -250,6 +251,104 @@ const TransformControls: FC = () => {
     }
   }, [])
 
+  const [handleObjectChangeFrameSync] = useRafCallback(
+    ({ axis }: { axis: OriginalTransformControls['axis'] }) => {
+      // scale은 양수 값만 가질 수 있음
+      const absoluteScale = pivot.scale.toArray().map(Math.abs) as Number3Tuple
+      // state를 건드리기 전에 object3d에 먼저 scale 값을 세팅해야 음수 값일 경우 음수 <-> 양수로 계속 바뀌면서 생기는 깜빡거림을 방지할 수 있음
+      pivot.scale.fromArray(absoluteScale)
+
+      const pivotQuat = pivot.quaternion.clone()
+      const pivotQuatDelta = pivotQuat
+        .clone()
+        .multiply(pivotInitialQuaternion.current.clone().invert())
+
+      const pivotWorldQuat = new Quaternion()
+      pivot.getWorldQuaternion(pivotWorldQuat)
+
+      // share objects inside loop instead of creating new one every iteration
+      const relativePosFromPivot = new Vector3()
+      const newPos = new Vector3()
+      const newQuat = new Quaternion()
+
+      const alteredScale = new Vector3()
+      const scaleToApply = new Vector3()
+
+      const sharedParent =
+        selectedEntityInitialTransformations.current[0].object.parent!
+
+      // 1. Get the shared parent's world quaternion
+      const parentQuatWorld = new Quaternion()
+      sharedParent.getWorldQuaternion(parentQuatWorld)
+
+      // 2. Precompute conversion (used for all children)
+      for (const transformData of selectedEntityInitialTransformations.current) {
+        if (mode !== 'scale') {
+          relativePosFromPivot
+            .copy(transformData.position)
+            .sub(pivotInitialPosition.current)
+
+          if (mode === 'rotate') {
+            // apply pivot quaternion delta to object initial quaternion
+            newQuat.copy(pivotQuatDelta).multiply(transformData.quaternion)
+            transformData.object.quaternion.copy(newQuat)
+          }
+
+          // FIXME: rotating an object inside scaled parent makes object stretched when rotated
+
+          newPos
+            .copy(relativePosFromPivot)
+            .applyQuaternion(pivotQuatDelta)
+            .add(pivot.position)
+
+          transformData.object.position.copy(newPos)
+        } else {
+          alteredScale.copy(transformData.scale).multiply(pivot.scale)
+          scaleToApply.copy(transformData.scale)
+          ;(['x', 'y', 'z'] as const).forEach((axis) => {
+            if (axis != null && axis.toLowerCase().includes(axis)) {
+              const initialAxisScale = transformData.scale[axis]
+              const axisScaleDiff = alteredScale[axis] - initialAxisScale
+
+              let finalAxisScale =
+                initialAxisScale +
+                Math.round(axisScaleDiff / SCALE_SNAP) * SCALE_SNAP
+              finalAxisScale = Math.max(
+                Math.abs(finalAxisScale),
+                Number.EPSILON,
+              )
+
+              scaleToApply[axis] = finalAxisScale
+            }
+          })
+
+          transformData.object.scale.copy(scaleToApply)
+        }
+
+        // manually update matrix since matrixAutoUpdate is disabled on entities
+        transformData.object.updateMatrix()
+      }
+
+      if (selectedEntityIds.length > 0) {
+        const firstSelectedEntityRefData = useEntityRefStore
+          .getState()
+          .entityRefs.get(selectedEntityIds[0])!
+
+        setSelectionBaseTransformation({
+          position:
+            firstSelectedEntityRefData.objectRef.current.position.toArray(),
+          rotation: firstSelectedEntityRefData.objectRef.current.rotation
+            .toArray()
+            .slice(0, 3) as [number, number, number],
+          size: firstSelectedEntityRefData.objectRef.current.scale.toArray(),
+        })
+      }
+
+      // update box
+      updateBoundingBox()
+    },
+  )
+
   return (
     <>
       <TransformControlsImpl
@@ -366,103 +465,12 @@ const TransformControls: FC = () => {
 
           pivot.scale.set(1, 1, 1)
         }}
-        onObjectChange={(e) => {
-          const target = (e as Event<string, OriginalTransformControls>).target
-          // scale은 양수 값만 가질 수 있음
-          const absoluteScale = target.object.scale
-            .toArray()
-            .map(Math.abs) as Number3Tuple
-          // state를 건드리기 전에 object3d에 먼저 scale 값을 세팅해야 음수 값일 경우 음수 <-> 양수로 계속 바뀌면서 생기는 깜빡거림을 방지할 수 있음
-          target.object.scale.fromArray(absoluteScale)
+        onObjectChange={(evt) => {
+          if (evt == null) return
 
-          const pivotQuat = pivot.quaternion.clone()
-          const pivotQuatDelta = pivotQuat
-            .clone()
-            .multiply(pivotInitialQuaternion.current.clone().invert())
-
-          const pivotWorldQuat = new Quaternion()
-          pivot.getWorldQuaternion(pivotWorldQuat)
-
-          // share objects inside loop instead of creating new one every iteration
-          const relativePosFromPivot = new Vector3()
-          const newPos = new Vector3()
-          const newQuat = new Quaternion()
-
-          const alteredScale = new Vector3()
-          const scaleToApply = new Vector3()
-
-          const sharedParent =
-            selectedEntityInitialTransformations.current[0].object.parent!
-
-          // 1. Get the shared parent's world quaternion
-          const parentQuatWorld = new Quaternion()
-          sharedParent.getWorldQuaternion(parentQuatWorld)
-
-          // 2. Precompute conversion (used for all children)
-          for (const transformData of selectedEntityInitialTransformations.current) {
-            if (mode !== 'scale') {
-              relativePosFromPivot
-                .copy(transformData.position)
-                .sub(pivotInitialPosition.current)
-
-              if (mode === 'rotate') {
-                // apply pivot quaternion delta to object initial quaternion
-                newQuat.copy(pivotQuatDelta).multiply(transformData.quaternion)
-                transformData.object.quaternion.copy(newQuat)
-              }
-
-              // FIXME: rotating an object inside scaled parent makes object stretched when rotated
-
-              newPos
-                .copy(relativePosFromPivot)
-                .applyQuaternion(pivotQuatDelta)
-                .add(pivot.position)
-
-              transformData.object.position.copy(newPos)
-            } else {
-              alteredScale.copy(transformData.scale).multiply(pivot.scale)
-              scaleToApply.copy(transformData.scale)
-              ;(['x', 'y', 'z'] as const).forEach((axis) => {
-                if (
-                  target.axis != null &&
-                  target.axis.toLowerCase().includes(axis)
-                ) {
-                  const initialAxisScale = transformData.scale[axis]
-                  const axisScaleDiff = alteredScale[axis] - initialAxisScale
-
-                  let finalAxisScale =
-                    initialAxisScale +
-                    Math.round(axisScaleDiff / SCALE_SNAP) * SCALE_SNAP
-                  finalAxisScale = Math.max(
-                    Math.abs(finalAxisScale),
-                    Number.EPSILON,
-                  )
-
-                  scaleToApply[axis] = finalAxisScale
-                }
-              })
-
-              transformData.object.scale.copy(scaleToApply)
-            }
-          }
-
-          if (selectedEntityIds.length > 0) {
-            const firstSelectedEntityRefData = useEntityRefStore
-              .getState()
-              .entityRefs.get(selectedEntityIds[0])!
-
-            setSelectionBaseTransformation({
-              position:
-                firstSelectedEntityRefData.objectRef.current.position.toArray(),
-              rotation: firstSelectedEntityRefData.objectRef.current.rotation
-                .toArray()
-                .slice(0, 3) as [number, number, number],
-              size: firstSelectedEntityRefData.objectRef.current.scale.toArray(),
-            })
-          }
-
-          // update box
-          updateBoundingBox()
+          handleObjectChangeFrameSync({
+            axis: (evt as Event<string, OriginalTransformControls>).target.axis,
+          })
         }}
       />
 

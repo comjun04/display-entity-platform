@@ -99,7 +99,11 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
   )
 
   return (
-    <zeroScaledGroup ref={ref} name={`ItemDisplay ${id} ${type}`}>
+    <zeroScaledGroup
+      ref={ref}
+      name={`ItemDisplay ${id} ${type}`}
+      matrixAutoUpdate={false}
+    >
       {useInstancing ? (
         <BoundingBoxForInstanced
           modelList={modelList}
@@ -111,7 +115,11 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
         thisEntitySelected && <Helper type={BoxHelper} args={['#06b6d4']} />
       )}
 
-      <group onClick={onClick} ref={boundingBoxTargetRef}>
+      <group
+        onClick={onClick}
+        ref={boundingBoxTargetRef}
+        matrixAutoUpdate={false}
+      >
         {useInstancing ? (
           <MemoizedInstancedModel
             entityId={id}
