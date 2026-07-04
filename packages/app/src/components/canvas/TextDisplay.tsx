@@ -1,15 +1,17 @@
-import { type ThreeEvent, invalidate } from '@react-three/fiber'
+import { type ThreeEvent, extend, invalidate } from '@react-three/fiber'
 import { type FC, type MutableRefObject, useEffect, useRef } from 'react'
 import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
 
-import { createTextMesh } from '@/lib/resources/textMesh'
+import { TextMeshGroup } from '@/lib/resources/textMesh'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type { Number3Tuple } from '@/types/base'
 
 import { BoundingBox } from './BoundingBox'
+
+extend({ TextMeshGroup })
 
 type TextDisplayProps = {
   id: string
@@ -55,32 +57,20 @@ const TextDisplay: FC<TextDisplayProps> = ({
 
   const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
 
-  const innerGroupRef = useRef<Group>(null)
-  const textModelGroupRef = useRef<Group>()
-
+  const textMeshGroupRef = useRef<TextMeshGroup>(null)
   useEffect(() => {
     const asyncFn = async () => {
-      if (
-        innerGroupRef.current == null ||
-        thisEntityLineWidth == null ||
-        thisEntityBackgroundColor == null
-      ) {
+      if (thisEntityLineWidth == null || thisEntityBackgroundColor == null) {
         return
       }
 
-      const textModelGroup = await createTextMesh({
+      await textMeshGroupRef.current?.updateData({
         text,
         font: forceUnifont ? 'uniform' : 'default',
         lineWidth: thisEntityLineWidth,
         backgroundColor: thisEntityBackgroundColor ?? 0xff000000,
         textColor: thisEntityTextColor ?? 0xffffffff,
       })
-
-      if (textModelGroupRef.current != null) {
-        innerGroupRef.current.remove(textModelGroupRef.current)
-      }
-      innerGroupRef.current.add(textModelGroup)
-      textModelGroupRef.current = textModelGroup
 
       invalidate()
     }
@@ -89,10 +79,10 @@ const TextDisplay: FC<TextDisplayProps> = ({
   }, [
     id,
     text,
-    thisEntityLineWidth,
-    thisEntityBackgroundColor,
-    thisEntityTextColor,
     forceUnifont,
+    thisEntityLineWidth,
+    thisEntityTextColor,
+    thisEntityBackgroundColor,
     targetGameVersion,
   ])
 
@@ -104,7 +94,9 @@ const TextDisplay: FC<TextDisplayProps> = ({
         color="#fb2c36"
       />
 
-      <group onClick={onClick} ref={innerGroupRef} />
+      <group onClick={onClick} matrixAutoUpdate={false}>
+        <textMeshGroup ref={textMeshGroupRef} />
+      </group>
     </object3D>
   )
 }

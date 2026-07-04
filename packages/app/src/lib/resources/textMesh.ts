@@ -1,3 +1,4 @@
+import type { Node } from '@react-three/fiber'
 import {
   FrontSide,
   Group,
@@ -16,7 +17,7 @@ import { createCharTexture as createBitmapFontCharTexture } from './font/bitmap'
 import { createCharTexture as createUnihexFontCharTexture } from './font/unihex'
 
 type Font = 'default' | 'uniform'
-type CreateTextMeshArgs = {
+interface TextMeshGroupData {
   text: string // TODO: handle Raw JSON Text Format
   font: Font
   lineWidth: number
@@ -25,157 +26,225 @@ type CreateTextMeshArgs = {
 }
 
 const UNIT_PIXEL_SIZE = 0.025
-const backgroundGeometry = new PlaneGeometry(1, 1)
+const BackgroundGeometry = new PlaneGeometry(1, 1)
 
-export async function createTextMesh({
-  text,
-  font = 'default',
-  lineWidth,
-  textColor,
-  backgroundColor,
-}: CreateTextMeshArgs) {
-  const textLinesGroup = new Group()
+export class TextMeshGroup extends Group {
+  private _text = ''
+  private _font: Font = 'default'
+  private _lineWidth = 100
+  private _textColor = 0xffffffff
+  private _backgroundColor = 0x00000000
 
-  // 모든 줄 통틀어서 최대 width를 가진 줄의 width
-  let maxLineWidth = 0
-  let offset = 0
-  const tempCharMeshList: Mesh[] = []
+  private backgroundMesh: Mesh
+  private backgroundMaterial: MeshBasicMaterial
+  private textMeshGroups: Group[] = []
 
-  for (const [charIdx, char] of text.split('').entries()) {
-    if (char === '\n') {
-      const lineGroup = new Group()
-      lineGroup.add(...tempCharMeshList)
-      textLinesGroup.add(lineGroup)
+  constructor() {
+    super()
 
-      tempCharMeshList.length = 0
-      offset = 0
-      continue
-    }
+    this.backgroundMaterial = new MeshBasicMaterial({
+      color: 0x00000000,
+      side: FrontSide,
+      opacity: 1,
+      transparent: true,
+      alphaTest: 0.01,
+    })
+    this.backgroundMesh = new Mesh(BackgroundGeometry, this.backgroundMaterial)
+    this.add(this.backgroundMesh)
+  }
 
-    // 텍스트 중간에 SPACE 문자가 2개 이상 연속으로 붙어 있더라도 최대 1개만 렌더링 (마크 동작)
-    if (char === ' ') {
-      const prevChar = text[charIdx - 1]
-      if (prevChar === ' ') {
-        continue
-      }
-    }
+  get text() {
+    return this._text
+  }
+  get font() {
+    return this._font
+  }
+  get lineWidth() {
+    return this._lineWidth
+  }
+  get textColor() {
+    return this._textColor
+  }
+  get backgroundColor() {
+    return this._backgroundColor
+  }
 
-    // TODO: mesh를 만들지 않고도 width를 구하는 함수 만들기
-    const {
-      mesh,
-      widthPixels,
-      // baseWidthPixels,
-      heightPixels,
-      advance,
-      ascent,
-      font: charFont,
-    } = await createCharMesh(char, font, textColor)
+  async updateData(data: TextMeshGroupData) {
+    const shouldRecreate = data.text !== this.text || data.font !== this._font
 
-    const width = widthPixels
+    if (shouldRecreate) {
+      this.textMeshGroups.forEach((group) => {
+        group.children.forEach((object) => {
+          const mesh = object as Mesh
 
-    // 주어진 line length보다 한 줄에 입력된 글자의 픽셀 수(여백 포함)가 크면
-    // 해당 글자부터 다음 줄로 내리기
-    if (offset + width > lineWidth) {
-      // 입력한 글자 전까지 한 줄로 묶기
-      if (tempCharMeshList.length > 0) {
-        const lineGroup = new Group()
-        lineGroup.add(...tempCharMeshList)
-        textLinesGroup.add(lineGroup)
+          mesh.geometry.dispose()
+
+          const materials = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material]
+          materials.forEach((material) => material.dispose())
+        })
+        this.remove(group)
+      })
+
+      // start recreating
+      this.textMeshGroups = []
+
+      // 모든 줄 통틀어서 최대 width를 가진 줄의 width
+      let maxLineWidth = 0
+      let offset = 0
+      const tempCharMeshList: Mesh[] = []
+
+      for (const [charIdx, char] of data.text.split('').entries()) {
+        if (char === '\n') {
+          const lineGroup = new Group()
+          lineGroup.add(...tempCharMeshList)
+          this.textMeshGroups.push(lineGroup)
+
+          tempCharMeshList.length = 0
+          offset = 0
+          continue
+        }
+
+        // 텍스트 중간에 SPACE 문자가 2개 이상 연속으로 붙어 있더라도 최대 1개만 렌더링 (마크 동작)
+        if (char === ' ') {
+          const prevChar = data.text[charIdx - 1]
+          if (prevChar === ' ') {
+            continue
+          }
+        }
+
+        // TODO: mesh를 만들지 않고도 width를 구하는 함수 만들기
+        const {
+          mesh,
+          widthPixels,
+          // baseWidthPixels,
+          heightPixels,
+          advance,
+          ascent,
+          font: charFont,
+        } = await createCharMesh(char, data.font, data.textColor)
+
+        const width = widthPixels
+
+        // 주어진 line length보다 한 줄에 입력된 글자의 픽셀 수(여백 포함)가 크면
+        // 해당 글자부터 다음 줄로 내리기
+        if (offset + width > data.lineWidth) {
+          // 입력한 글자 전까지 한 줄로 묶기
+          if (tempCharMeshList.length > 0) {
+            const lineGroup = new Group()
+            lineGroup.add(...tempCharMeshList)
+            this.textMeshGroups.push(lineGroup)
+
+            if (offset > maxLineWidth) {
+              maxLineWidth = offset
+            }
+          }
+
+          // 입력한 글자는 다음 줄로 예약
+          tempCharMeshList.length = 0
+          tempCharMeshList.push(mesh)
+
+          offset = 1
+        } else {
+          // 각 줄의 첫 글자일 경우 왼쪽에 1픽셀 여백
+          if (tempCharMeshList.length < 1) {
+            offset = 1
+          }
+
+          tempCharMeshList.push(mesh)
+        }
+
+        const height = heightPixels / (charFont === 'uniform' ? 2 : 1)
+
+        mesh.position.setX(offset)
+        mesh.position.setY(1 - (height - ascent))
+        offset += advance
 
         if (offset > maxLineWidth) {
           maxLineWidth = offset
         }
       }
-
-      // 입력한 글자는 다음 줄로 예약
-      tempCharMeshList.length = 0
-      tempCharMeshList.push(mesh)
-
-      offset = 1
-    } else {
-      // 각 줄의 첫 글자일 경우 왼쪽에 1픽셀 여백
-      if (tempCharMeshList.length < 1) {
-        offset = 1
+      if (tempCharMeshList.length > 0) {
+        // 마지막 문자까지
+        const lineGroup = new Group()
+        lineGroup.add(...tempCharMeshList)
+        this.textMeshGroups.push(lineGroup)
       }
 
-      tempCharMeshList.push(mesh)
+      for (const group of this.textMeshGroups) {
+        this.add(group)
+      }
+
+      let maxHeight = 0
+
+      for (const lineGroup of this.textMeshGroups.toReversed()) {
+        lineGroup.position.set(
+          (maxLineWidth / 2) * -1, // 중앙에 위치하도록 조정
+          maxHeight + 1, // 각 줄마다 하단 1픽셀씩 올리기
+          0,
+        )
+
+        // 각 row 간 간격 고정값
+        // net.minecraft.client.renderer.entity.DisplayEntityRenderer.TextDisplayRenderer#renderInner()
+        maxHeight += 10
+      }
+
+      const backgroundColorAlpha = ((data.backgroundColor >>> 24) & 0xff) / 0xff
+      const backgroundColorRGB = (data.backgroundColor << 8) >>> 8 // ensure unsigned
+      this.backgroundMaterial.color.setHex(backgroundColorRGB)
+      this.backgroundMaterial.opacity = backgroundColorAlpha
+
+      this.backgroundMesh.position.set(0, maxHeight / 2, 0)
+      this.backgroundMesh.scale.set(maxLineWidth, maxHeight, 1)
+
+      this.scale.set(UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE)
+
+      // update class properties
+      this._text = data.text
+      this._font = data.font
+      this._lineWidth = data.lineWidth
+      this._textColor = data.textColor
+      this._backgroundColor = data.backgroundColor
+    } else {
+      if (data.textColor !== this._textColor) {
+        for (const group of this.textMeshGroups) {
+          for (const object of group.children) {
+            const mesh = object as Mesh
+
+            const materials = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material]
+            materials.forEach((material) =>
+              (material as MeshBasicMaterial).color.setHex(data.textColor),
+            )
+          }
+        }
+      }
+
+      if (data.backgroundColor !== this._backgroundColor) {
+        const backgroundColorAlpha =
+          ((data.backgroundColor >>> 24) & 0xff) / 0xff
+        const backgroundColorRGB = (data.backgroundColor << 8) >>> 8 // ensure unsigned
+
+        this.backgroundMaterial.color.setHex(backgroundColorRGB)
+        this.backgroundMaterial.opacity = backgroundColorAlpha
+
+        this._backgroundColor = data.backgroundColor
+      }
     }
-
-    const height = heightPixels / (charFont === 'uniform' ? 2 : 1)
-
-    mesh.position.setX(offset)
-    mesh.position.setY(1 - (height - ascent))
-    offset += advance
-
-    if (offset > maxLineWidth) {
-      maxLineWidth = offset
-    }
   }
-  if (tempCharMeshList.length > 0) {
-    // 마지막 문자까지
-    const lineGroup = new Group()
-    lineGroup.add(...tempCharMeshList)
-    textLinesGroup.add(lineGroup)
-  }
-
-  let maxHeight = 0
-
-  for (const lineGroup of textLinesGroup.children.toReversed()) {
-    lineGroup.position.set(
-      (maxLineWidth / 2) * -1, // 중앙에 위치하도록 조정
-      maxHeight + 1, // 각 줄마다 하단 1픽셀씩 올리기
-      0,
-    )
-
-    // 각 row 간 간격 고정값
-    // net.minecraft.client.renderer.entity.DisplayEntityRenderer.TextDisplayRenderer#renderInner()
-    maxHeight += 10
-  }
-
-  const backgroundColorAlpha = ((backgroundColor >>> 24) & 0xff) / 0xff
-  const backgroundColorRGB = (backgroundColor << 8) >>> 8 // ensure unsigned
-  const backgroundMaterial = new MeshBasicMaterial({
-    color: backgroundColorRGB,
-    side: FrontSide,
-    opacity: backgroundColorAlpha,
-    transparent: true,
-    alphaTest: 0.01,
-  })
-  const backgroundMesh = new Mesh(backgroundGeometry, backgroundMaterial)
-  backgroundMesh.position.set(0, maxHeight / 2, 0)
-  backgroundMesh.scale.set(maxLineWidth, maxHeight, 1)
-  textLinesGroup.add(backgroundMesh)
-
-  textLinesGroup.scale.set(UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE)
-  return textLinesGroup
 }
 
-/*
-async function loadFontResource(filePath: string) {
-  const { fontResources } = useCacheStore.getState()
-  const fontResource = fontResources[filePath]
-  if (fontResource != null) return fontResource
-
-  if (!fontAssetLoadMutexMap.has(filePath)) {
-    fontAssetLoadMutexMap.set(filePath, new Mutex())
+// This should change when upgrading to r3f v9 (react v19), as global JSX namespace is deprecated
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      textMeshGroup: Node<TextMeshGroup, typeof TextMeshGroup>
+    }
   }
-  const mutex = fontAssetLoadMutexMap.get(filePath)!
-
-  return await mutex.runExclusive(async () => {
-    const { fontResources } = useCacheStore.getState()
-    const fontResource = fontResources[filePath]
-    if (fontResource != null) return fontResources
-
-    const d = await fetch(
-      `${import.meta.env.VITE_CDN_BASE_URL}/font/${filePath}`,
-    )
-
-    // TODO: currently assuming font file as unifont hex
-    // implement png font later
-    // const
-  })
 }
-*/
 
 async function createCharMesh(char: string, preferFont: Font, color: number) {
   let texture!: Texture
