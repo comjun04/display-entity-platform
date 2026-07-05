@@ -1,4 +1,3 @@
-import { MeshStandardMaterial, PlaneGeometry, Texture } from 'three'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
@@ -109,42 +108,4 @@ export const useCacheStore = create<CacheStoreState>()(
         state.fontProviders[key] = data
       }),
   })),
-)
-
-type FontGlyphData = {
-  geometry: PlaneGeometry
-  texture: Texture
-  widthPixels: number
-  baseWidthPixels: number
-  heightPixels: number
-  advance: number
-  ascent: number
-}
-type ClassObjectCacheStoreState = {
-  materials: Map<string, MeshStandardMaterial>
-  setMaterial: (key: string, material: MeshStandardMaterial) => void
-
-  fontGlyphs: Map<string, FontGlyphData>
-  setFontGlyph: (key: string, data: FontGlyphData) => void
-}
-
-// DO NOT USE IMMER ON THIS STORE
-export const useClassObjectCacheStore = create<ClassObjectCacheStoreState>()(
-  (set) => ({
-    materials: new Map(),
-    setMaterial: (key, material) =>
-      set((state) => {
-        const newMap = new Map(state.materials)
-        newMap.set(key, material)
-        return { materials: newMap }
-      }),
-
-    fontGlyphs: new Map(),
-    setFontGlyph: (key, data) =>
-      set((state) => {
-        const newMap = new Map(state.fontGlyphs)
-        newMap.set(key, data)
-        return { fontGlyphs: newMap }
-      }),
-  }),
 )

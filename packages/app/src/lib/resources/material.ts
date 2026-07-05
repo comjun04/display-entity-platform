@@ -9,7 +9,7 @@ import {
 } from 'three'
 
 import { getTextureColor } from '@/lib/utils'
-import { useCacheStore, useClassObjectCacheStore } from '@/stores/cacheStore'
+import { useCacheStore } from '@/stores/cacheStore'
 import { useProjectStore } from '@/stores/projectStore'
 
 import { AssetFileInfosCache } from './assetFileInfo'
@@ -36,21 +36,21 @@ type TextureData =
           }
       )
     }
+
+const MaterialCache = new Map<string, MeshStandardMaterial>()
+
 export type LoadMaterialArgs = {
   textureData: TextureData
   modelResourceLocation: string
   textureLayer?: string
   tintindex?: number
 }
-
 export async function loadMaterial({
   textureData,
   modelResourceLocation,
   textureLayer,
   tintindex,
 }: LoadMaterialArgs) {
-  const { setMaterial } = useClassObjectCacheStore.getState()
-
   const { targetGameVersion } = useProjectStore.getState()
   const textureColor = getTextureColor(
     modelResourceLocation,
@@ -80,17 +80,16 @@ export async function loadMaterial({
     const mutex = materialLoadMutexMap.get(materialKey)!
     return await mutex.runExclusive(async () => {
       // check for cached
-      const { materials } = useClassObjectCacheStore.getState()
-      if (materials.has(materialKey)) {
+      if (MaterialCache.has(materialKey)) {
         return {
-          material: materials.get(materialKey)!,
+          material: MaterialCache.get(materialKey)!,
           materialKey,
         }
       }
 
       const material = await makeMaterial(textureData, textureColor)
 
-      setMaterial(materialKey, material)
+      MaterialCache.set(materialKey, material)
       return { material, materialKey }
     })
   } else {
