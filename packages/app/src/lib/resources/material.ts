@@ -9,12 +9,10 @@ import {
 } from 'three'
 
 import { getTextureColor } from '@/lib/utils'
-import {
-  AssetFileInfosCache,
-  useCacheStore,
-  useClassObjectCacheStore,
-} from '@/stores/cacheStore'
+import { useCacheStore, useClassObjectCacheStore } from '@/stores/cacheStore'
 import { useProjectStore } from '@/stores/projectStore'
+
+import { AssetFileInfosCache } from './assetFileInfo'
 
 const materialLoadMutexMap = new Map<string, Mutex>()
 
