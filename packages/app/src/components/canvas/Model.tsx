@@ -283,6 +283,7 @@ const Model: FC<ModelNewProps> = ({
       loadedMesh.scale,
     )
 
+    loadedMesh.matrixWorldNeedsUpdate = true
     invalidate()
   }, [meshLoaded, modelDataTemp, displayType, xRotation, yRotation])
 
