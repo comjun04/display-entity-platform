@@ -14,8 +14,8 @@ interface ProjectStoreState {
   setMainNBT: (nbt: string) => void
 }
 
-export const useProjectStore = create(
-  immer<ProjectStoreState>((set) => ({
+export const useProjectStore = create<ProjectStoreState>()(
+  immer((set) => ({
     targetGameVersion: LatestGameVersion,
     setTargetGameVersion: (version) => {
       set((state) => {

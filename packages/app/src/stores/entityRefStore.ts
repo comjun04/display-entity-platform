@@ -26,11 +26,11 @@ type EntityRefStoreState = {
   deleteEntityRefs: (entityIds: string[]) => void
   clearEntityRefs: () => void
 }
+
 // DisplayEntity#objectRef는 mutable해야 하므로(object 내부 property를 수정할 수 있어야 하므로)
 // immer middleware로 전체 적용하지 않고 필요한 부분만 produce로 따로 적용
 // DO NOT USE IMMER ON THIS STORE
-
-export const useEntityRefStore = create<EntityRefStoreState>((set) => {
+export const useEntityRefStore = create<EntityRefStoreState>()((set) => {
   const rootGroupRef = ((node: Group) => {
     rootGroupRef.current = node
 

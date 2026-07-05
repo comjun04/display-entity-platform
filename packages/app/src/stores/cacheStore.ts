@@ -46,8 +46,8 @@ type CacheStoreState = {
 
 // 캐시 저장소
 
-export const useCacheStore = create(
-  immer<CacheStoreState>((set) => ({
+export const useCacheStore = create<CacheStoreState>()(
+  immer((set) => ({
     blockstatesData: {},
     setBlockstateData: (blockType, blockstatesData) =>
       set((state) => {
@@ -129,7 +129,7 @@ type ClassObjectCacheStoreState = {
 }
 
 // DO NOT USE IMMER ON THIS STORE
-export const useClassObjectCacheStore = create<ClassObjectCacheStoreState>(
+export const useClassObjectCacheStore = create<ClassObjectCacheStoreState>()(
   (set) => ({
     materials: new Map(),
     setMaterial: (key, material) =>

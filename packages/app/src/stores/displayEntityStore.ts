@@ -153,8 +153,8 @@ export type DisplayEntityState = {
   ungroupEntityGroup: (entityGroupId: string) => void
 }
 
-export const useDisplayEntityStore = create(
-  immer<DisplayEntityState>((set, get) => ({
+export const useDisplayEntityStore = create<DisplayEntityState>()(
+  immer((set, get) => ({
     entities: new Map(),
     selectedEntityIds: [],
     selectedEntityIdsIncludingParent: new Set(),

@@ -30,8 +30,8 @@ interface HistoryStoreState {
   }
 }
 
-export const useHistoryStore = create(
-  immer<HistoryStoreState>((set, get) => ({
+export const useHistoryStore = create<HistoryStoreState>()(
+  immer((set, get) => ({
     // undo stack, pushed when user action, popped when undo
     undoStack: [],
     // redo stack, pushed when undo, popped when redo

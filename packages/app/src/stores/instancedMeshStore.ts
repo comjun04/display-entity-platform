@@ -436,27 +436,29 @@ export interface InstancedMeshStoreState {
     data: Partial<Omit<MinimalInstancedMeshBatchData, 'key'>>,
   ) => void
 }
-export const useInstancedMeshStore = create<InstancedMeshStoreState>((set) => ({
-  batches: new Map(),
+export const useInstancedMeshStore = create<InstancedMeshStoreState>()(
+  (set) => ({
+    batches: new Map(),
 
-  _addBatch: (key, data) =>
-    set((state) => {
-      const batchesDraft = new Map(state.batches)
-      batchesDraft.set(key, { key, ...data })
-      return { batches: batchesDraft }
-    }),
-  _updateBatchInfo: (key, data) =>
-    set((state) => {
-      const batchesDraft = new Map(state.batches)
-      const batch = batchesDraft.get(key)
-      if (batch == null) {
-        return {}
-      }
+    _addBatch: (key, data) =>
+      set((state) => {
+        const batchesDraft = new Map(state.batches)
+        batchesDraft.set(key, { key, ...data })
+        return { batches: batchesDraft }
+      }),
+    _updateBatchInfo: (key, data) =>
+      set((state) => {
+        const batchesDraft = new Map(state.batches)
+        const batch = batchesDraft.get(key)
+        if (batch == null) {
+          return {}
+        }
 
-      Object.assign(batch, data)
-      return { batches: batchesDraft }
-    }),
-}))
+        Object.assign(batch, data)
+        return { batches: batchesDraft }
+      }),
+  }),
+)
 
 /**
  * Gets flattened matrix elements with all matrixes are correctly zero-scaled.
