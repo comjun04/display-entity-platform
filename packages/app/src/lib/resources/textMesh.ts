@@ -41,6 +41,7 @@ export class TextMeshGroup extends Group {
 
   constructor() {
     super()
+    this.matrixAutoUpdate = false
 
     this.backgroundMaterial = new MeshBasicMaterial({
       color: 0x00000000,
@@ -50,6 +51,11 @@ export class TextMeshGroup extends Group {
       alphaTest: 0.01,
     })
     this.backgroundMesh = new Mesh(BackgroundGeometry, this.backgroundMaterial)
+    this.backgroundMesh.matrixAutoUpdate = false
+
+    this.backgroundMesh.scale.set(0, 0, 0) // make background invisible on creation
+    this.backgroundMesh.updateMatrix()
+
     this.add(this.backgroundMesh)
   }
 
@@ -197,6 +203,7 @@ export class TextMeshGroup extends Group {
 
       this.backgroundMesh.position.set(0, maxHeight / 2, 0)
       this.backgroundMesh.scale.set(maxLineWidth, maxHeight, 1)
+      this.backgroundMesh.updateMatrix()
 
       this.scale.set(UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE)
 
@@ -206,6 +213,8 @@ export class TextMeshGroup extends Group {
       this._lineWidth = data.lineWidth
       this._textColor = data.textColor
       this._backgroundColor = data.backgroundColor
+
+      this.updateMatrix()
     } else {
       if (data.textColor !== this._textColor) {
         for (const group of this.textMeshGroups) {
