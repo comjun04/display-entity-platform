@@ -79,22 +79,8 @@ export class TextMeshGroup extends Group {
     const shouldRecreate = data.text !== this.text || data.font !== this._font
 
     if (shouldRecreate) {
-      this.textMeshGroups.forEach((group) => {
-        group.children.forEach((object) => {
-          const mesh = object as Mesh
-
-          mesh.geometry.dispose()
-
-          const materials = Array.isArray(mesh.material)
-            ? mesh.material
-            : [mesh.material]
-          materials.forEach((material) => material.dispose())
-        })
-        this.remove(group)
-      })
-
       // start recreating
-      this.textMeshGroups = []
+      const groups: Group[] = []
 
       // 모든 줄 통틀어서 최대 width를 가진 줄의 width
       let maxLineWidth = 0
@@ -105,7 +91,7 @@ export class TextMeshGroup extends Group {
         if (char === '\n') {
           const lineGroup = new Group()
           lineGroup.add(...tempCharMeshList)
-          this.textMeshGroups.push(lineGroup)
+          groups.push(lineGroup)
 
           tempCharMeshList.length = 0
           offset = 0
@@ -140,7 +126,7 @@ export class TextMeshGroup extends Group {
           if (tempCharMeshList.length > 0) {
             const lineGroup = new Group()
             lineGroup.add(...tempCharMeshList)
-            this.textMeshGroups.push(lineGroup)
+            groups.push(lineGroup)
 
             if (offset > maxLineWidth) {
               maxLineWidth = offset
@@ -175,16 +161,34 @@ export class TextMeshGroup extends Group {
         // 마지막 문자까지
         const lineGroup = new Group()
         lineGroup.add(...tempCharMeshList)
-        this.textMeshGroups.push(lineGroup)
+        groups.push(lineGroup)
       }
 
-      for (const group of this.textMeshGroups) {
+      // remove old rows and add new rows
+      this.textMeshGroups.forEach((group) => {
+        group.children.forEach((object) => {
+          const mesh = object as Mesh
+
+          mesh.geometry.dispose()
+
+          const materials = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material]
+          materials.forEach((material) => material.dispose())
+        })
+        this.remove(group)
+      })
+
+      this.textMeshGroups = groups
+      for (const group of groups) {
         this.add(group)
       }
 
+      // positioning rows
+
       let maxHeight = 0
 
-      for (const lineGroup of this.textMeshGroups.toReversed()) {
+      for (const lineGroup of groups.toReversed()) {
         lineGroup.position.set(
           (maxLineWidth / 2) * -1, // 중앙에 위치하도록 조정
           maxHeight + 1, // 각 줄마다 하단 1픽셀씩 올리기
