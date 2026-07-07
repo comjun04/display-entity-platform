@@ -26,6 +26,11 @@ interface TextMeshGroupData {
 }
 
 const UNIT_PIXEL_SIZE = 0.025
+// 각 row 간 간격 고정값
+// net.minecraft.client.renderer.entity.DisplayEntityRenderer$TextDisplayRenderer#renderInner()
+// 26.2: net.minecraft.client.renderer.entity.DisplayRenderer$TextDisplayRenderer#submitInner() `lineHeight`
+const ROW_HEIGHT = 10
+
 const BackgroundGeometry = new PlaneGeometry(1, 1)
 
 export class TextMeshGroup extends Group {
@@ -37,7 +42,8 @@ export class TextMeshGroup extends Group {
 
   private backgroundMesh: Mesh
   private backgroundMaterial: MeshBasicMaterial
-  private textMeshGroups: Group[] = []
+
+  private textMeshesGroup: Group
 
   constructor() {
     super()
@@ -57,6 +63,10 @@ export class TextMeshGroup extends Group {
     this.backgroundMesh.updateMatrix()
 
     this.add(this.backgroundMesh)
+
+    this.textMeshesGroup = new Group()
+    this.textMeshesGroup.matrixAutoUpdate = false
+    this.add(this.textMeshesGroup)
   }
 
   get text() {
@@ -80,21 +90,21 @@ export class TextMeshGroup extends Group {
 
     if (shouldRecreate) {
       // start recreating
-      const groups: Group[] = []
+      const meshes: Mesh[] = []
 
       // 모든 줄 통틀어서 최대 width를 가진 줄의 width
       let maxLineWidth = 0
       let offset = 0
+      let heightOffset = 0
       const tempCharMeshList: Mesh[] = []
 
       for (const [charIdx, char] of data.text.split('').entries()) {
         if (char === '\n') {
-          const lineGroup = new Group()
-          lineGroup.add(...tempCharMeshList)
-          groups.push(lineGroup)
+          meshes.push(...tempCharMeshList)
 
           tempCharMeshList.length = 0
           offset = 0
+          heightOffset -= ROW_HEIGHT
           continue
         }
 
@@ -124,9 +134,7 @@ export class TextMeshGroup extends Group {
         if (offset + width > data.lineWidth) {
           // 입력한 글자 전까지 한 줄로 묶기
           if (tempCharMeshList.length > 0) {
-            const lineGroup = new Group()
-            lineGroup.add(...tempCharMeshList)
-            groups.push(lineGroup)
+            meshes.push(...tempCharMeshList)
 
             if (offset > maxLineWidth) {
               maxLineWidth = offset
@@ -148,9 +156,14 @@ export class TextMeshGroup extends Group {
         }
 
         const height = heightPixels / (charFont === 'uniform' ? 2 : 1)
+        const y =
+          heightOffset - //
+          (height - ascent) +
+          1 +
+          1 // +1 = 각 줄마다 하단 1픽셀씩 올리기
 
         mesh.position.setX(offset)
-        mesh.position.setY(1 - (height - ascent))
+        mesh.position.setY(y)
         offset += advance
 
         if (offset > maxLineWidth) {
@@ -159,46 +172,36 @@ export class TextMeshGroup extends Group {
       }
       if (tempCharMeshList.length > 0) {
         // 마지막 문자까지
-        const lineGroup = new Group()
-        lineGroup.add(...tempCharMeshList)
-        groups.push(lineGroup)
+        meshes.push(...tempCharMeshList)
       }
 
       // remove old rows and add new rows
-      this.textMeshGroups.forEach((group) => {
-        group.children.forEach((object) => {
-          const mesh = object as Mesh
+      for (const object of this.textMeshesGroup.children) {
+        const mesh = object as Mesh
 
-          mesh.geometry.dispose()
+        mesh.geometry.dispose()
 
-          const materials = Array.isArray(mesh.material)
-            ? mesh.material
-            : [mesh.material]
-          materials.forEach((material) => material.dispose())
-        })
-        this.remove(group)
-      })
+        const materials = Array.isArray(mesh.material)
+          ? mesh.material
+          : [mesh.material]
+        materials.forEach((material) => material.dispose())
+      }
+      this.textMeshesGroup.clear()
 
-      this.textMeshGroups = groups
-      for (const group of groups) {
-        this.add(group)
+      for (const mesh of meshes) {
+        this.textMeshesGroup.add(mesh)
       }
 
       // positioning rows
 
-      let maxHeight = 0
+      this.textMeshesGroup.position.set(
+        (maxLineWidth / 2) * -1,
+        heightOffset * -1,
+        0,
+      )
+      this.textMeshesGroup.updateMatrix()
 
-      for (const lineGroup of groups.toReversed()) {
-        lineGroup.position.set(
-          (maxLineWidth / 2) * -1, // 중앙에 위치하도록 조정
-          maxHeight + 1, // 각 줄마다 하단 1픽셀씩 올리기
-          0,
-        )
-
-        // 각 row 간 간격 고정값
-        // net.minecraft.client.renderer.entity.DisplayEntityRenderer.TextDisplayRenderer#renderInner()
-        maxHeight += 10
-      }
+      const maxHeight = heightOffset * -1 + ROW_HEIGHT
 
       const backgroundColorAlpha = ((data.backgroundColor >>> 24) & 0xff) / 0xff
       const backgroundColorRGB = (data.backgroundColor << 8) >>> 8 // ensure unsigned
@@ -221,17 +224,15 @@ export class TextMeshGroup extends Group {
       this.updateMatrix()
     } else {
       if (data.textColor !== this._textColor) {
-        for (const group of this.textMeshGroups) {
-          for (const object of group.children) {
-            const mesh = object as Mesh
+        for (const object of this.textMeshesGroup.children) {
+          const mesh = object as Mesh
 
-            const materials = Array.isArray(mesh.material)
-              ? mesh.material
-              : [mesh.material]
-            materials.forEach((material) =>
-              (material as MeshBasicMaterial).color.setHex(data.textColor),
-            )
-          }
+          const materials = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material]
+          materials.forEach((material) =>
+            (material as MeshBasicMaterial).color.setHex(data.textColor),
+          )
         }
       }
 
