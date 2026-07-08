@@ -33,6 +33,29 @@ const ROW_HEIGHT = 10
 
 const BackgroundGeometry = new PlaneGeometry(1, 1)
 
+interface TextMeshGlyphData {
+  readonly char: string
+  readonly font: Font
+  readonly width: number
+  readonly baseWidth: number
+  readonly height: number
+  readonly advance: number
+  readonly ascent: number
+}
+class TextMesh extends Mesh {
+  readonly glyphData: TextMeshGlyphData
+
+  constructor(
+    geometry: PlaneGeometry,
+    material: MeshBasicMaterial,
+    glyphData: TextMeshGlyphData,
+  ) {
+    super(geometry, material)
+
+    this.glyphData = glyphData
+  }
+}
+
 export class TextMeshGroup extends Group {
   private _text = ''
   private _font: Font = 'default'
@@ -224,6 +247,12 @@ export class TextMeshGroup extends Group {
 
       this.updateMatrix()
     } else {
+      if (data.lineWidth !== this._lineWidth) {
+        this.reposition({ text: data.text, lineWidth: data.lineWidth })
+
+        this._lineWidth = data.lineWidth
+      }
+
       if (data.textColor !== this._textColor) {
         for (const object of this.textMeshesGroup.children) {
           const mesh = object as Mesh
@@ -249,6 +278,115 @@ export class TextMeshGroup extends Group {
       }
     }
   }
+
+  private reposition({ text, lineWidth }: { text: string; lineWidth: number }) {
+    let meshIdx = 0
+
+    // 모든 줄 통틀어서 최대 width를 가진 줄의 width
+    let maxLineWidth = 0
+    let offset = 0
+    let heightOffset = 0
+    const tempCharMeshList: TextMesh[] = []
+
+    let firstCharInRow = true
+
+    for (const [charIdx, char] of text.split('').entries()) {
+      // single char = single text mesh
+      // with the exception of line feed `\n`
+      const object = this.textMeshesGroup.children[meshIdx]
+      if (object == null) {
+        throw new Error(
+          `Cannot get corresponding text mesh (meshIdx: ${meshIdx}, charIdx: ${charIdx}). Maybe original text is longer than generated text meshes?`,
+        )
+      }
+
+      const mesh = object as TextMesh
+      if (mesh.glyphData.char !== char) {
+        throw new Error(
+          `TextMesh char is different with original text. Expected ${char} but TextMesh char is ${mesh.glyphData.char}`,
+        )
+      }
+
+      const {
+        width,
+        height: heightPixels,
+        font: charFont,
+        advance,
+        ascent,
+      } = mesh.glyphData
+
+      if (char === '\n') {
+        offset = 0
+        heightOffset -= ROW_HEIGHT
+        continue
+      }
+
+      // 텍스트 중간에 SPACE 문자가 2개 이상 연속으로 붙어 있더라도 최대 1개만 렌더링 (마크 동작)
+      if (char === ' ') {
+        const prevChar = text[charIdx - 1]
+        if (prevChar === ' ') {
+          meshIdx++
+          continue
+        }
+      }
+
+      // 주어진 line length보다 한 줄에 입력된 글자의 픽셀 수(여백 포함)가 크면
+      // 해당 글자부터 다음 줄로 내리기
+      if (offset + width > lineWidth) {
+        // 입력한 글자 전까지 한 줄로 묶기
+
+        if (offset > maxLineWidth) {
+          maxLineWidth = offset
+        }
+
+        // 입력한 글자는 다음 줄로 예약
+
+        firstCharInRow = true
+        heightOffset -= ROW_HEIGHT
+      }
+
+      if (firstCharInRow) {
+        // 각 줄의 첫 글자일 경우 왼쪽에 1픽셀 여백
+        if (tempCharMeshList.length < 1) {
+          offset = 1
+        }
+
+        firstCharInRow = false
+      }
+
+      const height = heightPixels / (charFont === 'uniform' ? 2 : 1)
+      const y =
+        heightOffset - //
+        (height - ascent) +
+        1 +
+        1 // +1 = 각 줄마다 하단 1픽셀씩 올리기
+
+      mesh.position.setX(offset)
+      mesh.position.setY(y)
+      offset += advance
+
+      if (offset > maxLineWidth) {
+        maxLineWidth = offset
+      }
+
+      meshIdx++
+    }
+
+    // positioning rows
+
+    this.textMeshesGroup.position.set(
+      (maxLineWidth / 2) * -1,
+      heightOffset * -1,
+      0,
+    )
+    this.textMeshesGroup.updateMatrix()
+
+    const maxHeight = heightOffset * -1 + ROW_HEIGHT
+
+    this.backgroundMesh.position.set(0, maxHeight / 2, 0)
+    this.backgroundMesh.scale.set(maxLineWidth, maxHeight, 1)
+    this.backgroundMesh.updateMatrix()
+  }
 }
 
 // This should change when upgrading to r3f v9 (react v19), as global JSX namespace is deprecated
@@ -261,7 +399,11 @@ declare global {
   }
 }
 
-async function createCharMesh(char: string, preferFont: Font, color: number) {
+async function createCharMesh(
+  charStr: string,
+  preferFont: Font,
+  color: number,
+) {
   let texture!: Texture
   let geometry!: PlaneGeometry
   let width!: number // 여백 자르고 난 뒤의 width
@@ -273,6 +415,8 @@ async function createCharMesh(char: string, preferFont: Font, color: number) {
   // check for cached glyph data
   const { fontGlyphs: cache, setFontGlyph } =
     useClassObjectCacheStore.getState()
+
+  const char = charStr[0]
 
   let fontKey: string = preferFont
   if (preferFont === 'uniform') {
@@ -347,7 +491,15 @@ async function createCharMesh(char: string, preferFont: Font, color: number) {
     alphaTest: 0.01,
   })
 
-  const mesh = new Mesh(geometry, material)
+  const mesh = new TextMesh(geometry, material, {
+    char,
+    font: preferFont,
+    width,
+    baseWidth,
+    height,
+    advance,
+    ascent,
+  })
   return {
     mesh,
     widthPixels: width,
