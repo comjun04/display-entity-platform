@@ -146,6 +146,7 @@ export class TextMeshGroup extends Group {
           tempCharMeshList.push(mesh)
 
           offset = 1
+          heightOffset -= ROW_HEIGHT
         } else {
           // 각 줄의 첫 글자일 경우 왼쪽에 1픽셀 여백
           if (tempCharMeshList.length < 1) {
