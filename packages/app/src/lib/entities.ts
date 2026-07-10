@@ -269,7 +269,7 @@ export function setTDEntityProperties(
     >) {
       if (key === 'textEffects') {
         if (properties.textEffects != null) {
-          oldState.textEffects = entity.textEffects
+          oldState.textEffects = { ...entity.textEffects } // copy object because `entity` is immutable
           for (const key of Object.keys(oldState.textEffects) as Array<
             keyof (typeof properties)['textEffects']
           >) {
