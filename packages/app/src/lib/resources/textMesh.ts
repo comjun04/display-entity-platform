@@ -90,6 +90,9 @@ export class TextMeshGroup extends Group {
     this.textMeshesGroup = new Group()
     this.textMeshesGroup.matrixAutoUpdate = false
     this.add(this.textMeshesGroup)
+
+    this.scale.set(UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE)
+    this.updateMatrix()
   }
 
   get text() {
@@ -115,23 +118,10 @@ export class TextMeshGroup extends Group {
       // start recreating
       const meshes: Mesh[] = []
 
-      // 모든 줄 통틀어서 최대 width를 가진 줄의 width
-      let maxLineWidth = 0
-      let offset = 0
-      let heightOffset = 0
-      const tempCharMeshList: Mesh[] = []
-
       for (const [charIdx, char] of data.text.split('').entries()) {
         if (char === '\n') {
-          meshes.push(...tempCharMeshList)
-
-          tempCharMeshList.length = 0
-          offset = 0
-          heightOffset -= ROW_HEIGHT
           continue
         }
-
-        // 텍스트 중간에 SPACE 문자가 2개 이상 연속으로 붙어 있더라도 최대 1개만 렌더링 (마크 동작)
         if (char === ' ') {
           const prevChar = data.text[charIdx - 1]
           if (prevChar === ' ') {
@@ -140,63 +130,8 @@ export class TextMeshGroup extends Group {
         }
 
         // TODO: mesh를 만들지 않고도 width를 구하는 함수 만들기
-        const {
-          mesh,
-          widthPixels,
-          // baseWidthPixels,
-          heightPixels,
-          advance,
-          ascent,
-          font: charFont,
-        } = await createCharMesh(char, data.font, data.textColor)
-
-        const width = widthPixels
-
-        // 주어진 line length보다 한 줄에 입력된 글자의 픽셀 수(여백 포함)가 크면
-        // 해당 글자부터 다음 줄로 내리기
-        if (offset + width > data.lineWidth) {
-          // 입력한 글자 전까지 한 줄로 묶기
-          if (tempCharMeshList.length > 0) {
-            meshes.push(...tempCharMeshList)
-
-            if (offset > maxLineWidth) {
-              maxLineWidth = offset
-            }
-          }
-
-          // 입력한 글자는 다음 줄로 예약
-          tempCharMeshList.length = 0
-          tempCharMeshList.push(mesh)
-
-          offset = 1
-          heightOffset -= ROW_HEIGHT
-        } else {
-          // 각 줄의 첫 글자일 경우 왼쪽에 1픽셀 여백
-          if (tempCharMeshList.length < 1) {
-            offset = 1
-          }
-
-          tempCharMeshList.push(mesh)
-        }
-
-        const height = heightPixels / (charFont === 'uniform' ? 2 : 1)
-        const y =
-          heightOffset - //
-          (height - ascent) +
-          1 +
-          1 // +1 = 각 줄마다 하단 1픽셀씩 올리기
-
-        mesh.position.setX(offset)
-        mesh.position.setY(y)
-        offset += advance
-
-        if (offset > maxLineWidth) {
-          maxLineWidth = offset
-        }
-      }
-      if (tempCharMeshList.length > 0) {
-        // 마지막 문자까지
-        meshes.push(...tempCharMeshList)
+        const { mesh } = await createCharMesh(char, data.font, data.textColor)
+        meshes.push(mesh)
       }
 
       // remove old rows and add new rows
@@ -216,27 +151,13 @@ export class TextMeshGroup extends Group {
         this.textMeshesGroup.add(mesh)
       }
 
-      // positioning rows
-
-      this.textMeshesGroup.position.set(
-        (maxLineWidth / 2) * -1,
-        heightOffset * -1,
-        0,
-      )
-      this.textMeshesGroup.updateMatrix()
-
-      const maxHeight = heightOffset * -1 + ROW_HEIGHT
+      // update character mesh and background mesh positions
+      this.reposition({ text: data.text, lineWidth: data.lineWidth })
 
       const backgroundColorAlpha = ((data.backgroundColor >>> 24) & 0xff) / 0xff
       const backgroundColorRGB = (data.backgroundColor << 8) >>> 8 // ensure unsigned
       this.backgroundMaterial.color.setHex(backgroundColorRGB)
       this.backgroundMaterial.opacity = backgroundColorAlpha
-
-      this.backgroundMesh.position.set(0, maxHeight / 2, 0)
-      this.backgroundMesh.scale.set(maxLineWidth, maxHeight, 1)
-      this.backgroundMesh.updateMatrix()
-
-      this.scale.set(UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE, UNIT_PIXEL_SIZE)
 
       // update class properties
       this._text = data.text
@@ -244,8 +165,6 @@ export class TextMeshGroup extends Group {
       this._lineWidth = data.lineWidth
       this._textColor = data.textColor
       this._backgroundColor = data.backgroundColor
-
-      this.updateMatrix()
     } else {
       if (data.lineWidth !== this._lineWidth) {
         this.reposition({ text: data.text, lineWidth: data.lineWidth })
@@ -291,6 +210,13 @@ export class TextMeshGroup extends Group {
     let firstCharInRow = true
 
     for (const [charIdx, char] of text.split('').entries()) {
+      if (char === '\n') {
+        offset = 0
+        heightOffset -= ROW_HEIGHT
+        firstCharInRow = true
+        continue
+      }
+
       // single char = single text mesh
       // with the exception of line feed `\n`
       const object = this.textMeshesGroup.children[meshIdx]
@@ -314,12 +240,6 @@ export class TextMeshGroup extends Group {
         advance,
         ascent,
       } = mesh.glyphData
-
-      if (char === '\n') {
-        offset = 0
-        heightOffset -= ROW_HEIGHT
-        continue
-      }
 
       // 텍스트 중간에 SPACE 문자가 2개 이상 연속으로 붙어 있더라도 최대 1개만 렌더링 (마크 동작)
       if (char === ' ') {
