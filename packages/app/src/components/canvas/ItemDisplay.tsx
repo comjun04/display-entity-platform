@@ -136,10 +136,11 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
         )}
       </group>
 
-      {thisEntityPlayerHeadProperties != null && headPainterEnabled && (
+      {thisEntityPlayerHeadProperties != null && (
         <PlayerHeadPainter
           entityId={id}
           playerHeadProperties={thisEntityPlayerHeadProperties}
+          disabled={!headPainterEnabled}
         />
       )}
     </zeroScaledGroup>

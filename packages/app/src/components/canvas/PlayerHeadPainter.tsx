@@ -16,6 +16,7 @@ import type {
 interface SideProps {
   face: ModelFaceKey
   layer: HeadPainterLayer
+  disabled?: boolean
   handlePaint: (side: ModelFaceKey, x: number, y: number) => void
   handlePointerDown: (face: ModelFaceKey, x: number, y: number) => void
   handlePointerMove: (face: ModelFaceKey, x: number, y: number) => void
@@ -23,6 +24,7 @@ interface SideProps {
 const Side: FC<SideProps> = ({
   face,
   layer,
+  disabled = false,
   handlePaint,
   handlePointerDown,
   handlePointerMove,
@@ -97,6 +99,8 @@ const Side: FC<SideProps> = ({
       <mesh
         rotation={innerMeshRotation}
         onClick={(evt) => {
+          if (disabled) return
+
           const localPos = evt.object.worldToLocal(evt.point.clone())
           handlePaint(
             face,
@@ -105,6 +109,8 @@ const Side: FC<SideProps> = ({
           )
         }}
         onPointerDown={(evt) => {
+          if (disabled) return
+
           const localPos = evt.object.worldToLocal(evt.point.clone())
           handlePointerDown(
             face,
@@ -113,6 +119,8 @@ const Side: FC<SideProps> = ({
           )
         }}
         onPointerMove={(evt) => {
+          if (disabled) return
+
           const localPos = evt.object.worldToLocal(evt.point.clone())
           handlePointerMove(
             face,
@@ -128,14 +136,15 @@ const Side: FC<SideProps> = ({
   )
 }
 
-type PlayerHeadPainterProps = {
+interface PlayerHeadPainterProps {
   entityId: string
   playerHeadProperties: PlayerHeadProperties
+  disabled?: boolean
 }
-
 const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
   entityId,
   playerHeadProperties,
+  disabled = false,
 }) => {
   const headPainterLayer = useEditorStore((state) => state.headPainter.layer)
 
@@ -302,11 +311,12 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
   }
 
   return (
-    <>
+    <group visible={!disabled}>
       {/* top */}
       <Side
         face="up"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -316,6 +326,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="down"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -325,6 +336,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="south"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -334,6 +346,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="north"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -343,6 +356,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="east"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -352,11 +366,12 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="west"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
       />
-    </>
+    </group>
   )
 }
 
