@@ -16,6 +16,8 @@ import {
 } from '@/stores/cacheStore'
 import { useProjectStore } from '@/stores/projectStore'
 
+import { stripSecondHeadLayer } from './player-head'
+
 const materialLoadMutexMap = new Map<string, Mutex>()
 
 type TextureData =
@@ -111,11 +113,12 @@ export async function makeMaterial(
 
   let texture: Texture
   if (textureData.type === 'player_head' && !textureData.playerHead.baked) {
-    texture = new DataTexture(
-      new Uint8ClampedArray(textureData.playerHead.paintTexturePixels),
-      64,
-      64,
-    )
+    let paintTexturePixels = textureData.playerHead.paintTexturePixels
+    if (!textureData.playerHead.showSecondLayer) {
+      paintTexturePixels = stripSecondHeadLayer(paintTexturePixels)
+    }
+
+    texture = new DataTexture(new Uint8ClampedArray(paintTexturePixels), 64, 64)
     texture.needsUpdate = true
     texture.flipY = true
   } else {
