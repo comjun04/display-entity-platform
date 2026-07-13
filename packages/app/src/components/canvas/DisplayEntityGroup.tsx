@@ -97,7 +97,7 @@ const DisplayEntityGroup: FC<DisplayEntityGroupProps> = ({
 
   return (
     <group
-      ref={ref as MutableRefObject<Group>}
+      ref={ref}
       name={`DisplayEntityGroup ${id}`}
       onClick={onClick}
       matrixAutoUpdate={false}
