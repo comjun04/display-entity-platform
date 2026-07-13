@@ -173,7 +173,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
             playerHead: {
               baked: true,
               url: textureData.url,
-              showSecondLayer: headPainterLayer === 'second',
+              showSecondLayer: true, // we need the full layer data
             },
           })) // no resource fromVersion required on player_head
         } else {

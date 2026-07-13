@@ -16,6 +16,7 @@ import useModelData from '@/hooks/useModelData'
 import { getLogger } from '@/lib/logger'
 import { makeMaterial } from '@/lib/resources/material'
 import { generateModelMeshIngredients } from '@/lib/resources/modelMesh'
+import { stripSecondHeadLayer } from '@/lib/resources/player-head'
 import { stripMinecraftPrefix } from '@/lib/utils'
 import { useProjectStore } from '@/stores/projectStore'
 import type {
@@ -60,7 +61,7 @@ const Model: FC<ModelNewProps> = ({
   const [meshLoaded, setMeshLoaded] = useState(false)
 
   const prevResourceLocationRef = useRef(initialResourceLocation)
-  const prevPlayerHeadTextureDataRef = useRef(playerHeadData?.textureData)
+  const prevPlayerHeadDataRef = useRef(playerHeadData)
 
   const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
 
@@ -93,22 +94,30 @@ const Model: FC<ModelNewProps> = ({
         )
         */
 
-        const prevPlayerHeadTextureData = prevPlayerHeadTextureDataRef.current
+        const prevPlayerHeadData = prevPlayerHeadDataRef.current
         if (
-          prevPlayerHeadTextureData?.baked === false &&
+          prevPlayerHeadData?.textureData.baked === false &&
           playerHeadData?.textureData.baked === false
         ) {
-          // prev and current has unbaked texture
-          if (
-            prevPlayerHeadTextureData?.paintTexturePixels !==
+          const textureChanged =
+            prevPlayerHeadData?.textureData.paintTexturePixels !==
             playerHeadData?.textureData.paintTexturePixels
-          ) {
+          const layerChanged =
+            prevPlayerHeadData?.showSecondLayer !==
+            playerHeadData?.showSecondLayer
+
+          // prev and current has unbaked texture
+          if (textureChanged || layerChanged) {
+            let paintTexturePixels =
+              playerHeadData.textureData.paintTexturePixels
+            if (!playerHeadData.showSecondLayer) {
+              paintTexturePixels = stripSecondHeadLayer(paintTexturePixels)
+            }
+
             // unbaked texture has changed, update material texture
             // console.log('just update material texture')
             const newTexture = new DataTexture(
-              new Uint8ClampedArray(
-                playerHeadData?.textureData.paintTexturePixels,
-              ),
+              new Uint8ClampedArray(paintTexturePixels),
               64,
               64,
             )
@@ -172,7 +181,7 @@ const Model: FC<ModelNewProps> = ({
           else old?.dispose()
         }
 
-        prevPlayerHeadTextureDataRef.current = playerHeadData?.textureData
+        prevPlayerHeadDataRef.current = playerHeadData
         invalidate()
         return
       }
@@ -207,7 +216,7 @@ const Model: FC<ModelNewProps> = ({
       }
       mergedMeshRef.current = newMesh
       prevResourceLocationRef.current = initialResourceLocation
-      prevPlayerHeadTextureDataRef.current = playerHeadData?.textureData
+      prevPlayerHeadDataRef.current = playerHeadData
 
       setMeshLoaded(true)
     }
