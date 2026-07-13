@@ -1,15 +1,13 @@
-import { Helper } from '@react-three/drei'
 import { type ThreeEvent, extend } from '@react-three/fiber'
 import { type FC, type MutableRefObject, memo, useMemo, useRef } from 'react'
 import { Group } from 'three'
-import { BoxHelper } from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { type Number3Tuple } from '@/types/base'
 
-import { BoundingBoxForInstanced } from './BoundingBox'
+import { BoundingBox, BoundingBoxForInstanced } from './BoundingBox'
 import Model from './Model'
 import PlayerHeadPainter from './PlayerHeadPainter'
 import { InstancedModel } from './instanced'
@@ -112,7 +110,11 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
           displayType={thisEntityDisplay ?? undefined}
         />
       ) : (
-        thisEntitySelected && <Helper type={BoxHelper} args={['#06b6d4']} />
+        <BoundingBox
+          object={boundingBoxTargetRef.current ?? undefined}
+          visible={thisEntitySelected}
+          color="#06b6d4"
+        />
       )}
 
       <group

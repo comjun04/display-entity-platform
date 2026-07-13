@@ -311,7 +311,8 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
   }
 
   return (
-    <group visible={!disabled}>
+    // set group scale to 0 when disabled to prevent interfering with parent group bounding box calculation
+    <group visible={!disabled} scale={disabled ? [0, 0, 0] : [1, 1, 1]}>
       {/* top */}
       <Side
         face="up"
