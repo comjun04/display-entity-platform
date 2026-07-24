@@ -7,6 +7,7 @@
     "asset-utils": "pnpm -F asset-utils",
     "backend": "pnpm -F backend",
     "shared": "pnpm -F @depl/shared",
+    "blockicongen": "pnpm -F block-icon-generator",
     "prepare": "husky"
   },
   "pnpm": {
