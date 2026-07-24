@@ -15,7 +15,7 @@ const app = new Hono()
 // frontend
 app.use(
   serveStatic({
-    root: fileURLToPath(new URL('./frontend', import.meta.url)),
+    root: fileURLToPath(new URL('./../dist', import.meta.url)),
   }),
 )
 

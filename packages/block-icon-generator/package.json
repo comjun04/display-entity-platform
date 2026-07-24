@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/app.ts",
+    "front:build": "vite build",
     "husky:pre-commit": "pretty-quick --staged --pattern \"packages/block-icon-generator/**/*.{js,ts,jsx,tsx}\""
   },
   "optionalDependencies": {
@@ -17,7 +18,8 @@
     "@types/node": "^26.1.1",
     "prettier": "^3.3.3",
     "pretty-quick": "^4.2.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
   },
   "dependencies": {
     "hono": "^4.9.0"
