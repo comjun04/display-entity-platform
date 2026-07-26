@@ -6,8 +6,13 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/app.ts",
+    "front:dev": "vite",
     "front:build": "vite build",
     "husky:pre-commit": "pretty-quick --staged --pattern \"packages/block-icon-generator/**/*.{js,ts,jsx,tsx}\""
+  },
+  "dependencies": {
+    "hono": "^4.9.0",
+    "three": "^0.179.1"
   },
   "optionalDependencies": {
     "@hono/node-server": "^1.18.1",
@@ -16,12 +21,10 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@types/three": "^0.179.0",
     "prettier": "^3.3.3",
     "pretty-quick": "^4.2.2",
     "typescript": "^6.0.3",
     "vite": "^8.0.10"
-  },
-  "dependencies": {
-    "hono": "^4.9.0"
   }
 }
