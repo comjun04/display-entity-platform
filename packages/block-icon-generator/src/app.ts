@@ -27,6 +27,86 @@ const OpenBrowserOnStart = !parsedArgs.values['no-open']
 // initialize App
 const app = new Hono()
 
+// This will eventually be supplied by the job queue.
+const jobList = [
+  'minecraft:stone',
+  'minecraft:grass_block',
+  'minecraft:oak_planks',
+  'minecraft:diamond_block',
+]
+const remainingJobs = new Set(jobList)
+const completedJobs: string[] = []
+
+app.get('/api/jobs', (c) =>
+  c.json({
+    remainingJobs: [...remainingJobs],
+    completedJobs,
+  }),
+)
+
+app.post('/api/jobs/:blockId', async (c) => {
+  const { blockId } = c.req.param()
+  if (!jobList.includes(blockId)) {
+    return c.json({ error: 'Unknown job' }, 404)
+  }
+  if (!remainingJobs.has(blockId)) {
+    return c.json({ error: 'Job has already been completed' }, 409)
+  }
+
+  const contentType = c.req.header('content-type') ?? ''
+  let image: ArrayBuffer
+
+  if (contentType.includes('application/json')) {
+    let body: { image?: unknown; imageData?: unknown }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Invalid JSON body' }, 400)
+    }
+
+    const encodedImage = body.image ?? body.imageData
+    if (typeof encodedImage !== 'string') {
+      return c.json({ error: 'Expected a base64 image string' }, 400)
+    }
+
+    const base64 = encodedImage.replace(/^data:[^;]+;base64,/, '')
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64) || base64.length % 4 !== 0) {
+      return c.json({ error: 'Invalid base64 image data' }, 400)
+    }
+
+    image = Uint8Array.from(Buffer.from(base64, 'base64')).buffer
+  } else {
+    image = await c.req.arrayBuffer()
+  }
+
+  if (image.byteLength === 0) {
+    return c.json({ error: 'Image data is required' }, 400)
+  }
+
+  // TODO: Store the rendered image when a job backend is connected.
+  console.log(
+    `Received rendered image for ${blockId} (${image.byteLength} bytes)`,
+  )
+
+  remainingJobs.delete(blockId)
+  completedJobs.push(blockId)
+
+  if (remainingJobs.size === 0) {
+    setImmediate(() => {
+      console.log('All block icon generation jobs completed.')
+      server.close((err) => {
+        if (err) {
+          console.error(err)
+          process.exit(1)
+        }
+        process.exit(0)
+      })
+    })
+  }
+
+  return c.json({ blockId, received: true }, 202)
+})
+
 // frontend
 app.use(
   serveStatic({
