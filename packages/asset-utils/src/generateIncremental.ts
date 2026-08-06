@@ -16,7 +16,7 @@ import {
   ModelFile,
   ServerJarGeneratedRegistryData,
 } from './types'
-import { VersionMetadata } from '@depl/shared'
+import { BlockIconGeneratorConfig, VersionMetadata } from '@depl/shared'
 import {
   blockstatesDefaultValues,
   renderableBlockEntityModelTextures,
@@ -51,10 +51,13 @@ const argsParseResult = parseArgs({
   args,
   strict: false,
   options: {
-    force: { type: 'boolean', short: 'f' },
+    force: { type: 'boolean', short: 'f', default: false },
+    'skip-icon-atlas': { type: 'boolean', default: false },
   },
 })
 const forceGenerateMode = argsParseResult.values.force
+const skipGeneratingIconAtlas = argsParseResult.values['skip-icon-atlas']
+
 if (forceGenerateMode) {
   console.warn(
     '[WARN] Force generation mode activated. This will ignore already generated data and regenerate again.',
@@ -110,6 +113,13 @@ const fileInfos = new Map<
   }
 >()
 const blockRenderables: Record<string, boolean> = {}
+const allRenderableItems: Record<
+  string,
+  {
+    kind: 'block' | 'item'
+    defaultBlockstates: Record<string, string>
+  }
+> = {}
 
 for (const versionToDownload of versions) {
   const versionId = versionToDownload.id
@@ -379,13 +389,19 @@ for (const versionToDownload of versions) {
     }
 
     if (canRender) {
-      const defaultBlockstateValues = [
-        ...Object.entries(blockstatesDefaultValues[blockName] ?? {}),
+      const defaultBlockstateValues = blockstatesDefaultValues[blockName] ?? {}
+      allRenderableItems[blockName] = {
+        kind: 'block',
+        defaultBlockstates: defaultBlockstateValues,
+      }
+
+      const defaultBlockstatesEntries = [
+        ...Object.entries(defaultBlockstateValues),
       ]
       const stringifiedDefaultBlockstateValues =
-        defaultBlockstateValues.length > 0
+        defaultBlockstatesEntries.length > 0
           ? '[' +
-            defaultBlockstateValues
+            defaultBlockstatesEntries
               .map(([key, value]) => `${key}=${value}`)
               .join(',') +
             ']'
@@ -415,10 +431,29 @@ for (const versionToDownload of versions) {
   const items = Object.keys(generatedRegistryJson['minecraft:item'].entries)
     .map((k) => k.match(/^minecraft:(.+)$/)![1])
     .filter((i) => i !== 'air')
+
   await writeFile(
     pathJoin(assetsMinecraftFolderPath, 'items.json'),
     JSON.stringify({ items }),
   )
+  items.forEach((item) => {
+    if (allRenderableItems[item] != null) return
+    allRenderableItems[item] = {
+      kind: 'item',
+      defaultBlockstates: {},
+    }
+  })
+
+  // generate icon atlas
+  if (!skipGeneratingIconAtlas) {
+    console.log('Generating icon atlas image')
+    await generateIconAtlas({
+      items: allRenderableItems,
+      targetGameVersion: versionId,
+      workdirPath: workdirFolderPath,
+      outputDirPath: assetsMinecraftFolderPath,
+    })
+  }
 
   const versionData = await fetchVersionData(versionId)
 
@@ -540,4 +575,43 @@ async function canRenderToBlockDisplay(
 
 function makeHash(buf: Buffer) {
   return createHash('sha1').update(buf).digest('hex')
+}
+
+async function generateIconAtlas({
+  items,
+  targetGameVersion,
+  workdirPath,
+  outputDirPath,
+}: {
+  items: BlockIconGeneratorConfig['items']
+  targetGameVersion: string
+  workdirPath: string
+  outputDirPath: string
+}) {
+  const configFilePath = pathJoin(
+    workdirPath,
+    'icon-atlas-generator-config.json',
+  )
+  const config: BlockIconGeneratorConfig = { targetGameVersion, items }
+
+  await writeFile(configFilePath, JSON.stringify(config))
+
+  // assume we use pnpm
+  const result = spawnSync(
+    'pnpm',
+    [
+      'blockicongen',
+      'start',
+      `--config=${configFilePath}`,
+      `--out-dir=${outputDirPath}`,
+    ],
+    {
+      cwd: pathResolve('../../'), // project root
+    },
+  )
+  if (result.status !== 0) {
+    throw new Error(
+      `Icon atlas generator failed with error: ${result.stderr.toString()}`,
+    )
+  }
 }
