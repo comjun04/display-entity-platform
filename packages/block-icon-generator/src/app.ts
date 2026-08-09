@@ -8,6 +8,11 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { fileURLToPath } from 'url'
 import open from 'open'
 import { parseArgs } from 'util'
+import { resolve as pathResolve } from 'path'
+import { readFile } from 'fs/promises'
+import type { BlockIconGeneratorConfig } from '@depl/shared'
+import { APIGetJobsResponse } from './types'
+import { cors } from 'hono/cors'
 
 const port = parseInt(process.env.PORT ?? '3100')
 
@@ -20,29 +25,53 @@ const parsedArgs = parseArgs({
       short: 'n',
       default: false,
     },
+    config: {
+      type: 'string',
+      short: 'c',
+      default: '',
+    },
+    'out-dir': {
+      type: 'string',
+      short: 'o',
+      default: '',
+    },
   },
 })
 const OpenBrowserOnStart = !parsedArgs.values['no-open']
+const ConfigFilePath = pathResolve(parsedArgs.values.config)
+const OutputDirPath = pathResolve(parsedArgs.values['out-dir'])
 
-// initialize App
-const app = new Hono()
+// read config
+const config = JSON.parse(
+  await readFile(ConfigFilePath, 'utf8'),
+) as BlockIconGeneratorConfig
+const jobList = Object.entries(config.items).map(([k, v]) => ({
+  id: k,
+  ...v,
+}))
 
-// This will eventually be supplied by the job queue.
-const jobList = [
-  'minecraft:stone',
-  'minecraft:grass_block',
-  'minecraft:oak_planks',
-  'minecraft:diamond_block',
-]
 const remainingJobs = new Set(jobList)
 const completedJobs: string[] = []
 
+// initialize App
+const app = new Hono()
+app.use(cors())
+
 app.get('/api/jobs', (c) =>
-  c.json({
-    remainingJobs: [...remainingJobs],
-    completedJobs,
+  c.json<APIGetJobsResponse>({
+    targetGameVersion: config.targetGameVersion,
+    jobs: jobList,
   }),
 )
+
+app.post('/api/submit', async (c) => {
+  let body: { image?: unknown; imageData?: unknown }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400)
+  }
+})
 
 app.post('/api/jobs/:blockId', async (c) => {
   const { blockId } = c.req.param()
@@ -106,6 +135,9 @@ app.post('/api/jobs/:blockId', async (c) => {
 
   return c.json({ blockId, received: true }, 202)
 })
+
+// api fallback
+app.all('/api/*', (c) => c.json({ error: 'Not Found' }, 404))
 
 // frontend
 app.use(

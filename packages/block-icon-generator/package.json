@@ -6,14 +6,19 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/app.ts",
+    "dev": "tsx --watch src/app.ts",
     "front:dev": "vite",
     "front:build": "vite build",
     "husky:pre-commit": "pretty-quick --staged --pattern \"packages/block-icon-generator/**/*.{js,ts,jsx,tsx}\""
   },
   "dependencies": {
+    "async-mutex": "^0.5.0",
+    "compare-versions": "^6.1.1",
+    "es-toolkit": "^1.49.0",
     "hono": "^4.9.0",
     "open": "^11.0.0",
-    "three": "^0.179.1"
+    "three": "^0.179.1",
+    "three-stdlib": "2.36.0"
   },
   "optionalDependencies": {
     "@hono/node-server": "^1.18.1",
