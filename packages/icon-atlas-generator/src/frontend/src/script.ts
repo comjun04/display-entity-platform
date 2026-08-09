@@ -102,7 +102,11 @@ async function run() {
       const blockstatesData = await loadBlockstates(job.id)
       const matchingBlockstateModels = getMatchingBlockstateModel(
         blockstatesData,
-        calculateDefaultBlockstates(blockstatesData, job.defaultBlockstates),
+        calculateDefaultBlockstates(
+          job.id,
+          blockstatesData,
+          job.defaultBlockstates,
+        ),
       )
 
       const models = await Promise.all(

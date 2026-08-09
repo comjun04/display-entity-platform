@@ -274,14 +274,28 @@ export async function loadBlockstates(
 }
 
 export function calculateDefaultBlockstates(
+  blockType: string,
   blockstatesData: BlockstatesData,
   override: Record<string, string> = {},
+  ignoreIconSpecificDefaults = false,
 ) {
   const newBlockstateObject: Record<string, string> = {}
   for (const [
     blockstateKey,
     blockstateValues,
   ] of blockstatesData.blockstates.entries()) {
+    if (!ignoreIconSpecificDefaults) {
+      const iconSpecific = getDefaultBlockstatesForIcon(
+        blockType,
+        blockstateKey,
+        blockstateValues.states,
+      )
+      if (iconSpecific != null) {
+        newBlockstateObject[blockstateKey] = iconSpecific
+        continue
+      }
+    }
+
     const existingValue = override[blockstateKey]
     if (existingValue == null) {
       newBlockstateObject[blockstateKey] = blockstateValues.states.has(
@@ -295,4 +309,63 @@ export function calculateDefaultBlockstates(
   }
 
   return newBlockstateObject
+}
+
+function getDefaultBlockstatesForIcon(
+  blockType: string,
+  key: string,
+  validStates: Set<string>,
+) {
+  // blocks should be up-facing (e.g. wood logs)
+  if (key === 'axis' && validStates.has('y')) return 'y'
+
+  // for horizontal facing, should be west
+  if (key === 'facing' && validStates.has('west')) {
+    if (blockType === 'end_rod' || blockType === 'lightning_rod') return 'up'
+
+    // except for stairs
+    return blockType.endsWith('_stairs') ? 'east' : 'west'
+  }
+
+  if (key === 'orientation' && validStates.has('west_up')) return 'west_up'
+
+  // levers and buttons
+  if (key === 'face' && validStates.has('wall')) return 'wall'
+
+  // render stairs as straight
+  if (key === 'shape' && validStates.has('straight')) return 'straight'
+
+  // fences
+  if (blockType.endsWith('_fence')) {
+    if (key === 'north' && validStates.has('true')) return 'true'
+    if (key === 'south' && validStates.has('true')) return 'true'
+    if (key === 'east' && validStates.has('false')) return 'false'
+    if (key === 'west' && validStates.has('false')) return 'false'
+  }
+
+  // *_wall (stone variant walls)
+  if (blockType.endsWith('_wall')) {
+    if (key === 'north' && validStates.has('low')) return 'low'
+    if (key === 'south' && validStates.has('low')) return 'low'
+    if (key === 'east' && validStates.has('none')) return 'none'
+    if (key === 'west' && validStates.has('none')) return 'none'
+  }
+
+  // glass panes
+  if (blockType.endsWith('glass_pane')) {
+    if (key === 'north' && validStates.has('true')) return 'true'
+    if (key === 'south' && validStates.has('true')) return 'true'
+    if (key === 'east' && validStates.has('false')) return 'false'
+    if (key === 'west' && validStates.has('false')) return 'false'
+  }
+
+  // rails
+  if (key === 'shape' && validStates.has('east_west')) return 'east_west'
+
+  // *_cauldron
+  if (key === 'level' && validStates.has('3')) {
+    if (blockType.endsWith('_cauldron')) return '3'
+  }
+
+  return null
 }
