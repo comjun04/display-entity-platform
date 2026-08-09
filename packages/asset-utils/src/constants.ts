@@ -74,7 +74,7 @@ export const blockstatesDefaultValues: Record<
   ].reduce(
     (acc, cur) => ({
       ...acc,
-      [`${cur}_wall`]: { up: true },
+      [`${cur}_wall`]: { up: 'true' },
     }),
     {},
   ),
