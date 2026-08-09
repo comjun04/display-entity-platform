@@ -1,15 +1,12 @@
 import {
   AmbientLight,
-  Box3,
   BoxGeometry,
   DirectionalLight,
   Group,
   MathUtils,
   Mesh,
   MeshStandardMaterial,
-  OrthographicCamera,
   Scene,
-  Vector3,
   WebGLRenderer,
 } from 'three'
 import type { APIGetJobsResponse } from '../../types'
@@ -22,6 +19,7 @@ import {
   loadBlockstates,
 } from './resources/blockstates'
 import { stripMinecraftPrefix } from './utils'
+import { IsometricCamera } from './IsometricCamera'
 
 const SIZE = 64
 
@@ -36,46 +34,15 @@ const atlasCanvasCtx = atlasCanvas.getContext('2d')!
 const scene = new Scene()
 
 // setup camera
-const camera = new OrthographicCamera()
-scene.add(camera)
-
-camera.position
+const isometricCamera = new IsometricCamera()
+scene.add(isometricCamera)
+isometricCamera.position
   .set(-1, 426.05 / 512, 1)
   .normalize()
   .multiplyScalar(10)
-camera.lookAt(0, 0, 0)
-camera.updateMatrixWorld(true)
-camera.updateProjectionMatrix()
-
-// calculate camera zoom to make no gaps on top and bottom
-const box3 = new Box3().setFromArray([0, 0, 0, 1, 1, 1])
-const corners = [
-  new Vector3(box3.min.x, box3.min.y, box3.min.z),
-  new Vector3(box3.min.x, box3.min.y, box3.max.z),
-  new Vector3(box3.min.x, box3.max.y, box3.min.z),
-  new Vector3(box3.min.x, box3.max.y, box3.max.z),
-  new Vector3(box3.max.x, box3.min.y, box3.min.z),
-  new Vector3(box3.max.x, box3.min.y, box3.max.z),
-  new Vector3(box3.max.x, box3.max.y, box3.min.z),
-  new Vector3(box3.max.x, box3.max.y, box3.max.z),
-]
-
-let minY = Infinity
-let maxY = -Infinity
-for (const p of corners) {
-  // World -> clip -> NDC
-  p.project(camera)
-
-  minY = Math.min(minY, p.y)
-  maxY = Math.max(maxY, p.y)
-}
-const zoom = (maxY - minY) / 2
-
-camera.left = -zoom
-camera.right = zoom
-camera.top = zoom
-camera.bottom = -zoom
-camera.updateProjectionMatrix()
+isometricCamera.lookAt(0, 0, 0)
+isometricCamera.updateMatrixWorld(true)
+isometricCamera.updateFrustum()
 
 // add light
 const directionLight1 = new DirectionalLight()
@@ -96,11 +63,6 @@ const renderer = new WebGLRenderer({
 })
 renderer.setSize(SIZE, SIZE)
 document.body.appendChild(renderer.domElement)
-
-// set the render loop
-renderer.setAnimationLoop(() => {
-  renderer.render(scene, camera)
-})
 
 // test: cube
 const mesh = new Mesh(
@@ -149,13 +111,13 @@ async function run() {
       if (models.length > 0) {
       group.add(...models)
       }
+
+      renderer.render(scene, isometricCamera)
     } else if (job.kind === 'item') {
       const resourceLocation = `item/${job.id}`
       const model = await createModel(resourceLocation)
       group.add(model)
     }
-
-    renderer.render(scene, camera)
 
     copyToAtlas(xOffset, yOffset)
 
