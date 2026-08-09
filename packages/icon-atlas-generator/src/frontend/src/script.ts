@@ -91,7 +91,9 @@ group.position.setScalar(-0.5)
 scene.add(group)
 
 // set up renderer
-const renderer = new WebGLRenderer()
+const renderer = new WebGLRenderer({
+  alpha: true, // enable transparent background
+})
 renderer.setSize(SIZE, SIZE)
 document.body.appendChild(renderer.domElement)
 
