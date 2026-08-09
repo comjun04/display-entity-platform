@@ -69,7 +69,7 @@ export async function loadBlockstates(
       return directFetchedBlockstatesData
     }
 
-    console.log(`Loading blockstates for block ${blockType}`)
+    // console.log(`Loading blockstates for block ${blockType}`)
 
     const { data: rawBlockstatesData } = await fetcher<BlockStatesFile>(
       `/assets/minecraft/blockstates/${blockType}.json`,

@@ -75,7 +75,7 @@ export async function loadModel(resourceLocation: string) {
       return cachedModelData
     }
 
-    console.log(`Loading model for ${resourceLocation}`)
+    // console.log(`Loading model for ${resourceLocation}`)
 
     const isItemModel =
       stripMinecraftPrefix(resourceLocation).startsWith('item/')
