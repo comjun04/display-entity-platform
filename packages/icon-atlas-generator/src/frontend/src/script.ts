@@ -142,7 +142,11 @@ async function run() {
       const models = await Promise.all(
         matchingBlockstateModels.map((d) => createModel(d.model, d.x, d.y)),
       )
+
+      // prevent error when `models` is empty array
+      if (models.length > 0) {
       group.add(...models)
+      }
     } else if (job.kind === 'item') {
       const resourceLocation = `item/${job.id}`
       const model = await createModel(resourceLocation)
