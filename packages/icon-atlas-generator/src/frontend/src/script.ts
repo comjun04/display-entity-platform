@@ -2,8 +2,10 @@ import {
   AmbientLight,
   BoxGeometry,
   DirectionalLight,
+  Euler,
   Group,
   MathUtils,
+  Matrix4,
   Mesh,
   MeshStandardMaterial,
   Scene,
@@ -126,6 +128,13 @@ async function run() {
 }
 run().catch(console.error)
 
+const HalfBlockTranslatedMatrix = new Matrix4().makeTranslation(0.5, 0.5, 0.5)
+const ReverseHalfBlockTranslatedMatrix = new Matrix4().makeTranslation(
+  -0.5,
+  -0.5,
+  -0.5,
+)
+
 async function createModel(
   resourceLocation: string,
   xRotation = 0,
@@ -148,13 +157,21 @@ async function createModel(
   }
 
   const mesh = new Mesh(meshIngredients.geometry, meshIngredients.materials)
-
-  mesh.rotation.set(
+  mesh.matrixAutoUpdate = false
+  mesh.matrix
+    .identity()
+    .premultiply(ReverseHalfBlockTranslatedMatrix)
+    .premultiply(
+      new Matrix4().makeRotationFromEuler(
+        new Euler(
     MathUtils.degToRad(-1 * xRotation),
     MathUtils.degToRad(-1 * yRotation),
     0,
+          'YXZ',
+        ),
+      ),
   )
-  mesh.updateMatrix()
+    .premultiply(HalfBlockTranslatedMatrix)
 
   return mesh
 }
