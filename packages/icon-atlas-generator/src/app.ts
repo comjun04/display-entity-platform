@@ -10,7 +10,7 @@ import open from 'open'
 import { parseArgs } from 'util'
 import { resolve as pathResolve } from 'path'
 import { readFile } from 'fs/promises'
-import type { BlockIconGeneratorConfig } from '@depl/shared'
+import type { IconAtlasGeneratorConfig } from '@depl/shared'
 import { APIGetJobsResponse } from './types'
 import { cors } from 'hono/cors'
 
@@ -44,7 +44,7 @@ const OutputDirPath = pathResolve(parsedArgs.values['out-dir'])
 // read config
 const config = JSON.parse(
   await readFile(ConfigFilePath, 'utf8'),
-) as BlockIconGeneratorConfig
+) as IconAtlasGeneratorConfig
 const jobList = Object.entries(config.items).map(([k, v]) => ({
   id: k,
   ...v,

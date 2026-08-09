@@ -16,7 +16,7 @@ import {
   ModelFile,
   ServerJarGeneratedRegistryData,
 } from './types'
-import { BlockIconGeneratorConfig, VersionMetadata } from '@depl/shared'
+import { IconAtlasGeneratorConfig, VersionMetadata } from '@depl/shared'
 import {
   blockstatesDefaultValues,
   renderableBlockEntityModelTextures,
@@ -583,7 +583,7 @@ async function generateIconAtlas({
   workdirPath,
   outputDirPath,
 }: {
-  items: BlockIconGeneratorConfig['items']
+  items: IconAtlasGeneratorConfig['items']
   targetGameVersion: string
   workdirPath: string
   outputDirPath: string
@@ -592,7 +592,7 @@ async function generateIconAtlas({
     workdirPath,
     'icon-atlas-generator-config.json',
   )
-  const config: BlockIconGeneratorConfig = { targetGameVersion, items }
+  const config: IconAtlasGeneratorConfig = { targetGameVersion, items }
 
   await writeFile(configFilePath, JSON.stringify(config))
 
@@ -600,7 +600,7 @@ async function generateIconAtlas({
   const result = spawnSync(
     'pnpm',
     [
-      'blockicongen',
+      'iconatlasgen',
       'start',
       `--config=${configFilePath}`,
       `--out-dir=${outputDirPath}`,

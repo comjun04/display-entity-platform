@@ -290,7 +290,7 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  packages/block-icon-generator:
+  packages/icon-atlas-generator:
     dependencies:
       async-mutex:
         specifier: ^0.5.0

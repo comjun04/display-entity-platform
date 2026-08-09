@@ -1,4 +1,4 @@
-export type BlockIconGeneratorConfig = {
+export type IconAtlasGeneratorConfig = {
   targetGameVersion: string
   items: Record<
     string,
