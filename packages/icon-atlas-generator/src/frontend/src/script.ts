@@ -39,7 +39,7 @@ const scene = new Scene()
 const isometricCamera = new IsometricCamera()
 scene.add(isometricCamera)
 isometricCamera.position
-  .set(-1, 426.05 / 512, 1)
+  .set(1, 426.05 / 512, 1)
   .normalize()
   .multiplyScalar(10)
 isometricCamera.lookAt(0, 0, 0)
