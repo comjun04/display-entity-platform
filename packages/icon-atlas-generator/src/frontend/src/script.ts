@@ -168,13 +168,13 @@ async function createModel(
     .premultiply(
       new Matrix4().makeRotationFromEuler(
         new Euler(
-    MathUtils.degToRad(-1 * xRotation),
-    MathUtils.degToRad(-1 * yRotation),
-    0,
+          MathUtils.degToRad(-1 * xRotation),
+          MathUtils.degToRad(-1 * yRotation),
+          0,
           'YXZ',
         ),
       ),
-  )
+    )
     .premultiply(HalfBlockTranslatedMatrix)
 
   return mesh
