@@ -8,10 +8,14 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { fileURLToPath } from 'url'
 import open from 'open'
 import { parseArgs } from 'util'
-import { resolve as pathResolve } from 'path'
-import { readFile } from 'fs/promises'
+import { resolve as pathResolve, join as pathJoin } from 'path'
+import { readFile, writeFile } from 'fs/promises'
 import type { IconAtlasGeneratorConfig } from '@depl/shared'
-import { APIGetJobsResponse } from './types'
+import {
+  APIGetJobsResponse,
+  APISubmitJobsBody,
+  AtlasImageMetadata,
+} from './types'
 import { cors } from 'hono/cors'
 
 const port = parseInt(process.env.PORT ?? '3100')
@@ -45,13 +49,16 @@ const OutputDirPath = pathResolve(parsedArgs.values['out-dir'])
 const config = JSON.parse(
   await readFile(ConfigFilePath, 'utf8'),
 ) as IconAtlasGeneratorConfig
-const jobList = Object.entries(config.items).map(([k, v]) => ({
-  id: k,
-  ...v,
-}))
-
-const remainingJobs = new Set(jobList)
-const completedJobs: string[] = []
+const jobList = Object.entries(config.items)
+  .map(([k, v]) => ({
+    id: k,
+    ...v,
+  }))
+  .sort((a, b) => {
+    if (a.id < b.id) return -1
+    else if (a.id > b.id) return 1
+    else return 0
+  })
 
 // initialize App
 const app = new Hono()
@@ -65,75 +72,38 @@ app.get('/api/jobs', (c) =>
 )
 
 app.post('/api/submit', async (c) => {
-  let body: { image?: unknown; imageData?: unknown }
   try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-})
+    const { atlasImage: encodedImageDataUrl, iconSize } =
+      await c.req.json<APISubmitJobsBody>()
 
-app.post('/api/jobs/:blockId', async (c) => {
-  const { blockId } = c.req.param()
-  if (!jobList.includes(blockId)) {
-    return c.json({ error: 'Unknown job' }, 404)
-  }
-  if (!remainingJobs.has(blockId)) {
-    return c.json({ error: 'Job has already been completed' }, 409)
-  }
+    const atlasImage = Buffer.from(
+      encodedImageDataUrl.split(';base64,')[1],
+      'base64',
+    )
 
-  const contentType = c.req.header('content-type') ?? ''
-  let image: ArrayBuffer
+    // write the image
+    await writeFile(pathJoin(OutputDirPath, 'icon-atlas.png'), atlasImage)
 
-  if (contentType.includes('application/json')) {
-    let body: { image?: unknown; imageData?: unknown }
-    try {
-      body = await c.req.json()
-    } catch {
-      return c.json({ error: 'Invalid JSON body' }, 400)
+    // write metadata
+    const metadata: AtlasImageMetadata = {
+      items: jobList.map((job) => job.id),
+      iconSize,
     }
+    await writeFile(
+      pathJoin(OutputDirPath, 'icon-atlas.metadata.json'),
+      JSON.stringify(metadata),
+    )
 
-    const encodedImage = body.image ?? body.imageData
-    if (typeof encodedImage !== 'string') {
-      return c.json({ error: 'Expected a base64 image string' }, 400)
-    }
+    console.log('done')
 
-    const base64 = encodedImage.replace(/^data:[^;]+;base64,/, '')
-    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64) || base64.length % 4 !== 0) {
-      return c.json({ error: 'Invalid base64 image data' }, 400)
-    }
+    // shutdown after response is sent
+    setTimeout(shutdown, 1000)
 
-    image = Uint8Array.from(Buffer.from(base64, 'base64')).buffer
-  } else {
-    image = await c.req.arrayBuffer()
+    return c.json({ result: 'success' })
+  } catch (err) {
+    console.error(err)
+    return c.json({ error: 'Invalid body' }, 400)
   }
-
-  if (image.byteLength === 0) {
-    return c.json({ error: 'Image data is required' }, 400)
-  }
-
-  // TODO: Store the rendered image when a job backend is connected.
-  console.log(
-    `Received rendered image for ${blockId} (${image.byteLength} bytes)`,
-  )
-
-  remainingJobs.delete(blockId)
-  completedJobs.push(blockId)
-
-  if (remainingJobs.size === 0) {
-    setImmediate(() => {
-      console.log('All block icon generation jobs completed.')
-      server.close((err) => {
-        if (err) {
-          console.error(err)
-          process.exit(1)
-        }
-        process.exit(0)
-      })
-    })
-  }
-
-  return c.json({ blockId, received: true }, 202)
 })
 
 // api fallback
@@ -177,3 +147,7 @@ process.on('SIGTERM', () => {
     process.exit(0)
   })
 })
+
+function shutdown() {
+  server.close()
+}

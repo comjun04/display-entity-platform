@@ -1,17 +1,15 @@
 import {
   AmbientLight,
-  BoxGeometry,
   DirectionalLight,
   Euler,
   Group,
   MathUtils,
   Matrix4,
   Mesh,
-  MeshStandardMaterial,
   Scene,
   WebGLRenderer,
 } from 'three'
-import type { APIGetJobsResponse } from '../../types'
+import type { APIGetJobsResponse, APISubmitJobsBody } from '../../types'
 import { loadModel } from './resources/model'
 import { AssetFileInfosCache } from './resources/assetFileInfo'
 import { generateModelMeshIngredients } from './resources/modelMesh'
@@ -66,15 +64,6 @@ const renderer = new WebGLRenderer({
 })
 renderer.setSize(SIZE, SIZE)
 document.body.appendChild(renderer.domElement)
-
-// test: cube
-const mesh = new Mesh(
-  new BoxGeometry(1, 1, 1),
-  new MeshStandardMaterial({
-    color: 'white',
-  }),
-)
-// scene.add(mesh)
 
 // start!
 async function run() {
@@ -135,7 +124,6 @@ async function run() {
         const textureResourceLocation = stripMinecraftPrefix(
           typeof texture === 'string' ? texture : texture.sprite,
         )
-        console.log(textureResourceLocation)
         const { dataUrl } = await loadTextureImage({
           type: 'vanilla',
           resourceLocation: textureResourceLocation,
@@ -156,6 +144,16 @@ async function run() {
   }
 
   console.log('end!')
+
+  // submit to server
+  const encodedImage = atlasCanvas.toDataURL()
+  await fetch(`${import.meta.env.VITE_DEV_HOST}/api/submit`, {
+    method: 'POST',
+    body: JSON.stringify({
+      atlasImage: encodedImage,
+      iconSize: SIZE,
+    } satisfies APISubmitJobsBody),
+  })
 }
 run().catch(console.error)
 
