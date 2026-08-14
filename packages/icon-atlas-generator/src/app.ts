@@ -14,6 +14,7 @@ import type { IconAtlasGeneratorConfig } from '@depl/shared'
 import {
   APIGetJobsResponse,
   APISubmitJobsBody,
+  APISubmitJobsResponse,
   AtlasImageMetadata,
 } from './types'
 import { cors } from 'hono/cors'
@@ -104,7 +105,7 @@ app.post('/api/submit', async (c) => {
     // shutdown after response is sent
     setTimeout(shutdown, 1000)
 
-    return c.json({ result: 'success' })
+    return c.json<APISubmitJobsResponse>({ result: 'success' })
   } catch (err) {
     console.error(err)
     return c.json({ error: 'Invalid body' }, 400)

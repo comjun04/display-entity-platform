@@ -9,7 +9,11 @@ import {
   Scene,
   WebGLRenderer,
 } from 'three'
-import type { APIGetJobsResponse, APISubmitJobsBody } from '../../types'
+import type {
+  APIGetJobsResponse,
+  APISubmitJobsBody,
+  APISubmitJobsResponse,
+} from '../../types'
 import { loadModel } from './resources/model'
 import { AssetFileInfosCache } from './resources/assetFileInfo'
 import { generateModelMeshIngredients } from './resources/modelMesh'
@@ -143,17 +147,24 @@ async function run() {
     i++
   }
 
-  console.log('end!')
+  console.log('submitting...')
 
   // submit to server
   const encodedImage = atlasCanvas.toDataURL()
-  await fetch(`${import.meta.env.VITE_DEV_HOST}/api/submit`, {
-    method: 'POST',
-    body: JSON.stringify({
-      atlasImage: encodedImage,
-      iconSize: SIZE,
-    } satisfies APISubmitJobsBody),
-  })
+  const submitResult = (await fetch(
+    `${import.meta.env.VITE_DEV_HOST}/api/submit`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        atlasImage: encodedImage,
+        iconSize: SIZE,
+      } satisfies APISubmitJobsBody),
+    },
+  ).then((res) => res.json())) as APISubmitJobsResponse
+  if (submitResult.result === 'success') {
+    console.log('end!')
+    window.close() // just close it
+  }
 }
 run().catch(console.error)
 
