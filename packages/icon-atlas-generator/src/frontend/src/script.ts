@@ -22,12 +22,13 @@ import {
 } from './resources/blockstates'
 import { stripMinecraftPrefix } from './utils'
 import { IsometricCamera } from './IsometricCamera'
+import { loadTextureImage } from './resources/material'
 
 const SIZE = 64
 
 // initialize icon atlas canvas
 const atlasCanvas = document.createElement('canvas')
-// atlasCanvas.style.display = 'none'
+atlasCanvas.style.imageRendering = 'pixelated' // show accurate pixels on canvas
 document.body.appendChild(atlasCanvas)
 
 const atlasCanvasCtx = atlasCanvas.getContext('2d')!
@@ -88,6 +89,8 @@ async function run() {
   atlasCanvas.width = sq * SIZE
   atlasCanvas.height = sq * SIZE
 
+  console.log(`total jobs: ${jobs.length}, image size: ${sq}x${sq}`)
+
   let i = 0
   for (const job of jobs) {
     const xOffset = i % sq
@@ -98,37 +101,61 @@ async function run() {
     // clear previous job
     group.clear()
 
-    if (job.kind === 'block') {
-      const blockstatesData = await loadBlockstates(job.id)
-      const matchingBlockstateModels = getMatchingBlockstateModel(
-        blockstatesData,
-        calculateDefaultBlockstates(
-          job.id,
-          blockstatesData,
-          job.defaultBlockstates,
-        ),
-      )
-
-      const models = await Promise.all(
-        matchingBlockstateModels.map((d) => createModel(d.model, d.x, d.y)),
-      )
-
-      // prevent error when `models` is empty array
-      if (models.length > 0) {
-      group.add(...models)
-      }
-
-      renderer.render(scene, isometricCamera)
-    } else if (job.kind === 'item') {
+    try {
+      // first load as icon
       const resourceLocation = `item/${job.id}`
-      const model = await createModel(resourceLocation)
-      group.add(model)
-    }
+      const { data: modelData, isBlockShapedItemModel } =
+        await loadModel(resourceLocation)
 
-    copyToAtlas(xOffset, yOffset)
+      if (isBlockShapedItemModel) {
+        // load as block model
+        const blockstatesData = await loadBlockstates(job.id)
+        const matchingBlockstateModels = getMatchingBlockstateModel(
+          blockstatesData,
+          calculateDefaultBlockstates(
+            job.id,
+            blockstatesData,
+            job.defaultBlockstates,
+          ),
+        )
+
+        const models = await Promise.all(
+          matchingBlockstateModels.map((d) => createModel(d.model, d.x, d.y)),
+        )
+
+        // prevent error when `models` is empty array
+        if (models.length > 0) {
+          group.add(...models)
+        }
+
+        renderer.render(scene, isometricCamera)
+        copyCanvasToAtlas(xOffset, yOffset)
+      } else {
+        const texture = modelData.textures['layer0']
+        const textureResourceLocation = stripMinecraftPrefix(
+          typeof texture === 'string' ? texture : texture.sprite,
+        )
+        console.log(textureResourceLocation)
+        const { dataUrl } = await loadTextureImage({
+          type: 'vanilla',
+          resourceLocation: textureResourceLocation,
+        })
+        const img = new Image()
+        await new Promise((resolve) => {
+          img.onload = resolve
+          img.src = dataUrl
+        })
+
+        copyImageToAtlas(img, xOffset, yOffset)
+      }
+    } catch (err) {
+      console.error(`Unexpected error when processing ${job.id}:`, err)
+    }
 
     i++
   }
+
+  console.log('end!')
 }
 run().catch(console.error)
 
@@ -182,7 +209,7 @@ async function createModel(
 
 const buf = new Uint8Array(SIZE * SIZE * 4)
 const imageData = atlasCanvasCtx?.createImageData(SIZE, SIZE)
-function copyToAtlas(xOffset: number, yOffset: number) {
+function copyCanvasToAtlas(xOffset: number, yOffset: number) {
   const width = SIZE
   const height = SIZE
   const gl = renderer.getContext()
@@ -197,4 +224,23 @@ function copyToAtlas(xOffset: number, yOffset: number) {
   }
 
   atlasCanvasCtx.putImageData(imageData, xOffset * width, yOffset * height)
+}
+
+function copyImageToAtlas(
+  image: HTMLImageElement,
+  xOffset: number,
+  yOffset: number,
+) {
+  const width = SIZE
+  const height = SIZE
+
+  // set this immediately before drawing image to ensure smoothing is disabled
+  atlasCanvasCtx.imageSmoothingEnabled = false
+  atlasCanvasCtx.drawImage(
+    image,
+    xOffset * width,
+    yOffset * height,
+    width,
+    height,
+  )
 }

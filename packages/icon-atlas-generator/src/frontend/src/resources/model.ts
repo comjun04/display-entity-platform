@@ -1,7 +1,7 @@
 import { Mutex } from 'async-mutex'
 
 import fetcher from '../fetcher'
-import { generateBuiltinItemModel, stripMinecraftPrefix } from '../utils'
+import { stripMinecraftPrefix } from '../utils'
 import type { ModelData, ModelElement, ModelFile } from '@depl/shared'
 
 import { AssetFileInfosCache } from './assetFileInfo'
@@ -52,7 +52,7 @@ export async function loadModel(resourceLocation: string) {
     `/assets/minecraft/models/${resourceLocation}.json`,
   )
   if (rootModelFileInfo == null) {
-    throw new Error('')
+    throw new Error(`Cannot get root model data of ${resourceLocation}`)
   }
 
   const key = `${rootModelFileInfo.fromVersion};${resourceLocation}`
@@ -125,12 +125,7 @@ export async function loadModel(resourceLocation: string) {
           const textureLayerPromises = Object.keys(textures)
             .filter((key) => /^layer\d{1,}$/.test(key))
             .sort((a, b) => parseInt(a.slice(5)) - parseInt(b.slice(5))) // layer0, layer1 등에서 `layer` 자르기
-            .map((key) =>
-              generateBuiltinItemModel(
-                stripMinecraftPrefix(textures[key]),
-                parseInt(key.slice(5)),
-              ),
-            )
+            .map((key) => generateBuiltinItemModel(parseInt(key.slice(5))))
           try {
             const generatedItemModels = await Promise.all(textureLayerPromises)
             elements = elements.concat(
@@ -171,4 +166,24 @@ export async function loadModel(resourceLocation: string) {
     })
     return { data: newModelData, isBlockShapedItemModel }
   })
+}
+
+async function generateBuiltinItemModel(layerNumber: number) {
+  const layerId = `#layer${layerNumber}`
+
+  const modelJson: {
+    elements: ModelElement[]
+  } = {
+    elements: [
+      {
+        from: [-8, -8, -0.5],
+        to: [8, 8, 0.5],
+        faces: {
+          south: { uv: [0, 0, 16, 16], texture: layerId },
+        },
+      },
+    ],
+  }
+
+  return modelJson
 }

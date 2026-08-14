@@ -3,6 +3,13 @@ import { Mutex } from 'async-mutex'
 
 import { CDNBaseUrl } from '../constants'
 
+const ENABLE_DEBUG = false
+function debugLog(...args: unknown[]) {
+  if (ENABLE_DEBUG) {
+    console.debug(...args)
+  }
+}
+
 export class AssetFileInfosCache {
   private static _instance: AssetFileInfosCache
 
@@ -51,13 +58,13 @@ export class AssetFileInfosCache {
       const data = (await fetch(`${CDNBaseUrl}/${version}/fileInfos.json`).then(
         (r) => r.json(),
       )) as AssetFileInfos
-      console.debug('[AssetFileInfosCache] set cache', version)
+      debugLog('[AssetFileInfosCache] set cache', version)
       this._cache.set(version, data)
       return data
     })
   }
   async fetchFileInfo(filePath: string, version?: string) {
-    console.debug('[AssetFileInfosCache] fetchFileInfo: ', filePath)
+    debugLog('[AssetFileInfosCache] fetchFileInfo: ', filePath)
     const fileInfos = await this.fetchAll(version)
 
     const slashUnprefixedPath =
