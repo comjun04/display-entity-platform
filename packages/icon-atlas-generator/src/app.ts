@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url'
 import open from 'open'
 import { parseArgs } from 'util'
 import { resolve as pathResolve, join as pathJoin } from 'path'
-import { readFile, writeFile } from 'fs/promises'
+import { readFile, stat, writeFile } from 'fs/promises'
 import type { IconAtlasGeneratorConfig } from '@depl/shared'
 import {
   APIGetJobsResponse,
@@ -110,11 +110,20 @@ app.post('/api/submit', async (c) => {
 app.all('/api/*', (c) => c.json({ error: 'Not Found' }, 404))
 
 // frontend
+const frontendDistFolderPath = fileURLToPath(
+  new URL('./../dist', import.meta.url),
+)
 app.use(
   serveStatic({
-    root: fileURLToPath(new URL('./../dist', import.meta.url)),
+    root: frontendDistFolderPath,
   }),
 )
+// print warning if frontend prod build not found
+if (!(await stat(frontendDistFolderPath)).isDirectory()) {
+  console.warn(
+    'Warning: Cannot find production build for frontend. Page opened from this server will not work.',
+  )
+}
 
 const server = serve(
   {
