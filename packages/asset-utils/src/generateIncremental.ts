@@ -596,6 +596,8 @@ async function generateIconAtlas({
 
   await writeFile(configFilePath, JSON.stringify(config))
 
+  console.log('----- Start of log from icon-atlas-generator -----')
+
   // assume we use pnpm
   const result = spawnSync(
     'pnpm',
@@ -607,8 +609,12 @@ async function generateIconAtlas({
     ],
     {
       cwd: pathResolve('../../'), // project root
+      stdio: 'inherit',
     },
   )
+
+  console.log('----- End of log from icon-atlas-generator -----')
+
   if (result.status !== 0) {
     throw new Error(
       `Icon atlas generator failed with error: ${result.stderr.toString()}`,

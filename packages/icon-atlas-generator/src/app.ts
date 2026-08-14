@@ -64,12 +64,15 @@ const jobList = Object.entries(config.items)
 const app = new Hono()
 app.use(cors())
 
-app.get('/api/jobs', (c) =>
-  c.json<APIGetJobsResponse>({
+app.get('/api/jobs', (c) => {
+  console.log(
+    'A client fetched the job list. Waiting for the client to submit atlas image data...',
+  )
+  return c.json<APIGetJobsResponse>({
     targetGameVersion: config.targetGameVersion,
     jobs: jobList,
-  }),
-)
+  })
+})
 
 app.post('/api/submit', async (c) => {
   try {
@@ -94,7 +97,9 @@ app.post('/api/submit', async (c) => {
       JSON.stringify(metadata),
     )
 
-    console.log('done')
+    console.log(
+      'Received submission from client. Shutting down the generator server...',
+    )
 
     // shutdown after response is sent
     setTimeout(shutdown, 1000)
