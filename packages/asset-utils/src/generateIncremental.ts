@@ -616,8 +616,7 @@ async function generateIconAtlas({
   console.log('----- End of log from icon-atlas-generator -----')
 
   if (result.status !== 0) {
-    throw new Error(
-      `Icon atlas generator failed with error: ${result.stderr.toString()}`,
-    )
+    const err = result.error ?? result.stderr?.toString()
+    throw new Error(`Icon atlas generator failed with error: ${err}`)
   }
 }
