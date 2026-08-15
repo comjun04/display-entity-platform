@@ -22,7 +22,7 @@ import {
   getMatchingBlockstateModel,
   loadBlockstates,
 } from './resources/blockstates'
-import { stripMinecraftPrefix } from './utils'
+import { getTextureColor, stripMinecraftPrefix } from './utils'
 import { IsometricCamera } from './IsometricCamera'
 import { loadTextureImage } from './resources/material'
 
@@ -124,21 +124,42 @@ async function run() {
         renderer.render(scene, isometricCamera)
         copyCanvasToAtlas(xOffset, yOffset)
       } else {
-        const texture = modelData.textures['layer0']
-        const textureResourceLocation = stripMinecraftPrefix(
-          typeof texture === 'string' ? texture : texture.sprite,
-        )
-        const { dataUrl } = await loadTextureImage({
-          type: 'vanilla',
-          resourceLocation: textureResourceLocation,
-        })
-        const img = new Image()
-        await new Promise((resolve) => {
-          img.onload = resolve
-          img.src = dataUrl
-        })
+        const sortedTextures = Object.keys(modelData.textures)
+          .filter((key) => /^layer\d+$/g.test(key))
+          .sort((a, b) => {
+            const numA = parseInt(a.slice(5))
+            const numB = parseInt(b.slice(5))
+            return numA - numB
+          })
+          .map((key) => ({
+            layer: key.slice(5),
+            texture: modelData.textures[key],
+          }))
+        const data = await Promise.all(
+          sortedTextures.map(async ({ layer, texture }) => {
+            const textureResourceLocation = stripMinecraftPrefix(
+              typeof texture === 'string' ? texture : texture.sprite,
+            )
+            const { dataUrl } = await loadTextureImage({
+              type: 'vanilla',
+              resourceLocation: textureResourceLocation,
+            })
+            const image = new Image()
+            await new Promise((resolve) => {
+              image.onload = resolve
+              image.src = dataUrl
+            })
 
-        copyImageToAtlas(img, xOffset, yOffset)
+            const textureColor = getTextureColor(
+              resourceLocation,
+              targetGameVersion,
+              layer,
+            )
+
+            return { image, textureColor: textureColor }
+          }),
+        )
+        copyStackedImagesToAtlas(data, xOffset, yOffset)
       }
     } catch (err) {
       console.error(`Unexpected error when processing ${job.id}:`, err)
@@ -235,21 +256,55 @@ function copyCanvasToAtlas(xOffset: number, yOffset: number) {
   atlasCanvasCtx.putImageData(imageData, xOffset * width, yOffset * height)
 }
 
-function copyImageToAtlas(
-  image: HTMLImageElement,
+const _stackedImageCanvas = new OffscreenCanvas(SIZE, SIZE)
+const _stackedImageCanvasCtx = _stackedImageCanvas.getContext('2d')!
+const _stackedImageLayer = new OffscreenCanvas(SIZE, SIZE)
+const _stackedImageLayerCtx = _stackedImageLayer.getContext('2d')!
+function copyStackedImagesToAtlas(
+  data: {
+    image: HTMLImageElement
+    textureColor: number
+  }[],
   xOffset: number,
   yOffset: number,
 ) {
   const width = SIZE
   const height = SIZE
 
-  // set this immediately before drawing image to ensure smoothing is disabled
-  atlasCanvasCtx.imageSmoothingEnabled = false
+  for (const { image, textureColor: tintColor } of data) {
+    // reset
+    _stackedImageLayerCtx.clearRect(0, 0, width, height)
+
+    // set this immediately before drawing image to ensure smoothing is disabled
+    _stackedImageLayerCtx.imageSmoothingEnabled = false
+    _stackedImageLayerCtx.drawImage(image, 0, 0, width, height)
+
+    // skip tinting unless the color is not white
+    if (tintColor !== 0xffffff) {
+      const tr = (tintColor >>> 16) & 0xff
+      const tg = (tintColor >>> 8) & 0xff
+      const tb = tintColor & 0xff
+
+      const imageData = _stackedImageLayerCtx.getImageData(0, 0, 64, 64)
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        imageData.data[i] *= tr / 0xff
+        imageData.data[i + 1] *= tg / 0xff
+        imageData.data[i + 2] *= tb / 0xff
+      }
+      _stackedImageLayerCtx.putImageData(imageData, 0, 0)
+    }
+
+    _stackedImageCanvasCtx.drawImage(_stackedImageLayer, 0, 0)
+  }
+
   atlasCanvasCtx.drawImage(
-    image,
+    _stackedImageCanvas,
     xOffset * width,
     yOffset * height,
     width,
     height,
   )
+
+  // reset
+  _stackedImageCanvasCtx.clearRect(0, 0, width, height)
 }
