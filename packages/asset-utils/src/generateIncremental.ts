@@ -9,7 +9,7 @@ import {
 import { createHash } from 'crypto'
 import { Open } from 'unzipper'
 import { rimraf } from 'rimraf'
-import { spawnSync } from 'child_process'
+import { sync as spawnSync } from 'cross-spawn'
 import {
   BlockStatesFile,
   FileInfosJson,
