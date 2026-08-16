@@ -1,3 +1,4 @@
+import { useResizeObserver } from '@react-hookz/web'
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type FC, useEffect, useState } from 'react'
@@ -12,24 +13,40 @@ import { useProjectStore } from '@/stores/projectStore'
 import { Input } from '../ui/input'
 import Dialog from './Dialog'
 
+const ITEM_SIZE = 64
+const ITEM_GAP = 4
+
 interface VirtualListProps {
   items: string[]
   isLoading: boolean
 }
-const VirtualList: FC<VirtualListProps> = ({
-  items: virtualItemList,
-  isLoading,
-}) => {
+const VirtualList: FC<VirtualListProps> = ({ items, isLoading }) => {
   const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
 
-  // virtualizing
   const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null)
+
+  const [itemsInRow, setItemsInRow] = useState(1)
+  useResizeObserver(parentRef, (entry) => {
+    const listWidth = entry.contentBoxSize[0].inlineSize
+    const maxItemsInRow = Math.floor(
+      (listWidth + ITEM_GAP) / (ITEM_SIZE + ITEM_GAP),
+    )
+
+    if (itemsInRow !== maxItemsInRow) {
+      setItemsInRow(maxItemsInRow)
+    }
+  })
+
+  const requiredRows = Math.ceil(items.length / itemsInRow)
+
+  // virtualizing
+
   const virtualizer = useVirtualizer({
-    count: isLoading ? 15 : virtualItemList.length,
+    count: isLoading ? 15 : requiredRows,
     getScrollElement: () => parentRef,
-    estimateSize: () => 24,
-    overscan: 10,
-    gap: 4,
+    estimateSize: () => ITEM_SIZE,
+    overscan: 5,
+    gap: ITEM_GAP,
   })
 
   return (
@@ -44,24 +61,39 @@ const VirtualList: FC<VirtualListProps> = ({
         }}
       >
         {virtualizer.getVirtualItems().map((virtualItem) => {
-          const block = virtualItemList[virtualItem.index]
+          const startIdx = virtualItem.index * itemsInRow
+          const blocks = items.slice(startIdx, startIdx + itemsInRow)
+
           return (
-            <button
+            <div
               key={virtualItem.key}
-              className="absolute top-0 left-0 w-full rounded-lg bg-neutral-700 p-1 text-center text-xs transition duration-150 hover:bg-neutral-700/50"
+              className="absolute top-0 left-0 mx-auto flex flex-row"
               style={{
                 height: virtualItem.size,
                 transform: `translateY(${virtualItem.start}px)`,
-              }}
-              onClick={() => {
-                createNewEntities([{ kind: 'block', type: block }]).catch(
-                  console.error,
-                )
-                closeActiveDialog()
+
+                gap: ITEM_GAP,
               }}
             >
-              {block}
-            </button>
+              {blocks.map((block) => (
+                <button
+                  key={block}
+                  className="rounded bg-neutral-700 p-1 text-center text-xs break-all transition duration-150 hover:bg-neutral-700/50"
+                  style={{
+                    width: ITEM_SIZE,
+                    height: ITEM_SIZE,
+                  }}
+                  onClick={() => {
+                    createNewEntities([{ kind: 'block', type: block }]).catch(
+                      console.error,
+                    )
+                    closeActiveDialog()
+                  }}
+                >
+                  {block}
+                </button>
+              ))}
+            </div>
           )
         })}
 
