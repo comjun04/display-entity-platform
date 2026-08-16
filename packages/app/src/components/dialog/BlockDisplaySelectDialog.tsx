@@ -1,7 +1,7 @@
 import { useResizeObserver } from '@react-hookz/web'
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type FC, useEffect, useRef, useState } from 'react'
+import { type FC, memo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
@@ -22,6 +22,96 @@ import Dialog from './Dialog'
 const ITEM_SIZE = 64
 const ITEM_GAP = 4
 
+interface VirtualListRowProps {
+  height: number
+  positionOffsetY: number
+
+  items: string[]
+
+  iconAtlasMetadata: ItemAtlasMetadataCalculated
+  gameVersion: string
+}
+const VirtualListRow: FC<VirtualListRowProps> = ({
+  height,
+  positionOffsetY,
+  items,
+  iconAtlasMetadata,
+  gameVersion,
+}) => {
+  const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
+
+  return (
+    <div
+      className="absolute top-0 left-0 mx-auto flex flex-row"
+      style={{
+        height,
+        transform: `translateY(${positionOffsetY}px)`,
+
+        gap: ITEM_GAP,
+      }}
+    >
+      {items.map((key) => {
+        const { xOffset, yOffset } = iconAtlasMetadata[key]
+        return (
+          <Tooltip key={key}>
+            <TooltipTrigger
+              delay={0}
+              render={
+                <button
+                  className="relative rounded border-2 border-transparent bg-neutral-800 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
+                  style={{
+                    width: ITEM_SIZE,
+                    height: ITEM_SIZE,
+                  }}
+                  onClick={() => {
+                    createNewEntities([{ kind: 'block', type: key }]).catch(
+                      console.error,
+                    )
+                    closeActiveDialog()
+                  }}
+                >
+                  <div
+                    className="absolute top-1/2 left-1/2 h-16 w-16 -translate-1/2 scale-90"
+                    style={{
+                      backgroundImage: `url(${CDNBaseUrl}/${gameVersion}/assets/minecraft/icon-atlas.png)`,
+                      backgroundPositionX: -xOffset,
+                      backgroundPositionY: -yOffset,
+                    }}
+                  />
+                </button>
+              }
+            />
+            <TooltipContent side="bottom">{key}</TooltipContent>
+          </Tooltip>
+        )
+      })}
+    </div>
+  )
+}
+const MemoizedVirtualListRow = memo(VirtualListRow, (prevProps, nextProps) => {
+  for (const key of Object.keys(nextProps) as (keyof typeof nextProps)[]) {
+    // check shallow equal for elements in `items` array
+    // instead of just checking equality of instances
+    // this enables to slice the original array but same elements with order
+    // to be considered as equal
+    if (key === 'items') {
+      const shallowEqual = nextProps.items.every(
+        (v, i) => v === prevProps.items[i],
+      )
+      if (!shallowEqual) return false
+
+      continue
+    }
+
+    // everything else just use Object.is()
+    const prevVal = prevProps[key]
+    const nextVal = nextProps[key]
+    if (!Object.is(prevVal, nextVal)) return false
+  }
+
+  return true
+})
+
 interface VirtualListProps {
   items: string[]
   iconAtlasMetadata: ItemAtlasMetadataCalculated
@@ -34,8 +124,6 @@ const VirtualList: FC<VirtualListProps> = ({
   isLoading,
   gameVersion,
 }) => {
-  const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
-
   const parentRef = useRef<HTMLDivElement>(null)
   const [itemsInRow, setItemsInRow] = useState(1)
   useResizeObserver(parentRef, (entry) => {
@@ -72,52 +160,14 @@ const VirtualList: FC<VirtualListProps> = ({
           const blocks = items.slice(startIdx, startIdx + itemsInRow)
 
           return (
-            <div
+            <MemoizedVirtualListRow
               key={virtualItem.key}
-              className="absolute top-0 left-0 mx-auto flex flex-row"
-              style={{
-                height: virtualItem.size,
-                transform: `translateY(${virtualItem.start}px)`,
-
-                gap: ITEM_GAP,
-              }}
-            >
-              {blocks.map((block) => {
-                const { xOffset, yOffset } = iconAtlasMetadata[block]
-                return (
-                  <Tooltip key={block}>
-                    <TooltipTrigger
-                      delay={0}
-                      render={
-                        <button
-                          className="relative rounded border-2 border-transparent bg-neutral-800 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
-                          style={{
-                            width: ITEM_SIZE,
-                            height: ITEM_SIZE,
-                          }}
-                          onClick={() => {
-                            createNewEntities([
-                              { kind: 'block', type: block },
-                            ]).catch(console.error)
-                            closeActiveDialog()
-                          }}
-                        >
-                          <div
-                            className="absolute top-1/2 left-1/2 h-16 w-16 -translate-1/2 scale-90"
-                            style={{
-                              backgroundImage: `url(${CDNBaseUrl}/${gameVersion}/assets/minecraft/icon-atlas.png)`,
-                              backgroundPositionX: -xOffset,
-                              backgroundPositionY: -yOffset,
-                            }}
-                          />
-                        </button>
-                      }
-                    />
-                    <TooltipContent side="bottom">{block}</TooltipContent>
-                  </Tooltip>
-                )
-              })}
-            </div>
+              height={virtualItem.size}
+              positionOffsetY={virtualItem.start}
+              items={blocks}
+              iconAtlasMetadata={iconAtlasMetadata}
+              gameVersion={gameVersion}
+            />
           )
         })}
 
