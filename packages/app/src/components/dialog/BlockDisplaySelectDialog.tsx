@@ -1,7 +1,7 @@
 import { useResizeObserver } from '@react-hookz/web'
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
@@ -36,8 +36,7 @@ const VirtualList: FC<VirtualListProps> = ({
 }) => {
   const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
 
-  const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null)
-
+  const parentRef = useRef<HTMLDivElement>(null)
   const [itemsInRow, setItemsInRow] = useState(1)
   useResizeObserver(parentRef, (entry) => {
     const listWidth = entry.contentBoxSize[0].inlineSize
@@ -54,17 +53,14 @@ const VirtualList: FC<VirtualListProps> = ({
 
   const virtualizer = useVirtualizer({
     count: isLoading ? 15 : requiredRows,
-    getScrollElement: () => parentRef,
+    getScrollElement: () => parentRef.current,
     estimateSize: () => ITEM_SIZE,
     overscan: 5,
     gap: ITEM_GAP,
   })
 
   return (
-    <div
-      className="h-full overflow-auto rounded-lg p-1"
-      ref={(element) => setParentRef(element)}
-    >
+    <div className="h-full overflow-auto rounded-lg p-1" ref={parentRef}>
       <div
         className="relative w-full"
         style={{

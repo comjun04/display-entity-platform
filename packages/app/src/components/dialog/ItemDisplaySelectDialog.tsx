@@ -1,6 +1,6 @@
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
@@ -23,20 +23,17 @@ const VirtualList: FC<VirtualListProps> = ({
   const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
 
   // virtualizing
-  const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null)
+  const parentRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
     count: isLoading ? 15 : virtualItemList.length,
-    getScrollElement: () => parentRef,
+    getScrollElement: () => parentRef.current,
     estimateSize: () => 24,
     overscan: 10,
     gap: 4,
   })
 
   return (
-    <div
-      className="h-full overflow-auto rounded-lg p-1"
-      ref={(element) => setParentRef(element)}
-    >
+    <div className="h-full overflow-auto rounded-lg p-1" ref={parentRef}>
       <div
         className="relative w-full"
         style={{
