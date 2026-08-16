@@ -16,6 +16,7 @@ import { useDialogStore } from '@/stores/dialogStore'
 import { useProjectStore } from '@/stores/projectStore'
 
 import { Input } from '../ui/input'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 import Dialog from './Dialog'
 
 const ITEM_SIZE = 64
@@ -50,8 +51,6 @@ const VirtualList: FC<VirtualListProps> = ({
   })
 
   const requiredRows = Math.ceil(items.length / itemsInRow)
-
-  // virtualizing
 
   const virtualizer = useVirtualizer({
     count: isLoading ? 15 : requiredRows,
@@ -90,29 +89,36 @@ const VirtualList: FC<VirtualListProps> = ({
               {blocks.map((block) => {
                 const { xOffset, yOffset } = iconAtlasMetadata[block]
                 return (
-                  <button
-                    key={block}
-                    className="relative rounded border-2 border-transparent bg-neutral-700 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
-                    style={{
-                      width: ITEM_SIZE,
-                      height: ITEM_SIZE,
-                    }}
-                    onClick={() => {
-                      createNewEntities([{ kind: 'block', type: block }]).catch(
-                        console.error,
-                      )
-                      closeActiveDialog()
-                    }}
-                  >
-                    <div
-                      className="absolute top-1/2 left-1/2 h-16 w-16 -translate-1/2 scale-90"
-                      style={{
-                        backgroundImage: `url(${CDNBaseUrl}/${gameVersion}/assets/minecraft/icon-atlas.png)`,
-                        backgroundPositionX: -xOffset,
-                        backgroundPositionY: -yOffset,
-                      }}
+                  <Tooltip key={block}>
+                    <TooltipTrigger
+                      delay={0}
+                      render={
+                        <button
+                          className="relative rounded border-2 border-transparent bg-neutral-800 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
+                          style={{
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                          }}
+                          onClick={() => {
+                            createNewEntities([
+                              { kind: 'block', type: block },
+                            ]).catch(console.error)
+                            closeActiveDialog()
+                          }}
+                        >
+                          <div
+                            className="absolute top-1/2 left-1/2 h-16 w-16 -translate-1/2 scale-90"
+                            style={{
+                              backgroundImage: `url(${CDNBaseUrl}/${gameVersion}/assets/minecraft/icon-atlas.png)`,
+                              backgroundPositionX: -xOffset,
+                              backgroundPositionY: -yOffset,
+                            }}
+                          />
+                        </button>
+                      }
                     />
-                  </button>
+                    <TooltipContent side="bottom">{block}</TooltipContent>
+                  </Tooltip>
                 )
               })}
             </div>
