@@ -8,3 +8,8 @@ export type IconAtlasGeneratorConfig = {
     }
   >
 }
+
+export interface IconAtlasMetadata {
+  items: string[]
+  iconSize: number
+}

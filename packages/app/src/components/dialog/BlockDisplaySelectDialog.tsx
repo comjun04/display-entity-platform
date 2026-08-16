@@ -5,6 +5,11 @@ import { type FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
+import { CDNBaseUrl } from '@/constants'
+import {
+  type ItemAtlasMetadataCalculated,
+  useIconAtlas,
+} from '@/hooks/useIconAtlas'
 import { createNewEntities } from '@/lib/entities'
 import { getBlockListQueryFn } from '@/lib/queries/getBlockList'
 import { useDialogStore } from '@/stores/dialogStore'
@@ -18,9 +23,16 @@ const ITEM_GAP = 4
 
 interface VirtualListProps {
   items: string[]
+  iconAtlasMetadata: ItemAtlasMetadataCalculated
   isLoading: boolean
+  gameVersion: string
 }
-const VirtualList: FC<VirtualListProps> = ({ items, isLoading }) => {
+const VirtualList: FC<VirtualListProps> = ({
+  items,
+  iconAtlasMetadata,
+  isLoading,
+  gameVersion,
+}) => {
   const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
 
   const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null)
@@ -75,24 +87,34 @@ const VirtualList: FC<VirtualListProps> = ({ items, isLoading }) => {
                 gap: ITEM_GAP,
               }}
             >
-              {blocks.map((block) => (
-                <button
-                  key={block}
-                  className="rounded bg-neutral-700 p-1 text-center text-xs break-all transition duration-150 hover:bg-neutral-700/50"
-                  style={{
-                    width: ITEM_SIZE,
-                    height: ITEM_SIZE,
-                  }}
-                  onClick={() => {
-                    createNewEntities([{ kind: 'block', type: block }]).catch(
-                      console.error,
-                    )
-                    closeActiveDialog()
-                  }}
-                >
-                  {block}
-                </button>
-              ))}
+              {blocks.map((block) => {
+                const { xOffset, yOffset } = iconAtlasMetadata[block]
+                return (
+                  <button
+                    key={block}
+                    className="relative rounded border-2 border-transparent bg-neutral-700 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
+                    style={{
+                      width: ITEM_SIZE,
+                      height: ITEM_SIZE,
+                    }}
+                    onClick={() => {
+                      createNewEntities([{ kind: 'block', type: block }]).catch(
+                        console.error,
+                      )
+                      closeActiveDialog()
+                    }}
+                  >
+                    <div
+                      className="absolute top-1/2 left-1/2 h-16 w-16 -translate-1/2 scale-90"
+                      style={{
+                        backgroundImage: `url(${CDNBaseUrl}/${gameVersion}/assets/minecraft/icon-atlas.png)`,
+                        backgroundPositionX: -xOffset,
+                        backgroundPositionY: -yOffset,
+                      }}
+                    />
+                  </button>
+                )
+              })}
             </div>
           )
         })}
@@ -128,12 +150,17 @@ const BlockDisplaySelectDialog: FC = () => {
   )
   const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
 
-  const { data: blocksListResponse, isLoading } = useQuery({
+  const { data: blocksListResponse, isLoading: blocksListLoading } = useQuery({
     queryKey: ['blocks.json', targetGameVersion],
     queryFn: firstOpened ? getBlockListQueryFn : skipToken,
     staleTime: Infinity,
   })
   const blocks = (blocksListResponse?.blocks ?? []).map((d) => d.split('[')[0]) // 블록 이름 뒤에 붙는 `[up=true]` 등 blockstate 기본값 텍스트 제거
+
+  const { data: iconAtlasMetadata, isLoading: iconAtlasMetadataLoading } =
+    useIconAtlas(targetGameVersion)
+
+  const isLoading = blocksListLoading || iconAtlasMetadataLoading
 
   useEffect(() => {
     if (isOpen) {
@@ -160,7 +187,12 @@ const BlockDisplaySelectDialog: FC = () => {
         />
       </div>
 
-      <VirtualList items={searchResult} isLoading={isLoading} />
+      <VirtualList
+        items={searchResult}
+        iconAtlasMetadata={iconAtlasMetadata ?? {}}
+        isLoading={isLoading}
+        gameVersion={targetGameVersion}
+      />
     </Dialog>
   )
 }

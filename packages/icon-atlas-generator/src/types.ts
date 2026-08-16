@@ -12,8 +12,3 @@ export interface APISubmitJobsBody {
 export interface APISubmitJobsResponse {
   result: 'success'
 }
-
-export interface AtlasImageMetadata {
-  items: string[]
-  iconSize: number
-}

@@ -10,12 +10,11 @@ import open from 'open'
 import { parseArgs } from 'util'
 import { resolve as pathResolve, join as pathJoin } from 'path'
 import { readFile, stat, writeFile } from 'fs/promises'
-import type { IconAtlasGeneratorConfig } from '@depl/shared'
+import type { IconAtlasGeneratorConfig, IconAtlasMetadata } from '@depl/shared'
 import {
   APIGetJobsResponse,
   APISubmitJobsBody,
   APISubmitJobsResponse,
-  AtlasImageMetadata,
 } from './types'
 import { cors } from 'hono/cors'
 
@@ -89,7 +88,7 @@ app.post('/api/submit', async (c) => {
     await writeFile(pathJoin(OutputDirPath, 'icon-atlas.png'), atlasImage)
 
     // write metadata
-    const metadata: AtlasImageMetadata = {
+    const metadata: IconAtlasMetadata = {
       items: jobList.map((job) => job.id),
       iconSize,
     }
