@@ -31,7 +31,7 @@ export function useIconAtlas(gameVersion: string): {
   }
 
   if (isLoading || data == null) {
-    return { data: undefined, isLoading: true }
+    return { data: undefined, isLoading }
   }
 
   const sq = Math.ceil(Math.sqrt(data.items.length))

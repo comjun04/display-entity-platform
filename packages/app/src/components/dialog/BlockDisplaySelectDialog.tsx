@@ -1,3 +1,4 @@
+import { Tooltip as BaseUITooltip } from '@base-ui/react'
 import { useResizeObserver } from '@react-hookz/web'
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -21,6 +22,8 @@ import Dialog from './Dialog'
 
 const ITEM_SIZE = 64
 const ITEM_GAP = 4
+
+const tooltipHandle = BaseUITooltip.createHandle<string>()
 
 interface VirtualListRowProps {
   height: number
@@ -51,38 +54,41 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
       }}
     >
       {items.map((key) => {
-        const { xOffset, yOffset } = iconAtlasMetadata[key]
+        const metadata = iconAtlasMetadata[key]
+        const xOffset = metadata?.xOffset ?? 0
+        const yOffset = metadata?.yOffset ?? 0
+
         return (
-          <Tooltip key={key}>
+          <button
+            key={key}
+            className="group relative rounded border-2 border-transparent bg-neutral-800 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
+            style={{
+              width: ITEM_SIZE,
+              height: ITEM_SIZE,
+            }}
+            onClick={() => {
+              createNewEntities([{ kind: 'block', type: key }]).catch(
+                console.error,
+              )
+              closeActiveDialog()
+            }}
+          >
             <TooltipTrigger
+              handle={tooltipHandle}
               delay={0}
               render={
-                <button
-                  className="relative rounded border-2 border-transparent bg-neutral-800 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
+                <div
+                  className="absolute top-1/2 left-1/2 flex h-16 w-16 -translate-1/2 scale-90 items-center justify-center"
                   style={{
-                    width: ITEM_SIZE,
-                    height: ITEM_SIZE,
+                    backgroundImage: `url(${CDNBaseUrl}/${gameVersion}/assets/minecraft/icon-atlas.png)`,
+                    backgroundPositionX: -xOffset,
+                    backgroundPositionY: -yOffset,
                   }}
-                  onClick={() => {
-                    createNewEntities([{ kind: 'block', type: key }]).catch(
-                      console.error,
-                    )
-                    closeActiveDialog()
-                  }}
-                >
-                  <div
-                    className="absolute top-1/2 left-1/2 h-16 w-16 -translate-1/2 scale-90"
-                    style={{
-                      backgroundImage: `url(${CDNBaseUrl}/${gameVersion}/assets/minecraft/icon-atlas.png)`,
-                      backgroundPositionX: -xOffset,
-                      backgroundPositionY: -yOffset,
-                    }}
-                  />
-                </button>
+                />
               }
+              payload={key}
             />
-            <TooltipContent side="bottom">{key}</TooltipContent>
-          </Tooltip>
+          </button>
         )
       })}
     </div>
@@ -128,8 +134,9 @@ const VirtualList: FC<VirtualListProps> = ({
   const [itemsInRow, setItemsInRow] = useState(1)
   useResizeObserver(parentRef, (entry) => {
     const listWidth = entry.contentBoxSize[0].inlineSize
-    const maxItemsInRow = Math.floor(
-      (listWidth + ITEM_GAP) / (ITEM_SIZE + ITEM_GAP),
+    const maxItemsInRow = Math.max(
+      Math.floor((listWidth + ITEM_GAP) / (ITEM_SIZE + ITEM_GAP)),
+      3, // minimum items in row, required to prevent generating infinite rows and crash user's device
     )
 
     if (itemsInRow !== maxItemsInRow) {
@@ -140,10 +147,10 @@ const VirtualList: FC<VirtualListProps> = ({
   const requiredRows = Math.ceil(items.length / itemsInRow)
 
   const virtualizer = useVirtualizer({
-    count: isLoading ? 15 : requiredRows,
+    count: requiredRows,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ITEM_SIZE,
-    overscan: 5,
+    overscan: 2,
     gap: ITEM_GAP,
   })
 
@@ -170,20 +177,30 @@ const VirtualList: FC<VirtualListProps> = ({
             />
           )
         })}
-
-        {isLoading && (
-          <div className="flex flex-col gap-1">
-            {Array(15)
-              .fill(0)
-              .map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-6 w-full animate-pulse rounded-lg bg-neutral-700/70"
-                />
-              ))}
-          </div>
-        )}
       </div>
+
+      {isLoading && (
+        <div
+          className="grid overflow-x-hidden"
+          style={{
+            gridTemplateColumns: `repeat(10, ${ITEM_SIZE}px)`,
+            gap: ITEM_GAP,
+          }}
+        >
+          {Array(10 * 10)
+            .fill(0)
+            .map((_, idx) => (
+              <div
+                key={idx}
+                className="animate-pulse rounded bg-neutral-800"
+                style={{
+                  width: ITEM_SIZE,
+                  height: ITEM_SIZE,
+                }}
+              />
+            ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -209,10 +226,9 @@ const BlockDisplaySelectDialog: FC = () => {
   })
   const blocks = (blocksListResponse?.blocks ?? []).map((d) => d.split('[')[0]) // 블록 이름 뒤에 붙는 `[up=true]` 등 blockstate 기본값 텍스트 제거
 
-  const { data: iconAtlasMetadata, isLoading: iconAtlasMetadataLoading } =
-    useIconAtlas(targetGameVersion)
+  const { data: iconAtlasMetadata } = useIconAtlas(targetGameVersion)
 
-  const isLoading = blocksListLoading || iconAtlasMetadataLoading
+  const isLoading = blocksListLoading
 
   useEffect(() => {
     if (isOpen) {
@@ -245,6 +261,12 @@ const BlockDisplaySelectDialog: FC = () => {
         isLoading={isLoading}
         gameVersion={targetGameVersion}
       />
+
+      <Tooltip handle={tooltipHandle} disableHoverablePopup>
+        {({ payload }) => (
+          <TooltipContent side="bottom">{payload as string}</TooltipContent>
+        )}
+      </Tooltip>
     </Dialog>
   )
 }
