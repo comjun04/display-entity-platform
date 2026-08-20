@@ -59,24 +59,24 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
         const yOffset = metadata?.yOffset ?? 0
 
         return (
-          <button
+          <TooltipTrigger
             key={key}
-            className="group relative rounded border-2 border-transparent bg-neutral-800 text-center text-xs break-all transition duration-100 hover:border-yellow-400"
-            style={{
-              width: ITEM_SIZE,
-              height: ITEM_SIZE,
-            }}
-            onClick={() => {
-              createNewEntities([{ kind: 'block', type: key }]).catch(
-                console.error,
-              )
-              closeActiveDialog()
-            }}
-          >
-            <TooltipTrigger
-              handle={tooltipHandle}
-              delay={0}
-              render={
+            handle={tooltipHandle}
+            delay={0}
+            render={
+              <button
+                className="relative rounded border-2 border-transparent bg-neutral-800 transition duration-100 hover:border-yellow-400"
+                style={{
+                  width: ITEM_SIZE,
+                  height: ITEM_SIZE,
+                }}
+                onClick={() => {
+                  createNewEntities([{ kind: 'block', type: key }]).catch(
+                    console.error,
+                  )
+                  closeActiveDialog()
+                }}
+              >
                 <div
                   className="absolute top-1/2 left-1/2 flex h-16 w-16 -translate-1/2 scale-90 items-center justify-center"
                   style={{
@@ -85,10 +85,10 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
                     backgroundPositionY: -yOffset,
                   }}
                 />
-              }
-              payload={key}
-            />
-          </button>
+              </button>
+            }
+            payload={key}
+          />
         )
       })}
     </div>
@@ -152,7 +152,7 @@ const VirtualList: FC<VirtualListProps> = ({
     count: requiredRows,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ITEM_SIZE,
-    overscan: 2,
+    overscan: 4,
     gap: ITEM_GAP,
   })
 
