@@ -1,29 +1,15 @@
 import { Tooltip as BaseUITooltip } from '@base-ui/react'
 import { useResizeObserver } from '@react-hookz/web'
-import { skipToken, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type FC, memo, useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { useShallow } from 'zustand/shallow'
+import { type FC, memo, useMemo, useRef, useState } from 'react'
 
 import { CDNBaseUrl } from '@/constants'
-import {
-  type ItemAtlasMetadataCalculated,
-  useIconAtlas,
-} from '@/hooks/useIconAtlas'
-import { createNewEntities } from '@/lib/entities'
-import { getBlockListQueryFn } from '@/lib/queries/getBlockList'
-import { useDialogStore } from '@/stores/dialogStore'
-import { useProjectStore } from '@/stores/projectStore'
+import { type ItemAtlasMetadataCalculated } from '@/hooks/useIconAtlas'
 
-import { Input } from '../ui/input'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
-import Dialog from './Dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
 
 const ITEM_SIZE = 64
 const ITEM_GAP = 4
-
-const tooltipHandle = BaseUITooltip.createHandle<string>()
 
 interface VirtualListRowProps {
   height: number
@@ -33,6 +19,9 @@ interface VirtualListRowProps {
 
   iconAtlasMetadata: ItemAtlasMetadataCalculated
   gameVersion: string
+
+  onItemClick?: (key: string) => void
+  tooltipHandle: BaseUITooltip.Handle<string>
 }
 const VirtualListRow: FC<VirtualListRowProps> = ({
   height,
@@ -40,9 +29,9 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
   items,
   iconAtlasMetadata,
   gameVersion,
+  onItemClick,
+  tooltipHandle,
 }) => {
-  const closeActiveDialog = useDialogStore((state) => state.closeActiveDialog)
-
   return (
     <div
       className="absolute top-0 left-0 mx-auto flex flex-row"
@@ -70,12 +59,7 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
                   width: ITEM_SIZE,
                   height: ITEM_SIZE,
                 }}
-                onClick={() => {
-                  createNewEntities([{ kind: 'block', type: key }]).catch(
-                    console.error,
-                  )
-                  closeActiveDialog()
-                }}
+                onClick={() => onItemClick?.(key)}
               >
                 <div
                   className="absolute top-1/2 left-1/2 flex h-16 w-16 -translate-1/2 scale-90 items-center justify-center"
@@ -125,12 +109,16 @@ interface VirtualListProps {
   iconAtlasMetadata: ItemAtlasMetadataCalculated
   isLoading: boolean
   gameVersion: string
+  onItemClick?: (key: string) => void
+  tooltipHandle: BaseUITooltip.Handle<string>
 }
 const VirtualList: FC<VirtualListProps> = ({
   items,
   iconAtlasMetadata,
   isLoading,
   gameVersion,
+  onItemClick,
+  tooltipHandle,
 }) => {
   const parentRef = useRef<HTMLDivElement>(null)
   const [itemsInRow, setItemsInRow] = useState(1)
@@ -176,6 +164,8 @@ const VirtualList: FC<VirtualListProps> = ({
               items={blocks}
               iconAtlasMetadata={iconAtlasMetadata}
               gameVersion={gameVersion}
+              onItemClick={onItemClick}
+              tooltipHandle={tooltipHandle}
             />
           )
         })}
@@ -207,61 +197,31 @@ const VirtualList: FC<VirtualListProps> = ({
   )
 }
 
-const BlockDisplaySelectDialog: FC = () => {
-  const { t } = useTranslation()
-
-  const [firstOpened, setFirstOpened] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const { isOpen, closeActiveDialog } = useDialogStore(
-    useShallow((state) => ({
-      isOpen: state.activeDialog === 'blockDisplaySelect',
-      closeActiveDialog: state.closeActiveDialog,
-    })),
-  )
-  const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
-
-  const { data: blocksListResponse, isLoading: blocksListLoading } = useQuery({
-    queryKey: ['blocks.json', targetGameVersion],
-    queryFn: firstOpened ? getBlockListQueryFn : skipToken,
-    staleTime: Infinity,
-  })
-  const blocks = (blocksListResponse?.blocks ?? []).map((d) => d.split('[')[0]) // 블록 이름 뒤에 붙는 `[up=true]` 등 blockstate 기본값 텍스트 제거
-
-  const { data: iconAtlasMetadata } = useIconAtlas(targetGameVersion)
-
-  const isLoading = blocksListLoading
-
-  useEffect(() => {
-    if (isOpen) {
-      setFirstOpened(true)
-    }
-  }, [isOpen])
-
-  // search filtering
-  const searchResult = blocks.filter((block) => block.includes(searchQuery))
+export interface DisplaySelectDialogBase {
+  items: string[]
+  iconAtlasMetadata: ItemAtlasMetadataCalculated
+  isLoading: boolean
+  gameVersion: string
+  onItemClick?: (key: string) => void
+}
+const DisplaySelectDialogBase: FC<DisplaySelectDialogBase> = ({
+  items,
+  iconAtlasMetadata,
+  isLoading,
+  gameVersion,
+  onItemClick,
+}) => {
+  const tooltipHandle = useMemo(() => BaseUITooltip.createHandle<string>(), [])
 
   return (
-    <Dialog
-      title={t(($) => $.dialog.blockDisplaySelect.title)}
-      open={isOpen}
-      onClose={closeActiveDialog}
-    >
-      <div className="flex flex-row items-center gap-4">
-        <span className="flex-none">
-          {t(($) => $.dialog.blockDisplaySelect.search.label)}
-        </span>
-        <Input
-          value={searchQuery}
-          onChange={(evt) => setSearchQuery(evt.target.value)}
-        />
-      </div>
-
+    <>
       <VirtualList
-        items={searchResult}
+        items={items}
         iconAtlasMetadata={iconAtlasMetadata ?? {}}
         isLoading={isLoading}
-        gameVersion={targetGameVersion}
+        gameVersion={gameVersion}
+        tooltipHandle={tooltipHandle}
+        onItemClick={onItemClick}
       />
 
       <Tooltip handle={tooltipHandle} disableHoverablePopup>
@@ -269,8 +229,8 @@ const BlockDisplaySelectDialog: FC = () => {
           <TooltipContent side="bottom">{payload as string}</TooltipContent>
         )}
       </Tooltip>
-    </Dialog>
+    </>
   )
 }
 
-export default BlockDisplaySelectDialog
+export default DisplaySelectDialogBase
