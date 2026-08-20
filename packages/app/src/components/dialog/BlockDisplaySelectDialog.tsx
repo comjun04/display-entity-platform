@@ -101,6 +101,8 @@ const MemoizedVirtualListRow = memo(VirtualListRow, (prevProps, nextProps) => {
     // this enables to slice the original array but same elements with order
     // to be considered as equal
     if (key === 'items') {
+      if (prevProps.items.length !== nextProps.items.length) return false
+
       const shallowEqual = nextProps.items.every(
         (v, i) => v === prevProps.items[i],
       )
