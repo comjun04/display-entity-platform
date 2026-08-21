@@ -32,6 +32,10 @@ import { satisfies as semverSatisfies, compareVersions } from 'compare-versions'
 import { glob } from 'glob'
 import { parseArgs } from 'util'
 
+// Current resource version this script generates
+// if the existing resource version is lower than this, it will be regenerated
+const ResourceVersion = 2
+
 // these minecraft versions does not include resource/feature addition or changes, just bugfixes
 const versionsToSkip = [
   '1.20.1',
@@ -151,7 +155,10 @@ for (const versionToDownload of versions) {
         await readFile(metadataFilePath, 'utf8'),
       ) as VersionMetadata
 
-      if (metadata.gameVersion === versionId) {
+      if (
+        metadata.version === ResourceVersion &&
+        metadata.gameVersion === versionId
+      ) {
         // load precomputed fileInfos data
         const tempFileInfos = JSON.parse(
           await readFile(pathJoin(workdirFolderPath, 'fileInfos.json'), 'utf8'),
@@ -198,7 +205,7 @@ for (const versionToDownload of versions) {
   const filesToExtract = zip.files.filter(
     (f) =>
       (f.type === 'File' &&
-        /^assets\/minecraft\/(blockstates|models|font|textures\/(block|colormap|entity\/player|font|item))\//.test(
+        /^assets\/minecraft\/(blockstates|items|models|font|textures\/(block|colormap|entity\/player|font|item))\//.test(
           f.path,
         )) ||
       renderableBlockEntityModelTextures.includes(f.path),
