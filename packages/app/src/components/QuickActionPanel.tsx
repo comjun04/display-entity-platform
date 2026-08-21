@@ -74,13 +74,14 @@ const QuickActionPanel: FC = () => {
         bottom: panelLocation === 'bottom' ? panelMargin : undefined,
       }}
     >
-      <div className="flex flex-row rounded-lg bg-black">
+      <div className="flex flex-row gap-1 rounded-lg bg-black p-1">
         {/* Desktop - show all 'Add Display Entity' buttons */}
-        <div className="hidden flex-row sm:flex">
+        <div className="hidden flex-row gap-1 sm:flex">
           <Tooltip>
             <TooltipTrigger
               render={
                 <FloatingButton
+                  size="sm"
                   disabled={headPainterEnabled}
                   onClick={() => {
                     setOpenedDialog('blockDisplaySelect')
@@ -99,6 +100,7 @@ const QuickActionPanel: FC = () => {
             <TooltipTrigger
               render={
                 <FloatingButton
+                  size="sm"
                   onClick={() => {
                     setOpenedDialog('itemDisplaySelect')
                   }}
@@ -116,6 +118,7 @@ const QuickActionPanel: FC = () => {
             <TooltipTrigger
               render={
                 <FloatingButton
+                  size="sm"
                   onClick={() => {
                     createNewEntities([
                       { kind: 'text', text: 'Enter Text' },
@@ -135,6 +138,7 @@ const QuickActionPanel: FC = () => {
             <TooltipTrigger
               render={
                 <FloatingButton
+                  size="sm"
                   onClick={() => {
                     createNewEntities([
                       { kind: 'item', type: 'player_head' },
@@ -154,7 +158,10 @@ const QuickActionPanel: FC = () => {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <FloatingButton className="flex flex-row items-center gap-1 sm:hidden">
+              <FloatingButton
+                size="sm"
+                className="flex flex-row items-center gap-1 sm:hidden"
+              >
                 <LuPlus size={24} />
                 <LuChevronDown size={16} />
               </FloatingButton>
@@ -212,12 +219,14 @@ const QuickActionPanel: FC = () => {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="my-2 border-l border-gray-700" />
+        <div className="my-1 border-l border-gray-700" />
 
         <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton
+                size="sm"
+                active={headPainterEnabled}
                 onClick={() => {
                   const {
                     headPainter: {
@@ -237,12 +246,13 @@ const QuickActionPanel: FC = () => {
           </TooltipContent>
         </Tooltip>
 
-        <div className="my-2 border-l border-gray-700" />
+        <div className="my-1 border-l border-gray-700" />
 
         <Tooltip>
           <TooltipTrigger
             render={
               <FloatingButton
+                size="sm"
                 disabled={selectedEntityIds.length < 1}
                 onClick={() => cloneSelectedEntities()}
               >
@@ -259,11 +269,12 @@ const QuickActionPanel: FC = () => {
           <TooltipTrigger
             render={
               singleSelectedEntityIsGrouped ? (
-                <FloatingButton onClick={toggleGroup}>
+                <FloatingButton size="sm" onClick={toggleGroup}>
                   <LuUngroup size={24} />
                 </FloatingButton>
               ) : (
                 <FloatingButton
+                  size="sm"
                   disabled={selectedEntityIds.length < 1}
                   onClick={toggleGroup}
                 >
@@ -285,6 +296,7 @@ const QuickActionPanel: FC = () => {
           <TooltipTrigger
             render={
               <FloatingButton
+                size="sm"
                 onClick={() => {
                   deleteEntities(selectedEntityIds)
                 }}
