@@ -69,6 +69,10 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
                     backgroundPositionY: -yOffset,
                   }}
                 />
+
+                <div className="absolute bottom-0 w-full rounded-b bg-neutral-900 text-[0.5rem] break-all opacity-40 pointer-fine:hidden">
+                  {key}
+                </div>
               </button>
             }
             payload={key}
