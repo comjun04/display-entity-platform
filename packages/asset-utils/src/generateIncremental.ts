@@ -143,7 +143,7 @@ for (const versionToDownload of versions) {
     'minecraft',
   )
 
-  // skip if metadata.json exists with correct format
+  // skip if `metadata.json` exists with correct format
   // this skips versions with already generated data from re-generating
   if (
     !forceGenerateMode &&
@@ -507,7 +507,7 @@ for (const versionToDownload of versions) {
   // write version metadata.json
   console.log('Writing metadata.json')
   const versionMetadata: VersionMetadata = {
-    version: 1,
+    version: 2,
     incremental: true,
     gameVersion: versionId,
     sharedAssets: {
