@@ -55,7 +55,7 @@ export async function loadModel(resourceLocation: string) {
     `/assets/minecraft/models/${resourceLocation}.json`,
   )
   if (rootModelFileInfo == null) {
-    throw new Error('')
+    throw new Error(`Cannot get root model data of ${resourceLocation}`)
   }
 
   const key = `${rootModelFileInfo.fromVersion};${resourceLocation}`

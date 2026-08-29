@@ -3,6 +3,8 @@ import { type FC, type MutableRefObject, memo, useMemo, useRef } from 'react'
 import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
 
+import { useItemsModel } from '@/hooks/useItemsModel'
+import { stripMinecraftPrefix } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { type Number3Tuple } from '@/types/base'
@@ -86,6 +88,9 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
     ],
   )
 
+  const itemsModelData = useItemsModel(type)
+  const models = itemsModelData != null ? [itemsModelData] : []
+
   const modelResourceLocation = `item/${type}`
   const modelList = useMemo(
     () => [
@@ -123,12 +128,20 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
         matrixAutoUpdate={false}
       >
         {useInstancing ? (
-          <MemoizedInstancedModel
-            entityId={id}
-            resourceLocation={modelResourceLocation}
-            modelId={`${id};item/${type}`}
-            displayType={thisEntityDisplay ?? undefined}
-          />
+          models.map((modelToApply, idx) => {
+            const resourceLocation = stripMinecraftPrefix(modelToApply.model)
+            const modelId = `${id}|${resourceLocation}|${idx}`
+
+            return (
+              <MemoizedInstancedModel
+                key={idx}
+                entityId={id}
+                resourceLocation={resourceLocation}
+                modelId={modelId}
+                displayType={thisEntityDisplay ?? undefined}
+              />
+            )
+          })
         ) : (
           <MemoizedModel
             initialResourceLocation={`item/${type}`}
