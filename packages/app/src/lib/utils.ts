@@ -94,8 +94,8 @@ export async function generateBuiltinItemModel(
   } = {
     elements: [
       {
-        from: [-8, -8, -0.5],
-        to: [8, 8, 0.5],
+        from: [0, 0, -0.5],
+        to: [16, 16, 0.5],
         faces: {
           north: { uv: [16, 0, 0, 16], texture: layerId },
           south: { uv: [0, 0, 16, 16], texture: layerId },
@@ -199,15 +199,11 @@ export async function generateBuiltinItemModel(
   for (const borderGroup of mergedPixelBorders) {
     const element: ModelElement = {
       from: [
-        borderGroup.rangeStart[0] - 8,
-        16 - (borderGroup.rangeEnd[1] + 1) - 8,
+        borderGroup.rangeStart[0],
+        16 - (borderGroup.rangeEnd[1] + 1),
         -0.5,
       ],
-      to: [
-        borderGroup.rangeEnd[0] + 1 - 8,
-        16 - borderGroup.rangeStart[1] - 8,
-        0.5,
-      ],
+      to: [borderGroup.rangeEnd[0] + 1, 16 - borderGroup.rangeStart[1], 0.5],
       faces: {
         [borderGroup.direction]: {
           // ts does not check missing key errors inside here idk why

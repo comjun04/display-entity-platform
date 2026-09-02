@@ -109,6 +109,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
     >
       {useInstancing ? (
         <BoundingBoxForInstanced
+          entityKind="item"
           modelList={modelList}
           visible={thisEntitySelected}
           color="#06b6d4" // tailwind v3 cyan-500
@@ -136,6 +137,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
               <MemoizedInstancedModel
                 key={idx}
                 entityId={id}
+                entityKind="item"
                 resourceLocation={resourceLocation}
                 modelId={modelId}
                 displayType={thisEntityDisplay ?? undefined}

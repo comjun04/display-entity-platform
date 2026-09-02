@@ -10,6 +10,7 @@ import {
 
 interface InstacedModelProps {
   entityId: string
+  entityKind: 'block' | 'item'
   modelId: string
   resourceLocation: string
   displayType?: ModelDisplayPositionKey
@@ -18,6 +19,7 @@ interface InstacedModelProps {
 }
 export const InstancedModel: FC<InstacedModelProps> = ({
   entityId,
+  entityKind,
   modelId,
   resourceLocation,
   displayType,
@@ -53,11 +55,20 @@ export const InstancedModel: FC<InstacedModelProps> = ({
     InstancedMeshManager.instance.allocateInstance(resourceLocation, {
       modelId,
       entityId,
+      entityKind,
       rotation: [xRotation, yRotation],
     })
     allocatedRef.current = true
     invalidate()
-  }, [resourceLocation, modelId, entityId, batchStatus, xRotation, yRotation])
+  }, [
+    resourceLocation,
+    modelId,
+    entityId,
+    entityKind,
+    batchStatus,
+    xRotation,
+    yRotation,
+  ])
 
   // free instance when important data changed which requires reallocation
   useEffect(() => {

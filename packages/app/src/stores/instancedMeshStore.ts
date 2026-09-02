@@ -67,6 +67,7 @@ export class InstancedMeshManager {
     data: {
       modelId: string
       entityId: string
+      entityKind: 'block' | 'item'
       rotation: [number, number]
     },
   ) {
@@ -193,6 +194,7 @@ export class InstancedMeshManager {
     batch.instances.set(data.modelId, {
       instanceIndex: index,
       entityId: data.entityId,
+      entityKind: data.entityKind,
       rotation: data.rotation,
     })
 
@@ -329,6 +331,10 @@ export class InstancedMeshManager {
             )
             .premultiply(HalfBlockTranslatedMatrix)
           _matrix.multiply(tempRotatedMatrix4)
+
+          if (instance.entityKind === 'item') {
+            _matrix.premultiply(ReverseHalfBlockTranslatedMatrix)
+          }
         }
 
         batch.mesh.setMatrixAt(instance.instanceIndex, _matrix)
@@ -400,6 +406,7 @@ export type InstancedMeshBatchData = {
     {
       instanceIndex: number
       entityId: string
+      entityKind: 'block' | 'item'
       rotation: [number, number]
       display?: ModelDisplayPositionKey
     }
@@ -472,8 +479,7 @@ function getFlattenedZeroScaleMatrixElements(matrixCount: number) {
 }
 
 async function prepareMeshIngredients(resourceLocation: string) {
-  const { data: modelData, isBlockShapedItemModel } =
-    await loadModel(resourceLocation)
+  const { data: modelData } = await loadModel(resourceLocation)
   const isItemModel = stripMinecraftPrefix(resourceLocation).startsWith('item/')
 
   const meshIngredients = await generateModelMeshIngredients({
@@ -481,7 +487,6 @@ async function prepareMeshIngredients(resourceLocation: string) {
     elements: modelData.elements,
     textures: modelData.textures,
     isItemModel,
-    isBlockShapedItemModel,
     playerHeadData: undefined,
   })
   if (meshIngredients == null) {

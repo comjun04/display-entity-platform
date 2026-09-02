@@ -89,6 +89,7 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
       matrixAutoUpdate={false}
     >
       <BoundingBoxForInstanced
+        entityKind="block"
         modelList={modelList}
         visible={thisEntitySelected}
         color="gold"
@@ -103,6 +104,7 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
             <MemoizedInstancedModel
               key={modelId}
               entityId={id}
+              entityKind="block"
               modelId={modelId}
               resourceLocation={resourceLocation}
               xRotation={modelToApply.x}

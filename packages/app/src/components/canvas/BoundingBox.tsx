@@ -97,6 +97,7 @@ export const BoundingBox: FC<BoundingBoxProps> = ({
 }
 
 interface BoundingBoxForInstancedProps {
+  entityKind: 'block' | 'item'
   modelList: {
     resourceLocation: string
     xRotation?: number
@@ -107,6 +108,7 @@ interface BoundingBoxForInstancedProps {
   displayType?: ModelDisplayPositionKey
 }
 export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
+  entityKind,
   modelList,
   visible = true,
   color,
@@ -213,11 +215,22 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
           ),
         )
         .premultiply(HalfBlockTranslatedMatrix)
+      if (entityKind === 'item') {
+        _matrix.premultiply(ReverseHalfBlockTranslatedMatrix)
+      }
+
       boundingBox.applyMatrix4(_matrix)
 
       box.union(boundingBox)
     }
-  }, [box, modelList, batchGeometries, batchDisplayInfos, displayType])
+  }, [
+    box,
+    entityKind,
+    modelList,
+    batchGeometries,
+    batchDisplayInfos,
+    displayType,
+  ])
 
   return (
     <box3Helper args={[box, color]} visible={visible} raycast={() => null} />
