@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { getLogger } from '@/lib/logger'
 import { fetchItemsModelJson } from '@/lib/resources/items-model'
+import { stripMinecraftPrefix } from '@/lib/utils'
 import { useProjectStore } from '@/stores/projectStore'
 
 const logger = getLogger('useItemsModel()')
@@ -29,7 +30,7 @@ export const useItemsModel = (itemType: string) => {
 
         if (model.type === 'minecraft:model') {
           setItemsModelData({
-            model: model.model,
+            model: stripMinecraftPrefix(model.model),
           })
         }
       })

@@ -4,7 +4,6 @@ import { Group } from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import { useItemsModel } from '@/hooks/useItemsModel'
-import { stripMinecraftPrefix } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 import { type Number3Tuple } from '@/types/base'
@@ -89,16 +88,12 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
   )
 
   const itemsModelData = useItemsModel(type)
-  const models = itemsModelData != null ? [itemsModelData] : []
-
-  const modelResourceLocation = `item/${type}`
   const modelList = useMemo(
-    () => [
-      {
-        resourceLocation: modelResourceLocation,
-      },
-    ],
-    [modelResourceLocation],
+    () =>
+      itemsModelData != null
+        ? [{ resourceLocation: itemsModelData.model }]
+        : [],
+    [itemsModelData],
   )
 
   return (
@@ -129,8 +124,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
         matrixAutoUpdate={false}
       >
         {useInstancing ? (
-          models.map((modelToApply, idx) => {
-            const resourceLocation = stripMinecraftPrefix(modelToApply.model)
+          modelList.map(({ resourceLocation }, idx) => {
             const modelId = `${id}|${resourceLocation}|${idx}`
 
             return (
