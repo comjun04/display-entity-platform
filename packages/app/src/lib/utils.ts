@@ -83,6 +83,7 @@ export function isValidTextureUrl(url: string) {
 }
 
 type ItemModelBorderFaceKey = Exclude<ModelFaceKey, 'north' | 'south'>
+const BUILTIN_ITEM_MODEL_Z_OFFSET = 8
 export async function generateBuiltinItemModel(
   textureResourceLocation: string,
   layerNumber: number,
@@ -94,8 +95,8 @@ export async function generateBuiltinItemModel(
   } = {
     elements: [
       {
-        from: [0, 0, -0.5],
-        to: [16, 16, 0.5],
+        from: [0, 0, -0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET],
+        to: [16, 16, 0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET],
         faces: {
           north: { uv: [16, 0, 0, 16], texture: layerId },
           south: { uv: [0, 0, 16, 16], texture: layerId },
@@ -201,9 +202,13 @@ export async function generateBuiltinItemModel(
       from: [
         borderGroup.rangeStart[0],
         16 - (borderGroup.rangeEnd[1] + 1),
-        -0.5,
+        -0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET,
       ],
-      to: [borderGroup.rangeEnd[0] + 1, 16 - borderGroup.rangeStart[1], 0.5],
+      to: [
+        borderGroup.rangeEnd[0] + 1,
+        16 - borderGroup.rangeStart[1],
+        0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET,
+      ],
       faces: {
         [borderGroup.direction]: {
           // ts does not check missing key errors inside here idk why
