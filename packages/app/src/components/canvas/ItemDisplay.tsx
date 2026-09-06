@@ -87,7 +87,9 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
     ],
   )
 
-  const itemsModelData = useItemsModel(type)
+  const itemsModelData = useItemsModel(type, {
+    display: thisEntityDisplay ?? null,
+  })
   const modelList = useMemo(
     () =>
       itemsModelData != null
