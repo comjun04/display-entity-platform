@@ -17,7 +17,7 @@ export const useItemsModel = (
   },
 ) => {
   const [itemsModelData, setItemsModelData] = useState<{
-    model: string
+    models: string[]
   }>()
 
   const targetGameVersion = useProjectStore((state) => state.targetGameVersion)
@@ -26,7 +26,7 @@ export const useItemsModel = (
   useEffect(() => {
     if (!shouldUseItemsModel) {
       setItemsModelData({
-        model: `item/${itemType}`,
+        models: [`item/${itemType}`],
       })
       return
     }
@@ -34,10 +34,13 @@ export const useItemsModel = (
     fetchItemsModelJson(itemType)
       .then(({ model }) => {
         // TODO: check items model data with current item
-        const f: (model: ItemsModel) => string | null = (model) => {
+        const f: (model: ItemsModel) => string[] | null = (model) => {
           switch (model.type) {
             case 'minecraft:model':
-              return model.model
+              return [model.model]
+
+            case 'minecraft:composite':
+              return model.models.flatMap((m) => f(m)).filter((m) => m != null)
 
             case 'minecraft:condition': {
               let condition: boolean
@@ -147,10 +150,12 @@ export const useItemsModel = (
           }
         }
 
-        const modelResourceLocation = f(model)
-        if (modelResourceLocation != null) {
+        const modelResourceLocations = f(model)
+        if (modelResourceLocations != null) {
           setItemsModelData({
-            model: stripMinecraftPrefix(modelResourceLocation),
+            models: modelResourceLocations.map((str) =>
+              stripMinecraftPrefix(str),
+            ),
           })
         }
       })

@@ -93,7 +93,9 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
   const modelList = useMemo(
     () =>
       itemsModelData != null
-        ? [{ resourceLocation: itemsModelData.model }]
+        ? itemsModelData.models.map((resourceLocation) => ({
+            resourceLocation,
+          }))
         : [],
     [itemsModelData],
   )
