@@ -46,6 +46,9 @@ export const useItemsModel = (
                   condition = false
                   break
                 default:
+                  logger.warn(
+                    `Unhandled minecraft:condition property: ${model.property}, using falsy result.`,
+                  )
                   condition = false
               }
 
@@ -59,9 +62,39 @@ export const useItemsModel = (
                   : [targetCase.when]
 
                 switch (model.property) {
+                  case 'minecraft:block_state':
+                    if (
+                      itemType === 'light' &&
+                      model.block_state_property === 'level'
+                    ) {
+                      // items using this: light
+                      return when.includes('15') // light level 15
+                    }
+
+                    logger.warn(
+                      `Unhandled minecraft:select block_state property: ${model.property}`,
+                    )
+                    return false
+
+                  case 'minecraft:context_dimension':
+                    // assume dimension type as overworld
+                    // items using this: clock
+                    return when.includes('minecraft:overworld')
+
                   case 'minecraft:display_context':
                     if (metadata.display == null) return false
                     return when.includes(metadata.display)
+
+                  // no armor trims by default
+                  // items using this: *_helmet, *_chestplate, *_leggings, *_boots
+                  case 'minecraft:trim_material':
+                    return false
+
+                  default:
+                    logger.warn(
+                      `Unhandled minecraft:select property: ${model.property}`,
+                    )
+                    return false
                 }
               })
 
@@ -72,10 +105,44 @@ export const useItemsModel = (
               return f(selectedModel)
             }
 
-            case 'minecraft:range_dispatch':
-              return model.fallback != null ? f(model.fallback) : null
+            case 'minecraft:range_dispatch': {
+              let value = 0
+
+              switch (model.property) {
+                // items using this: compass, recovery_compass
+                case 'minecraft:compass':
+                  // return direction as always north
+                  // as there are no spawn, lodestone, or recovery anchor in editor
+                  value = 0
+                  break
+
+                // items using this: clock
+                case 'minecraft:time':
+                  if (model.source === 'daytime')
+                    // return time as always noon, as there are no time settings in editor
+                    value = 0 // noon
+                  else value = 0
+                  break
+
+                default:
+                  logger.warn(
+                    `Unhandled minecraft:range_dispatch property: ${model.property}`,
+                  )
+              }
+              value *= model.scale ?? 1
+
+              const foundEntry = model.entries.findLast(
+                (entry) => entry.threshold <= value,
+              )
+              const selectedModel =
+                foundEntry != null ? foundEntry.model : model.fallback
+              if (selectedModel == null) return null
+
+              return f(selectedModel)
+            }
 
             default:
+              logger.warn(`Unhandled items model type: ${model.type}`)
               return null
           }
         }
