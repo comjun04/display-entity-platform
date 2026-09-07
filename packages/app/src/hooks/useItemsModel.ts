@@ -34,10 +34,23 @@ export const useItemsModel = (
     fetchItemsModelJson(itemType)
       .then(({ model }) => {
         // TODO: check items model data with current item
-        const f = (model: ItemsModel) => {
+        const f: (model: ItemsModel) => string | null = (model) => {
           switch (model.type) {
             case 'minecraft:model':
               return model.model
+
+            case 'minecraft:condition': {
+              let condition: boolean
+              switch (model.property) {
+                case 'minecraft:using_item':
+                  condition = false
+                  break
+                default:
+                  condition = false
+              }
+
+              return f(condition ? model.on_true : model.on_false)
+            }
 
             case 'minecraft:select': {
               const foundCase = model.cases.find((targetCase) => {
@@ -54,10 +67,16 @@ export const useItemsModel = (
 
               const selectedModel =
                 foundCase != null ? foundCase.model : model.fallback
-              if (selectedModel == null) return
+              if (selectedModel == null) return null
 
               return f(selectedModel)
             }
+
+            case 'minecraft:range_dispatch':
+              return model.fallback != null ? f(model.fallback) : null
+
+            default:
+              return null
           }
         }
 
