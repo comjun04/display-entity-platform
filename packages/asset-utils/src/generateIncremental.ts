@@ -34,7 +34,7 @@ import { parseArgs } from 'util'
 
 // Current resource version this script generates
 // if the existing resource version is lower than this, it will be regenerated
-const ResourceVersion = 2
+const ResourceVersion = 2.1
 
 // these minecraft versions does not include resource/feature addition or changes, just bugfixes
 const versionsToSkip = [
@@ -256,10 +256,19 @@ for (const versionToDownload of versions) {
       cwd: hardcodedDataVersionPath,
     })
     for (const path of hardcodedDataFilePaths) {
-      const buf = await readFile(pathJoin(hardcodedDataVersionPath, path))
+      // in windows, path uses `\\` delimiter
+      // we need to change to posix style to match with unzipped result
+      // to overwrite existing fileinfo when needed
+      const posixifiedPath = path.replaceAll('\\', '/')
+      const buf = await readFile(
+        pathJoin(hardcodedDataVersionPath, posixifiedPath),
+      )
       const hash = makeHash(buf)
 
-      fileInfos.set(`assets/minecraft/${path}`, {
+      // TODO: regenerate all version resources without icon atlas
+      // consider increasing resource version by 0.1(patch)?
+
+      fileInfos.set(`assets/minecraft/${posixifiedPath}`, {
         fromVersion: versionId,
         hash,
         isHardcodedData: true,
