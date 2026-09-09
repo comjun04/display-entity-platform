@@ -1,0 +1,6 @@
+{
+  "parent": "item/shulker_box",
+  "textures": {
+    "particle": "entity/shulker/shulker_yellow"
+  }
+}
