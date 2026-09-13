@@ -1,5 +1,6 @@
 // Base source from three-stdlib `SelectionBox.js`
 // https://github.com/pmndrs/three-stdlib/blob/6b51b6dfaa4af721616945c0b0f9787afdd0a3f8/src/interactive/SelectionBox.js
+import { mapKeys } from 'es-toolkit/map'
 import {
   Box3,
   Frustum,
@@ -11,7 +12,10 @@ import {
 } from 'three'
 
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
-import { useEntityRefStore } from '@/stores/entityRefStore'
+import {
+  type EntityRefStoreState,
+  useEntityRefStore,
+} from '@/stores/entityRefStore'
 
 const frustum = new Frustum()
 const center = new Vector3()
@@ -50,11 +54,24 @@ class SelectionBox {
     this.deep = deep || Number.MAX_SAFE_INTEGER // Number.MAX_VALUE (+Infinity) 사용 시 frustum의 planes[5] 값이 NaN으로 채워지는 문제가 발생함
   }
   select(startPoint?: Vector3, endPoint?: Vector3) {
+    const { rootGroupRefData, entityRefs } = useEntityRefStore.getState()
+    if (!rootGroupRefData.refAvailable) return
+
+    // make object uuid -> entity ref data lookup table before recursion
+    const refsDataByObjectUuid = mapKeys(
+      entityRefs,
+      (value) => value.objectRef.current.uuid,
+    )
+
     this.startPoint = startPoint || this.startPoint
     this.endPoint = endPoint || this.endPoint
     this.collection = []
     this.updateFrustum(this.startPoint, this.endPoint)
-    this.searchChildInFrustum(frustum, this.scene)
+    this.searchChildInFrustum(
+      frustum,
+      rootGroupRefData.objectRef.current,
+      refsDataByObjectUuid,
+    )
     return this.collection
   }
   updateFrustum(startPoint: Vector3, endPoint: Vector3) {
@@ -172,11 +189,12 @@ class SelectionBox {
    * frustum 안에 지정된 `object`가 포함되어 있는지 확인합니다.
    * @returns object가 frustum에 포함되어 있을 경우 `true`, 아니면 `false`를 반환합니다.
    */
-  searchChildInFrustum(frustum2: Frustum, object: Object3D) {
-    const entityRefs = useEntityRefStore.getState().entityRefs
-    const targetEntityRefData = [...entityRefs.values()].find(
-      (d) => d.objectRef.current.id === object.id,
-    )
+  searchChildInFrustum(
+    frustum2: Frustum,
+    object: Object3D,
+    displayEntityRefsByObjectUuid: EntityRefStoreState['entityRefs'],
+  ) {
+    const targetEntityRefData = displayEntityRefsByObjectUuid.get(object.uuid)
     const isDisplayEntity = targetEntityRefData != null
 
     // 디스플레이 엔티티인 경우
@@ -206,7 +224,7 @@ class SelectionBox {
       if (entity.kind === 'group') {
         // 그룹 children에 포함되어 있는 엔티티들에 대해 같은 계산을 수행행
         const frustumIncludesChild = object.children.some((o) =>
-          this.searchChildInFrustum(frustum2, o),
+          this.searchChildInFrustum(frustum2, o, displayEntityRefsByObjectUuid),
         )
         if (frustumIncludesChild) {
           if (entity.parent == null) {
@@ -222,7 +240,11 @@ class SelectionBox {
 
     if (!isDisplayEntity && object.children.length > 0) {
       for (let x = 0; x < object.children.length; x++) {
-        this.searchChildInFrustum(frustum2, object.children[x])
+        this.searchChildInFrustum(
+          frustum2,
+          object.children[x],
+          displayEntityRefsByObjectUuid,
+        )
       }
     }
 

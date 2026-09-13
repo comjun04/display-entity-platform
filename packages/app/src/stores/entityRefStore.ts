@@ -9,7 +9,7 @@ const logger = getLogger('entityRefStore')
 
 // ==========
 
-type EntityRefStoreState = {
+export type EntityRefStoreState = {
   entityRefs: Map<
     string,
     {
