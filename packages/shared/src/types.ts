@@ -60,6 +60,7 @@ export type ModelFaceKey = 'up' | 'down' | 'north' | 'south' | 'west' | 'east'
 
 export interface ModelElement {
   __comment?: string
+  name?: string
   from: Number3Tuple
   to: Number3Tuple
   faces: {

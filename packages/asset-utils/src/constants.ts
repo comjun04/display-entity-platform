@@ -186,6 +186,9 @@ export const renderableBlockEntityModelTextures = [
   'bed/white',
   'bed/yellow',
 
+  // banner
+  'banner_base',
+
   // copper_golem (statue)
   'copper_golem/copper_golem',
   'copper_golem/exposed_copper_golem',

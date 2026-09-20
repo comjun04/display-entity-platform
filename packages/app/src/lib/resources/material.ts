@@ -43,12 +43,14 @@ const MaterialCache = new Map<string, MeshStandardMaterial>()
 export type LoadMaterialArgs = {
   textureData: TextureData
   modelResourceLocation: string
+  elementName?: string
   textureLayer?: string
   tintindex?: number
 }
 export async function loadMaterial({
   textureData,
   modelResourceLocation,
+  elementName,
   textureLayer,
   tintindex,
 }: LoadMaterialArgs) {
@@ -56,6 +58,7 @@ export async function loadMaterial({
   const textureColor = getTextureColor(
     modelResourceLocation,
     targetGameVersion,
+    elementName,
     textureLayer,
     tintindex,
   )

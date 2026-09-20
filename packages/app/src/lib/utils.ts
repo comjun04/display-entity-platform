@@ -250,11 +250,56 @@ const blocksUsingDefaultFoliageColors = [
 export function getTextureColor(
   modelResourceLocation: string,
   gameVersion: string,
+  elementName?: string,
   textureLayer?: string,
   tintindex?: number,
 ) {
   const isBlockModel = modelResourceLocation.startsWith('block/')
   const modelName = modelResourceLocation.split('/').slice(1).join('/')
+
+  // banner color
+  if (elementName === 'slate') {
+    const bannerMatch = /^item\/(\w+)_banner$/g.exec(modelResourceLocation)
+    if (bannerMatch != null) {
+      const bannerColor = bannerMatch[1]
+      switch (bannerColor) {
+        case 'orange':
+          return 0xf9801d
+        case 'magenta':
+          return 0xc74ebd
+        case 'light_blue':
+          return 0x3ab3da
+        case 'yellow':
+          return 0xfed83d
+        case 'lime':
+          return 0x80c71f
+        case 'pink':
+          return 0xf38baa
+        case 'gray':
+          return 0x474f52
+        case 'light_gray':
+          return 0x9d9d97
+        case 'cyan':
+          return 0x169c9c
+        case 'purple':
+          return 0x8932d8
+        case 'blue':
+          return 0x3c44aa
+        case 'brown':
+          return 0x835432
+        case 'green':
+          return 0x5e7c16
+        case 'red':
+          return 0xb02e26
+        case 'black':
+          return 0x1d2121
+
+        case 'white':
+        default:
+          return 0xf9fffe
+      }
+    }
+  }
 
   if (textureLayer == null && tintindex == null) {
     return 0xffffff

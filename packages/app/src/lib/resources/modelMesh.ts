@@ -130,6 +130,7 @@ export async function loadModelMaterials({
               resourceLocation: textureResourceLocation,
             },
         modelResourceLocation,
+        elementName: element.name,
         textureLayer,
         tintindex: faceData.tintindex,
       })
@@ -241,6 +242,7 @@ export async function generateModelMeshIngredients({
               resourceLocation: textureResourceLocation,
             },
         modelResourceLocation,
+        elementName: element.name,
         textureLayer,
         tintindex: faceData.tintindex,
       })
