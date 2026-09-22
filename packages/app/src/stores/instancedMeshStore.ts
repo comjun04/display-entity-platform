@@ -130,7 +130,7 @@ export class InstancedMeshManager {
 
       // then start loading mesh ingredients
       // and replace dummy mesh with new one when ready
-      prepareMeshIngredients(resourceLocation)
+      prepareMeshIngredients(resourceLocation, data.entityKind)
         .then((meshIngredients) => {
           const batch = this.batches.get(batchKey)!
 
@@ -342,10 +342,6 @@ export class InstancedMeshManager {
             )
             .premultiply(HalfBlockTranslatedMatrix)
           _matrix.multiply(tempRotatedMatrix4)
-
-          if (instance.entityKind === 'item') {
-            _matrix.premultiply(ReverseHalfBlockTranslatedMatrix)
-          }
         }
 
         batch.mesh.setMatrixAt(instance.instanceIndex, _matrix)
@@ -489,7 +485,10 @@ function getFlattenedZeroScaleMatrixElements(matrixCount: number) {
     .flat()
 }
 
-async function prepareMeshIngredients(resourceLocation: string) {
+async function prepareMeshIngredients(
+  resourceLocation: string,
+  entityKind: 'block' | 'item',
+) {
   const { data: modelData } = await loadModel(resourceLocation)
   const isItemModel = stripMinecraftPrefix(resourceLocation).startsWith('item/')
 
@@ -497,6 +496,7 @@ async function prepareMeshIngredients(resourceLocation: string) {
     modelResourceLocation: resourceLocation,
     elements: modelData.elements,
     textures: modelData.textures,
+    entityKind,
     isItemModel,
     playerHeadData: undefined,
   })

@@ -214,9 +214,6 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
           ),
         )
         .premultiply(HalfBlockTranslatedMatrix)
-      if (entityKind === 'item') {
-        _matrix.premultiply(ReverseHalfBlockTranslatedMatrix)
-      }
 
       boundingBox.applyMatrix4(_matrix)
 

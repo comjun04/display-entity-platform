@@ -145,6 +145,7 @@ const ItemDisplay: FC<ItemDisplayProps> = ({
         ) : (
           <MemoizedModel
             initialResourceLocation={`item/${type}`}
+            entityKind="item"
             displayType={thisEntityDisplay ?? undefined}
             playerHeadData={playerHeadData}
           />

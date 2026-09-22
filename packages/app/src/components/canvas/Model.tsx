@@ -27,6 +27,7 @@ import type {
 
 type ModelNewProps = {
   initialResourceLocation: string
+  entityKind: 'block' | 'item'
   displayType?: ModelDisplayPositionKey
   xRotation?: number
   yRotation?: number
@@ -52,6 +53,7 @@ const logger = getLogger('Model')
 
 const Model: FC<ModelNewProps> = ({
   initialResourceLocation,
+  entityKind,
   displayType,
   xRotation = 0,
   yRotation = 0,
@@ -76,7 +78,7 @@ const Model: FC<ModelNewProps> = ({
   useEffect(() => {
     if (modelDataTemp == null || modelDataLoading) return
 
-    const { data: modelData, isBlockShapedItemModel } = modelDataTemp
+    const { data: modelData } = modelDataTemp
     const isItemModel = stripMinecraftPrefix(
       initialResourceLocation,
     ).startsWith('item/')
@@ -194,8 +196,8 @@ const Model: FC<ModelNewProps> = ({
         modelResourceLocation: initialResourceLocation,
         elements: modelData.elements,
         textures: modelData.textures,
+        entityKind,
         isItemModel,
-        isBlockShapedItemModel,
         playerHeadData,
       }).catch((err) => {
         logger.error(`Failed to load model mesh for ${initialResourceLocation}`)
@@ -228,6 +230,7 @@ const Model: FC<ModelNewProps> = ({
     }
   }, [
     initialResourceLocation,
+    entityKind,
     modelDataTemp,
     modelDataLoading,
     meshLoaded,
