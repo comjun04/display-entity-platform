@@ -16,6 +16,7 @@ import { useShallow } from 'zustand/shallow'
 
 import {
   InstancedMeshManager,
+  makeBatchKey,
   useInstancedMeshStore,
 } from '@/stores/instancedMeshStore'
 
@@ -122,14 +123,13 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
   const batchGeometries = useInstancedMeshStore(
     useShallow((state) =>
       modelList.map((modelData) => {
-        const minimalBatchInfo = state.batches.get(modelData.resourceLocation)
+        const batchKey = makeBatchKey(modelData.resourceLocation, entityKind)
+        const minimalBatchInfo = state.batches.get(batchKey)
         if (minimalBatchInfo?.status !== 'ready') {
           return
         }
 
-        const batches = InstancedMeshManager.instance.getBatch(
-          modelData.resourceLocation,
-        )
+        const batches = InstancedMeshManager.instance.getBatch(batchKey)
         if (batches?.status !== 'ready') {
           // this should not happen
           return
@@ -142,14 +142,13 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
   const batchDisplayInfos = useInstancedMeshStore(
     useShallow((state) =>
       modelList.map((modelData) => {
-        const minimalBatchInfo = state.batches.get(modelData.resourceLocation)
+        const batchKey = makeBatchKey(modelData.resourceLocation, entityKind)
+        const minimalBatchInfo = state.batches.get(batchKey)
         if (minimalBatchInfo?.status !== 'ready') {
           return
         }
 
-        const batch = InstancedMeshManager.instance.getBatch(
-          modelData.resourceLocation,
-        )
+        const batch = InstancedMeshManager.instance.getBatch(batchKey)
         if (batch?.status !== 'ready') {
           // this should not happen
           return

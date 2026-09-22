@@ -5,6 +5,7 @@ import { Group, Matrix4 } from 'three'
 
 import {
   InstancedMeshManager,
+  makeBatchKey,
   useInstancedMeshStore,
 } from '@/stores/instancedMeshStore'
 
@@ -28,11 +29,12 @@ export const InstancedModel: FC<InstacedModelProps> = ({
 }) => {
   const objectRef = useRef<Group>(null)
   const matrixRef = useRef(new Matrix4().fromArray(Array(16).fill(0)))
+  const allocatedBatchKeyRef = useRef<string | null>(null)
 
-  const allocatedRef = useRef(false)
+  const batchKey = makeBatchKey(resourceLocation, entityKind)
 
   const batchStatus = useInstancedMeshStore((state) => {
-    const batch = state.batches.get(resourceLocation)
+    const batch = state.batches.get(batchKey)
     if (batch == null) return
 
     return batch.status
@@ -45,22 +47,23 @@ export const InstancedModel: FC<InstacedModelProps> = ({
   // allocate instance
   useEffect(() => {
     if (batchStatus === 'loading') return
-    if (allocatedRef.current) return // skip when already allocated
+    if (allocatedBatchKeyRef.current != null) return // skip when already allocated
 
     // fetch latest batch status from manager directly
     // (to prevent race-condition between manager and store update gap)
-    const batch = InstancedMeshManager.instance.getBatch(resourceLocation)
+    const batch = InstancedMeshManager.instance.getBatch(batchKey)
     if (batch?.status === 'loading') return
 
-    InstancedMeshManager.instance.allocateInstance(resourceLocation, {
-      modelId,
-      entityId,
-      entityKind,
-      rotation: [xRotation, yRotation],
-    })
-    allocatedRef.current = true
+    allocatedBatchKeyRef.current =
+      InstancedMeshManager.instance.allocateInstance(resourceLocation, {
+        modelId,
+        entityId,
+        entityKind,
+        rotation: [xRotation, yRotation],
+      })
     invalidate()
   }, [
+    batchKey,
     resourceLocation,
     modelId,
     entityId,
@@ -74,15 +77,18 @@ export const InstancedModel: FC<InstacedModelProps> = ({
   useEffect(() => {
     return () => {
       // skip when instance is not allocated
-      if (!allocatedRef.current) return
+      if (allocatedBatchKeyRef.current == null) return
 
-      InstancedMeshManager.instance.freeInstance(resourceLocation, modelId)
-      allocatedRef.current = false
+      InstancedMeshManager.instance.freeInstance(
+        allocatedBatchKeyRef.current,
+        modelId,
+      )
+      allocatedBatchKeyRef.current = null
     }
-  }, [resourceLocation, modelId])
+  }, [batchKey, modelId])
 
   useEffect(() => {
-    if (!allocatedRef.current) return
+    if (allocatedBatchKeyRef.current == null) return
 
     InstancedMeshManager.instance.setRotation(modelId, {
       x: xRotation,
@@ -90,7 +96,7 @@ export const InstancedModel: FC<InstacedModelProps> = ({
     })
   }, [modelId, xRotation, yRotation])
   useEffect(() => {
-    if (!allocatedRef.current) return
+    if (allocatedBatchKeyRef.current == null) return
 
     InstancedMeshManager.instance.setDisplay(modelId, displayType)
   }, [modelId, displayType])

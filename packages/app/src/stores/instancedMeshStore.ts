@@ -37,6 +37,13 @@ const ReverseHalfBlockTranslatedMatrix = new Matrix4().makeTranslation(
   -0.5,
 )
 
+export function makeBatchKey(
+  resourceLocation: string,
+  entityKind: 'block' | 'item',
+) {
+  return `${entityKind}|${resourceLocation}`
+}
+
 export class InstancedMeshManager {
   // singleton class setup
   private static _instance?: InstancedMeshManager
@@ -73,7 +80,9 @@ export class InstancedMeshManager {
   ) {
     // this.logger.debug('allocateInstance()', resourceLocation, data)
 
-    if (!this.batches.has(resourceLocation)) {
+    const batchKey = makeBatchKey(resourceLocation, data.entityKind)
+
+    if (!this.batches.has(batchKey)) {
       // Initialize dummy mesh and register it first
       this.logger.debug(`Initializing dummy mesh for model ${resourceLocation}`)
 
@@ -93,7 +102,7 @@ export class InstancedMeshManager {
       dummyMesh.matrixAutoUpdate = false
 
       const newBatch: InstancedMeshBatchData = {
-        key: resourceLocation,
+        key: batchKey,
         status: 'loading', // indicate as loading
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -111,9 +120,9 @@ export class InstancedMeshManager {
 
         instances: new Map(),
       }
-      this.batches.set(resourceLocation, newBatch)
+      this.batches.set(batchKey, newBatch)
 
-      useInstancedMeshStore.getState()._addBatch(resourceLocation, {
+      useInstancedMeshStore.getState()._addBatch(batchKey, {
         status: 'loading',
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         mesh: dummyMesh,
@@ -123,7 +132,7 @@ export class InstancedMeshManager {
       // and replace dummy mesh with new one when ready
       prepareMeshIngredients(resourceLocation)
         .then((meshIngredients) => {
-          const batch = this.batches.get(resourceLocation)!
+          const batch = this.batches.get(batchKey)!
 
           const newMesh = new InstancedMesh(
             meshIngredients.geometry,
@@ -146,7 +155,7 @@ export class InstancedMeshManager {
 
           batch.status = 'ready'
 
-          useInstancedMeshStore.getState()._updateBatchInfo(resourceLocation, {
+          useInstancedMeshStore.getState()._updateBatchInfo(batchKey, {
             status: 'ready',
             mesh: newMesh,
           })
@@ -154,7 +163,7 @@ export class InstancedMeshManager {
         .catch(console.error)
     }
 
-    const batch = this.batches.get(resourceLocation)!
+    const batch = this.batches.get(batchKey)!
 
     // allocate new space
     let index = 0
@@ -183,7 +192,7 @@ export class InstancedMeshManager {
 
         batch.mesh.dispose()
 
-        useInstancedMeshStore.getState()._updateBatchInfo(resourceLocation, {
+        useInstancedMeshStore.getState()._updateBatchInfo(batchKey, {
           mesh: newMesh,
         })
       }
@@ -204,15 +213,17 @@ export class InstancedMeshManager {
     const s = this.entityToModels.get(data.entityId)!
     s.add(data.modelId)
 
-    this.modelToBatch.set(data.modelId, resourceLocation)
+    this.modelToBatch.set(data.modelId, batchKey)
 
     this.markEntityDirty(data.entityId)
+
+    return batchKey
   }
 
-  freeInstance(resourceLocation: string, modelId: string) {
-    // this.logger.debug('freeInstance', resourceLocation, modelId)
+  freeInstance(batchKey: string, modelId: string) {
+    // this.logger.debug('freeInstance', batchKey, modelId)
 
-    const batch = this.batches.get(resourceLocation)
+    const batch = this.batches.get(batchKey)
     if (batch == null) return
 
     const existingInstance = batch.instances.get(modelId)
