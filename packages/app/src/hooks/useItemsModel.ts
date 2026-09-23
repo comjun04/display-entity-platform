@@ -144,6 +144,23 @@ export const useItemsModel = (
               return f(selectedModel)
             }
 
+            case 'minecraft:special': {
+              switch (model.model.type) {
+                case 'minecraft:banner': {
+                  // TODO: handle `attachment` field
+
+                  const color = model.model.color
+                  return [`minecraft:item/${color}_banner`]
+                }
+
+                default:
+                  logger.warn(
+                    `Unhandled minecraft:special model type: ${model.model.type}`,
+                  )
+                  return null
+              }
+            }
+
             default:
               logger.warn(`Unhandled items model type: ${model.type}`)
               return null

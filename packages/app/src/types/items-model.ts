@@ -22,7 +22,7 @@ export type ItemsModel = (
 export interface ItemsModelPlain {
   type: 'minecraft:model'
   model: string // resource location
-  tints: unknown[] // TODO
+  tints?: unknown[] // TODO
 }
 
 export interface ItemsModelComposite {
