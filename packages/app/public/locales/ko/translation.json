@@ -33,13 +33,15 @@
       "title": "블록 디스플레이 추가",
       "search": {
         "label": "검색"
-      }
+      },
+      "mobileShowId": "블록 ID 표시"
     },
     "itemDisplaySelect": {
       "title": "아이템 디스플레이 추가",
       "search": {
         "label": "검색"
-      }
+      },
+      "mobileShowId": "아이템 ID 표시"
     },
     "exportToMinecraft": {
       "title": "Minecraft로 내보내기",

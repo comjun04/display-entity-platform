@@ -3,6 +3,7 @@ import { type FC, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/shallow'
 
+import { Switch } from '@/components/ui/switch'
 import { useIconAtlas } from '@/hooks/useIconAtlas'
 import { createNewEntities } from '@/lib/entities'
 import { getItemListQueryFn } from '@/lib/queries/getItemList'
@@ -18,6 +19,7 @@ const ItemDisplaySelectDialog: FC = () => {
 
   const [firstOpened, setFirstOpened] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showId, setShowId] = useState(false)
 
   const { isOpen, closeActiveDialog } = useDialogStore(
     useShallow((state) => ({
@@ -68,11 +70,17 @@ const ItemDisplaySelectDialog: FC = () => {
           onChange={(evt) => setSearchQuery(evt.target.value)}
         />
       </div>
+      <div className="flex flex-row items-center gap-2 pointer-fine:hidden">
+        <Switch onCheckedChange={(checked) => setShowId(checked)} />
+        <div>{t(($) => $.dialog.itemDisplaySelect.mobileShowId)}</div>
+      </div>
+
       <DisplaySelectDialogBase
         items={searchResult}
         iconAtlasMetadata={iconAtlasMetadata ?? {}}
         isLoading={isLoading}
         gameVersion={targetGameVersion}
+        mobileShowItemId={showId}
         onItemClick={handleItemClick}
       />
     </Dialog>

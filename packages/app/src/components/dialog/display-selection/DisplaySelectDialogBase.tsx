@@ -5,6 +5,7 @@ import { type FC, memo, useMemo, useRef, useState } from 'react'
 
 import { CDNBaseUrl } from '@/constants'
 import { type ItemAtlasMetadataCalculated } from '@/hooks/useIconAtlas'
+import { cn } from '@/lib/utils'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
 
@@ -19,6 +20,7 @@ interface VirtualListRowProps {
 
   iconAtlasMetadata: ItemAtlasMetadataCalculated
   gameVersion: string
+  mobileShowItemId: boolean
 
   onItemClick?: (key: string) => void
   tooltipHandle: BaseUITooltip.Handle<string>
@@ -29,6 +31,7 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
   items,
   iconAtlasMetadata,
   gameVersion,
+  mobileShowItemId,
   onItemClick,
   tooltipHandle,
 }) => {
@@ -70,7 +73,14 @@ const VirtualListRow: FC<VirtualListRowProps> = ({
                   }}
                 />
 
-                <div className="absolute bottom-0 w-full rounded-b bg-neutral-900 text-[0.5rem] break-all opacity-40 pointer-fine:hidden">
+                <div
+                  className={cn(
+                    'absolute bottom-0 w-full rounded-b bg-neutral-900 text-[0.6rem] break-all opacity-90',
+                    // hidden on desktop, show on mobile when toggled
+                    'hidden',
+                    mobileShowItemId && 'pointer-coarse:block',
+                  )}
+                >
                   {key}
                 </div>
               </button>
@@ -113,6 +123,7 @@ interface VirtualListProps {
   iconAtlasMetadata: ItemAtlasMetadataCalculated
   isLoading: boolean
   gameVersion: string
+  mobileShowItemId: boolean
   onItemClick?: (key: string) => void
   tooltipHandle: BaseUITooltip.Handle<string>
 }
@@ -121,6 +132,7 @@ const VirtualList: FC<VirtualListProps> = ({
   iconAtlasMetadata,
   isLoading,
   gameVersion,
+  mobileShowItemId,
   onItemClick,
   tooltipHandle,
 }) => {
@@ -168,6 +180,7 @@ const VirtualList: FC<VirtualListProps> = ({
               items={blocks}
               iconAtlasMetadata={iconAtlasMetadata}
               gameVersion={gameVersion}
+              mobileShowItemId={mobileShowItemId}
               onItemClick={onItemClick}
               tooltipHandle={tooltipHandle}
             />
@@ -206,6 +219,7 @@ export interface DisplaySelectDialogBase {
   iconAtlasMetadata: ItemAtlasMetadataCalculated
   isLoading: boolean
   gameVersion: string
+  mobileShowItemId?: boolean
   onItemClick?: (key: string) => void
 }
 const DisplaySelectDialogBase: FC<DisplaySelectDialogBase> = ({
@@ -213,6 +227,7 @@ const DisplaySelectDialogBase: FC<DisplaySelectDialogBase> = ({
   iconAtlasMetadata,
   isLoading,
   gameVersion,
+  mobileShowItemId = false,
   onItemClick,
 }) => {
   const tooltipHandle = useMemo(() => BaseUITooltip.createHandle<string>(), [])
@@ -224,6 +239,7 @@ const DisplaySelectDialogBase: FC<DisplaySelectDialogBase> = ({
         iconAtlasMetadata={iconAtlasMetadata ?? {}}
         isLoading={isLoading}
         gameVersion={gameVersion}
+        mobileShowItemId={mobileShowItemId}
         tooltipHandle={tooltipHandle}
         onItemClick={onItemClick}
       />

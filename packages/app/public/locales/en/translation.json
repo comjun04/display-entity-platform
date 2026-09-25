@@ -33,13 +33,15 @@
       "title": "Add Block Display",
       "search": {
         "label": "Search"
-      }
+      },
+      "mobileShowId": "Show Block ID"
     },
     "itemDisplaySelect": {
       "title": "Add Item Display",
       "search": {
         "label": "Search"
-      }
+      },
+      "mobileShowId": "Show Item ID"
     },
     "exportToMinecraft": {
       "title": "Export to Minecraft",
