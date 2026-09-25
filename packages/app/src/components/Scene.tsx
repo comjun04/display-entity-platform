@@ -7,6 +7,7 @@ import {
 import { Canvas, invalidate, useThree } from '@react-three/fiber'
 import { type FC, Suspense, lazy, useEffect, useRef } from 'react'
 import { type AxesHelper, Color, DoubleSide } from 'three'
+import type { Controls } from 'three'
 import { useShallow } from 'zustand/shallow'
 
 import { useDisplayEntityStore } from '../stores/displayEntityStore'
@@ -22,28 +23,40 @@ import TransformControls from './TransformControls'
 const Perf = lazy(() => import('./Perf'))
 
 const InsideCanvas: FC = () => {
-  const headPainting = useEditorStore((state) => state.headPainter.nowPainting)
+  const controls = useThree((state) => state.controls) as Controls<object>
 
-  const controls = useThree((state) => state.controls)
   // silence eslint errors due to use of `any`
-  /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-  const oldControlsEnabledRef = useRef<boolean>((controls as any)?.enabled)
-
   useEffect(() => {
-    if (headPainting) {
-      if (controls != null) {
-        oldControlsEnabledRef.current = (controls as any).enabled
-        ;(controls as any).enabled = false
-      }
-    } else {
-      // only change when controls are disabled
-      // to prevent disabling controls on first render
-      if (controls != null && !(controls as any).enabled) {
-        ;(controls as any).enabled = oldControlsEnabledRef.current
+    if (controls == null) return
+
+    let oldControlsEnabled = controls.enabled
+    let headPainting = useEditorStore.getState().headPainter.nowPainting
+
+    const setControlsForHeadPainting = (painting: boolean) => {
+      if (painting) {
+        oldControlsEnabled = controls.enabled
+        // Setting CameraControls.enabled to false also cancels an active drag.
+        controls.enabled = false
+      } else if (!controls.enabled) {
+        controls.enabled = oldControlsEnabled
       }
     }
-  }, [headPainting, controls])
-  /* eslint-enable */
+
+    setControlsForHeadPainting(headPainting)
+
+    // Store subscriptions run synchronously. This cancels CameraControls during
+    // the painter's pointerdown handler instead of waiting for a React effect,
+    // which could allow a pointermove through on slower devices.
+    const unsubscribe = useEditorStore.subscribe((state) => {
+      const nextHeadPainting = state.headPainter.nowPainting
+      if (nextHeadPainting === headPainting) return
+
+      headPainting = nextHeadPainting
+      setControlsForHeadPainting(headPainting)
+    })
+
+    return unsubscribe
+  }, [controls])
 
   useEffect(() => {
     const fn = () => {
