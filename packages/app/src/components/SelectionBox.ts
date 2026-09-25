@@ -53,9 +53,9 @@ class SelectionBox {
     this.collection = []
     this.deep = deep || Number.MAX_SAFE_INTEGER // Number.MAX_VALUE (+Infinity) 사용 시 frustum의 planes[5] 값이 NaN으로 채워지는 문제가 발생함
   }
-  select(startPoint?: Vector3, endPoint?: Vector3) {
+  select(startPoint?: Vector3, endPoint?: Vector3): Object3D[] {
     const { rootGroupRefData, entityRefs } = useEntityRefStore.getState()
-    if (!rootGroupRefData.refAvailable) return
+    if (!rootGroupRefData.refAvailable) return []
 
     // make object uuid -> entity ref data lookup table before recursion
     const refsDataByObjectUuid = mapKeys(
