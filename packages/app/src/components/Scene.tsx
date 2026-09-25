@@ -88,10 +88,28 @@ const Axes: FC<AxesProps> = ({ lineScale }) => {
   const ref = useRef<AxesHelper>(null)
 
   useEffect(() => {
-    ref.current?.setColors(...AxesColors)
+    const axes = ref.current
+    if (!axes) return
+
+    axes.setColors(...AxesColors)
+    // The grid is transparent, so the axes must share its render pass to draw after it.
+    axes.material.transparent = true
+    axes.material.depthTest = true
+    axes.material.depthWrite = false
+
+    axes.material.needsUpdate = true
+    invalidate()
   }, [])
 
-  return <axesHelper args={[lineScale]} ref={ref} matrixAutoUpdate={false} />
+  return (
+    <axesHelper
+      args={[lineScale]}
+      ref={ref}
+      matrixAutoUpdate={false}
+      // render "after" Grid
+      renderOrder={1}
+    />
+  )
 }
 
 const Scene: FC = () => {
@@ -162,6 +180,15 @@ const Scene: FC = () => {
       <InsideCanvas />
 
       <Grid
+        ref={(grid) => {
+          if (grid == null) return
+
+          // Keep the grid from hiding axes that occupy the same plane.
+          const material = Array.isArray(grid.material)
+            ? grid.material[0]
+            : grid.material
+          material.depthWrite = false
+        }}
         visible={!headPainterEnabled}
         cellSize={1 / 16}
         cellColor={0x777777}
