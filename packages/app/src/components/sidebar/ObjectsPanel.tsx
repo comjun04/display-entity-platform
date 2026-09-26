@@ -182,7 +182,7 @@ const ObjectsPanel: FC = () => {
   )
 
   return (
-    <SidePanel className="max-h-[50vh] overflow-x-auto">
+    <SidePanel className="max-h-[50dvh] overflow-x-auto">
       <SidePanelTitle>{t(($) => $.sidebar.objectsPanel.title)}</SidePanelTitle>
       <SidePanelContent>
         {rootEntityIds.map((id) => (
