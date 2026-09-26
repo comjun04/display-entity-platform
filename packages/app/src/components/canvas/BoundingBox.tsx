@@ -209,6 +209,7 @@ export const BoundingBoxForInstanced: FC<BoundingBoxForInstancedProps> = ({
               MathUtils.degToRad(-1 * (modelData.xRotation ?? 0)),
               MathUtils.degToRad(-1 * (modelData.yRotation ?? 0)),
               0,
+              'YXZ',
             ),
           ),
         )

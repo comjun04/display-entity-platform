@@ -304,29 +304,19 @@ export class InstancedMeshManager {
             )
             .premultiply(ReverseHalfBlockTranslatedMatrix)
             .premultiply(
-              // set x rotation
+              // set xy rotation
               new Matrix4().makeRotationFromQuaternion(
                 new Quaternion().setFromEuler(
                   new Euler(
                     MathUtils.degToRad(-1 * instance.rotation[0]),
-                    0,
-                    0,
-                  ),
-                ),
-              ),
-            )
-            .premultiply(
-              // set y rotation
-              new Matrix4().makeRotationFromQuaternion(
-                new Quaternion().setFromEuler(
-                  new Euler(
-                    0,
                     MathUtils.degToRad(-1 * instance.rotation[1]),
                     0,
+                    'YXZ',
                   ),
                 ),
               ),
             )
+
             .premultiply(HalfBlockTranslatedMatrix)
           _matrix.multiply(tempRotatedMatrix4)
         }
