@@ -1,4 +1,3 @@
-import { Grid } from '@react-three/drei'
 import { type FC, useMemo } from 'react'
 import { MathUtils } from 'three'
 
@@ -12,6 +11,8 @@ import type {
   Number3Tuple,
   PlayerHeadProperties,
 } from '@/types/base'
+
+import AlignedGrid from './AlignedGrid'
 
 interface SideProps {
   face: ModelFaceKey
@@ -55,31 +56,17 @@ const Side: FC<SideProps> = ({
   const groupRotation = useMemo<Number3Tuple>(() => {
     switch (face) {
       case 'up':
-        return [0, 0, 0]
+        return [MathUtils.degToRad(90), 0, MathUtils.degToRad(180)]
       case 'down':
-        return [MathUtils.degToRad(180), 0, 0]
-      case 'south':
         return [MathUtils.degToRad(-90), 0, 0]
-      case 'north':
-        return [MathUtils.degToRad(90), 0, 0]
-      case 'east':
-        return [0, 0, MathUtils.degToRad(-90)]
-      case 'west':
-        return [0, 0, MathUtils.degToRad(90)]
-    }
-  }, [face])
-  const innerMeshRotation = useMemo<Number3Tuple>(() => {
-    switch (face) {
-      case 'up':
-      case 'down':
       case 'south':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(180)]
+        return [0, 0, MathUtils.degToRad(180)]
       case 'north':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(0)]
+        return [MathUtils.degToRad(180), 0, 0]
       case 'east':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(90)]
+        return [MathUtils.degToRad(180), MathUtils.degToRad(-90), 0]
       case 'west':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(-90)]
+        return [MathUtils.degToRad(180), MathUtils.degToRad(90), 0]
     }
   }, [face])
 
@@ -88,50 +75,50 @@ const Side: FC<SideProps> = ({
   }
 
   return (
-    <group position={groupPosition} rotation={groupRotation}>
-      <Grid
+    <group
+      position={groupPosition}
+      rotation={groupRotation}
+      onClick={(evt) => {
+        if (disabled) return
+        evt.stopPropagation()
+
+        const localPos = evt.object.worldToLocal(evt.point.clone())
+        handlePaint(
+          face,
+          getPixelIntegerPos(localPos.x),
+          getPixelIntegerPos(localPos.y),
+        )
+      }}
+      onPointerDown={(evt) => {
+        if (disabled) return
+        evt.stopPropagation()
+
+        const localPos = evt.object.worldToLocal(evt.point.clone())
+        handlePointerDown(
+          face,
+          getPixelIntegerPos(localPos.x),
+          getPixelIntegerPos(localPos.y),
+        )
+      }}
+      onPointerMove={(evt) => {
+        if (disabled) return
+        evt.stopPropagation()
+
+        const localPos = evt.object.worldToLocal(evt.point.clone())
+        handlePointerMove(
+          face,
+          getPixelIntegerPos(localPos.x),
+          getPixelIntegerPos(localPos.y),
+        )
+      }}
+    >
+      <AlignedGrid
         args={gridSize}
         cellSize={gridCellSize}
         cellThickness={1}
         cellColor="#ffffff"
         sectionSize={0}
       />
-      <mesh
-        rotation={innerMeshRotation}
-        onClick={(evt) => {
-          if (disabled) return
-
-          const localPos = evt.object.worldToLocal(evt.point.clone())
-          handlePaint(
-            face,
-            getPixelIntegerPos(localPos.x),
-            getPixelIntegerPos(localPos.y),
-          )
-        }}
-        onPointerDown={(evt) => {
-          if (disabled) return
-
-          const localPos = evt.object.worldToLocal(evt.point.clone())
-          handlePointerDown(
-            face,
-            getPixelIntegerPos(localPos.x),
-            getPixelIntegerPos(localPos.y),
-          )
-        }}
-        onPointerMove={(evt) => {
-          if (disabled) return
-
-          const localPos = evt.object.worldToLocal(evt.point.clone())
-          handlePointerMove(
-            face,
-            getPixelIntegerPos(localPos.x),
-            getPixelIntegerPos(localPos.y),
-          )
-        }}
-      >
-        <planeGeometry args={gridSize} />
-        <meshBasicMaterial transparent opacity={0} alphaTest={0.01} />
-      </mesh>
     </group>
   )
 }
@@ -230,9 +217,9 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
         baseX += 32
       }
 
-      const shouldFlipY = side !== 'down'
-      const pixelX = baseX + x
-      const pixelY = baseY + (shouldFlipY ? 7 - y : y)
+      const shouldFlipX = side === 'down'
+      const pixelX = baseX + (shouldFlipX ? 7 - x : x)
+      const pixelY = baseY + y
 
       const brushColor_R = (brushColor >>> 16) & 0xff
       const brushColor_G = (brushColor >>> 8) & 0xff
