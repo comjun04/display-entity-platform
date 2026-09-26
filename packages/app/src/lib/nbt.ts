@@ -57,6 +57,11 @@ export function generateNbtStrings({
   )
   // whether text is represented as SNBT rather than JSON
   const isTextFormatSNBT = semverSatisfies(targetGameVersion, '>=1.21.5')
+  // whether `Count` field is required in ItemDisplay
+  const itemDisplayCountFieldRequired = semverSatisfies(
+    targetGameVersion,
+    '<1.20.5',
+  )
 
   // =====
 
@@ -95,7 +100,7 @@ export function generateNbtStrings({
         const displayText =
           entity.display != null ? `,item_display:"${entity.display}"` : ''
 
-        let itemExtraData = ''
+        let itemExtraData = itemDisplayCountFieldRequired ? ',Count:1' : ''
         if (isItemDisplayPlayerHead(entity)) {
           const textureData = entity.playerHeadProperties.texture
           if (textureData?.baked) {
@@ -107,7 +112,7 @@ export function generateNbtStrings({
               },
             } satisfies MinimalTextureValue
             const textureValueString = btoa(JSON.stringify(o))
-            itemExtraData = isItemDataComponentEnabled
+            itemExtraData += isItemDataComponentEnabled
               ? `,components:{"minecraft:profile":{properties:[{name:"textures",value:"${textureValueString}"}]}}`
               : `,SkullOwner:{Properties:{textures:[{Value:"${textureValueString}"}]}}`
           }
