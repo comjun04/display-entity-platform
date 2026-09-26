@@ -1,4 +1,3 @@
-import { Grid } from '@react-three/drei'
 import { type FC, useMemo } from 'react'
 import { MathUtils } from 'three'
 
@@ -13,9 +12,12 @@ import type {
   PlayerHeadProperties,
 } from '@/types/base'
 
+import AlignedGrid from './AlignedGrid'
+
 interface SideProps {
   face: ModelFaceKey
   layer: HeadPainterLayer
+  disabled?: boolean
   handlePaint: (side: ModelFaceKey, x: number, y: number) => void
   handlePointerDown: (face: ModelFaceKey, x: number, y: number) => void
   handlePointerMove: (face: ModelFaceKey, x: number, y: number) => void
@@ -23,6 +25,7 @@ interface SideProps {
 const Side: FC<SideProps> = ({
   face,
   layer,
+  disabled = false,
   handlePaint,
   handlePointerDown,
   handlePointerMove,
@@ -53,31 +56,17 @@ const Side: FC<SideProps> = ({
   const groupRotation = useMemo<Number3Tuple>(() => {
     switch (face) {
       case 'up':
-        return [0, 0, 0]
+        return [MathUtils.degToRad(90), 0, MathUtils.degToRad(180)]
       case 'down':
-        return [MathUtils.degToRad(180), 0, 0]
-      case 'south':
         return [MathUtils.degToRad(-90), 0, 0]
-      case 'north':
-        return [MathUtils.degToRad(90), 0, 0]
-      case 'east':
-        return [0, 0, MathUtils.degToRad(-90)]
-      case 'west':
-        return [0, 0, MathUtils.degToRad(90)]
-    }
-  }, [face])
-  const innerMeshRotation = useMemo<Number3Tuple>(() => {
-    switch (face) {
-      case 'up':
-      case 'down':
       case 'south':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(180)]
+        return [0, 0, MathUtils.degToRad(180)]
       case 'north':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(0)]
+        return [MathUtils.degToRad(180), 0, 0]
       case 'east':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(90)]
+        return [MathUtils.degToRad(180), MathUtils.degToRad(-90), 0]
       case 'west':
-        return [MathUtils.degToRad(-90), 0, MathUtils.degToRad(-90)]
+        return [MathUtils.degToRad(180), MathUtils.degToRad(90), 0]
     }
   }, [face])
 
@@ -86,56 +75,63 @@ const Side: FC<SideProps> = ({
   }
 
   return (
-    <group position={groupPosition} rotation={groupRotation}>
-      <Grid
+    <group
+      position={groupPosition}
+      rotation={groupRotation}
+      onClick={(evt) => {
+        if (disabled) return
+        evt.stopPropagation()
+
+        const localPos = evt.object.worldToLocal(evt.point.clone())
+        handlePaint(
+          face,
+          getPixelIntegerPos(localPos.x),
+          getPixelIntegerPos(localPos.y),
+        )
+      }}
+      onPointerDown={(evt) => {
+        if (disabled) return
+        evt.stopPropagation()
+
+        const localPos = evt.object.worldToLocal(evt.point.clone())
+        handlePointerDown(
+          face,
+          getPixelIntegerPos(localPos.x),
+          getPixelIntegerPos(localPos.y),
+        )
+      }}
+      onPointerMove={(evt) => {
+        if (disabled) return
+        evt.stopPropagation()
+
+        const localPos = evt.object.worldToLocal(evt.point.clone())
+        handlePointerMove(
+          face,
+          getPixelIntegerPos(localPos.x),
+          getPixelIntegerPos(localPos.y),
+        )
+      }}
+    >
+      <AlignedGrid
         args={gridSize}
         cellSize={gridCellSize}
         cellThickness={1}
         cellColor="#ffffff"
         sectionSize={0}
       />
-      <mesh
-        rotation={innerMeshRotation}
-        onClick={(evt) => {
-          const localPos = evt.object.worldToLocal(evt.point.clone())
-          handlePaint(
-            face,
-            getPixelIntegerPos(localPos.x),
-            getPixelIntegerPos(localPos.y),
-          )
-        }}
-        onPointerDown={(evt) => {
-          const localPos = evt.object.worldToLocal(evt.point.clone())
-          handlePointerDown(
-            face,
-            getPixelIntegerPos(localPos.x),
-            getPixelIntegerPos(localPos.y),
-          )
-        }}
-        onPointerMove={(evt) => {
-          const localPos = evt.object.worldToLocal(evt.point.clone())
-          handlePointerMove(
-            face,
-            getPixelIntegerPos(localPos.x),
-            getPixelIntegerPos(localPos.y),
-          )
-        }}
-      >
-        <planeGeometry args={gridSize} />
-        <meshBasicMaterial transparent opacity={0} alphaTest={0.01} />
-      </mesh>
     </group>
   )
 }
 
-type PlayerHeadPainterProps = {
+interface PlayerHeadPainterProps {
   entityId: string
   playerHeadProperties: PlayerHeadProperties
+  disabled?: boolean
 }
-
 const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
   entityId,
   playerHeadProperties,
+  disabled = false,
 }) => {
   const headPainterLayer = useEditorStore((state) => state.headPainter.layer)
 
@@ -221,9 +217,9 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
         baseX += 32
       }
 
-      const shouldFlipY = side !== 'down'
-      const pixelX = baseX + x
-      const pixelY = baseY + (shouldFlipY ? 7 - y : y)
+      const shouldFlipX = side === 'down'
+      const pixelX = baseX + (shouldFlipX ? 7 - x : x)
+      const pixelY = baseY + y
 
       const brushColor_R = (brushColor >>> 16) & 0xff
       const brushColor_G = (brushColor >>> 8) & 0xff
@@ -302,11 +298,13 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
   }
 
   return (
-    <>
+    // set group scale to 0 when disabled to prevent interfering with parent group bounding box calculation
+    <group visible={!disabled} scale={disabled ? [0, 0, 0] : [1, 1, 1]}>
       {/* top */}
       <Side
         face="up"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -316,6 +314,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="down"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -325,6 +324,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="south"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -334,6 +334,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="north"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -343,6 +344,7 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="east"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
@@ -352,11 +354,12 @@ const PlayerHeadPainter: FC<PlayerHeadPainterProps> = ({
       <Side
         face="west"
         layer={headPainterLayer}
+        disabled={disabled}
         handlePaint={handlePaint}
         handlePointerDown={handlePointerDown}
         handlePointerMove={handlePointerMove}
       />
-    </>
+    </group>
   )
 }
 

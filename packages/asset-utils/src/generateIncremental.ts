@@ -9,14 +9,14 @@ import {
 import { createHash } from 'crypto'
 import { Open } from 'unzipper'
 import { rimraf } from 'rimraf'
-import { spawnSync } from 'child_process'
+import { sync as spawnSync } from 'cross-spawn'
 import {
   BlockStatesFile,
   FileInfosJson,
   ModelFile,
   ServerJarGeneratedRegistryData,
 } from './types'
-import { VersionMetadata } from '@depl/shared'
+import { IconAtlasGeneratorConfig, VersionMetadata } from '@depl/shared'
 import {
   blockstatesDefaultValues,
   renderableBlockEntityModelTextures,
@@ -28,11 +28,7 @@ import {
   fetchVersionData,
 } from './cdn'
 
-import {
-  coerce as semverCoerce,
-  satisfies as semverSatisfies,
-  compare as semverCompare,
-} from 'semver'
+import { satisfies as semverSatisfies, compareVersions } from 'compare-versions'
 import { glob } from 'glob'
 import { parseArgs } from 'util'
 
@@ -55,10 +51,13 @@ const argsParseResult = parseArgs({
   args,
   strict: false,
   options: {
-    force: { type: 'boolean', short: 'f' },
+    force: { type: 'boolean', short: 'f', default: false },
+    'skip-icon-atlas': { type: 'boolean', default: false },
   },
 })
 const forceGenerateMode = argsParseResult.values.force
+const skipGeneratingIconAtlas = argsParseResult.values['skip-icon-atlas']
+
 if (forceGenerateMode) {
   console.warn(
     '[WARN] Force generation mode activated. This will ignore already generated data and regenerate again.',
@@ -66,11 +65,7 @@ if (forceGenerateMode) {
 }
 
 const mcVersion = argsParseResult.positionals[0]
-const semveredMcVersion = semverCoerce(mcVersion)?.version
-if (semveredMcVersion == null) {
-  console.error(`Invalid version ${mcVersion}`)
-  process.exit(1)
-} else if (!semverSatisfies(semveredMcVersion, '>=1.19.4')) {
+if (!semverSatisfies(mcVersion, '>=1.19.4')) {
   console.error(
     `Minimum target version must be 1.19.4 or above, but got ${mcVersion}`,
   )
@@ -102,14 +97,12 @@ if (releaseVersions.find((v) => v.id === mcVersion) == null) {
 
 // 1.19.4 <= versions to process <= targetVersion
 const versions = releaseVersions
-  .filter((v) =>
-    semverSatisfies(semverCoerce(v.id)!, `>=1.19.4 <=${semveredMcVersion}`),
-  )
-  .sort((a, b) => semverCompare(semverCoerce(a.id)!, semverCoerce(b.id)!))
+  .filter((v) => semverSatisfies(v.id, `>=1.19.4 <=${mcVersion}`))
+  .sort((a, b) => compareVersions(a.id, b.id))
 
 const sortedHardcodedDataFolders = (
   await readdir(pathJoin(pathResolve(), 'hardcoded'))
-).sort((a, b) => semverCompare(semverCoerce(a)!, semverCoerce(b)!))
+).sort((a, b) => compareVersions(a, b))
 
 const fileInfos = new Map<
   string,
@@ -120,6 +113,13 @@ const fileInfos = new Map<
   }
 >()
 const blockRenderables: Record<string, boolean> = {}
+const allRenderableItems: Record<
+  string,
+  {
+    kind: 'block' | 'item'
+    defaultBlockstates: Record<string, string>
+  }
+> = {}
 
 for (const versionToDownload of versions) {
   const versionId = versionToDownload.id
@@ -197,9 +197,11 @@ for (const versionToDownload of versions) {
 
   const filesToExtract = zip.files.filter(
     (f) =>
-      /^assets\/minecraft\/(blockstates|models|font|textures\/(block|colormap|entity\/player|font|item))\//.test(
-        f.path,
-      ) || renderableBlockEntityModelTextures.includes(f.path),
+      (f.type === 'File' &&
+        /^assets\/minecraft\/(blockstates|models|font|textures\/(block|colormap|entity\/player|font|item))\//.test(
+          f.path,
+        )) ||
+      renderableBlockEntityModelTextures.includes(f.path),
   )
   let fileExtractSkipCount = 0
   for (const file of filesToExtract) {
@@ -291,7 +293,7 @@ for (const versionToDownload of versions) {
   // generate server resource reports file to get blocks.json and items.json
   console.log('Generating server.jar resource reports...')
   const serverJarfilePath = pathJoin(workdirFolderPath, 'server.jar')
-  spawnSync(
+  const spawnResult = spawnSync(
     'java',
     [
       '-DbundlerMainClass=net.minecraft.data.Main',
@@ -303,6 +305,11 @@ for (const versionToDownload of versions) {
       cwd: workdirFolderPath,
     },
   )
+  if (spawnResult.status !== 0) {
+    throw new Error(
+      `server.jar resource report generation failed with error: ${spawnResult.stderr}`,
+    )
+  }
 
   const reportsPath = pathJoin(workdirFolderPath, 'generated', 'reports')
 
@@ -382,13 +389,19 @@ for (const versionToDownload of versions) {
     }
 
     if (canRender) {
-      const defaultBlockstateValues = [
-        ...Object.entries(blockstatesDefaultValues[blockName] ?? {}),
+      const defaultBlockstateValues = blockstatesDefaultValues[blockName] ?? {}
+      allRenderableItems[blockName] = {
+        kind: 'block',
+        defaultBlockstates: defaultBlockstateValues,
+      }
+
+      const defaultBlockstatesEntries = [
+        ...Object.entries(defaultBlockstateValues),
       ]
       const stringifiedDefaultBlockstateValues =
-        defaultBlockstateValues.length > 0
+        defaultBlockstatesEntries.length > 0
           ? '[' +
-            defaultBlockstateValues
+            defaultBlockstatesEntries
               .map(([key, value]) => `${key}=${value}`)
               .join(',') +
             ']'
@@ -418,10 +431,29 @@ for (const versionToDownload of versions) {
   const items = Object.keys(generatedRegistryJson['minecraft:item'].entries)
     .map((k) => k.match(/^minecraft:(.+)$/)![1])
     .filter((i) => i !== 'air')
+
   await writeFile(
     pathJoin(assetsMinecraftFolderPath, 'items.json'),
     JSON.stringify({ items }),
   )
+  items.forEach((item) => {
+    if (allRenderableItems[item] != null) return
+    allRenderableItems[item] = {
+      kind: 'item',
+      defaultBlockstates: {},
+    }
+  })
+
+  // generate icon atlas
+  if (!skipGeneratingIconAtlas) {
+    console.log('Generating icon atlas image')
+    await generateIconAtlas({
+      items: allRenderableItems,
+      targetGameVersion: versionId,
+      workdirPath: workdirFolderPath,
+      outputDirPath: assetsMinecraftFolderPath,
+    })
+  }
 
   const versionData = await fetchVersionData(versionId)
 
@@ -543,4 +575,48 @@ async function canRenderToBlockDisplay(
 
 function makeHash(buf: Buffer) {
   return createHash('sha1').update(buf).digest('hex')
+}
+
+async function generateIconAtlas({
+  items,
+  targetGameVersion,
+  workdirPath,
+  outputDirPath,
+}: {
+  items: IconAtlasGeneratorConfig['items']
+  targetGameVersion: string
+  workdirPath: string
+  outputDirPath: string
+}) {
+  const configFilePath = pathJoin(
+    workdirPath,
+    'icon-atlas-generator-config.json',
+  )
+  const config: IconAtlasGeneratorConfig = { targetGameVersion, items }
+
+  await writeFile(configFilePath, JSON.stringify(config))
+
+  console.log('----- Start of log from icon-atlas-generator -----')
+
+  // assume we use pnpm
+  const result = spawnSync(
+    'pnpm',
+    [
+      'iconatlasgen',
+      'start',
+      `--config=${configFilePath}`,
+      `--out-dir=${outputDirPath}`,
+    ],
+    {
+      cwd: pathResolve('../../'), // project root
+      stdio: 'inherit',
+    },
+  )
+
+  console.log('----- End of log from icon-atlas-generator -----')
+
+  if (result.status !== 0) {
+    const err = result.error ?? result.stderr?.toString()
+    throw new Error(`Icon atlas generator failed with error: ${err}`)
+  }
 }

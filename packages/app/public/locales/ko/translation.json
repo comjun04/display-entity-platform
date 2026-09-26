@@ -33,13 +33,15 @@
       "title": "블록 디스플레이 추가",
       "search": {
         "label": "검색"
-      }
+      },
+      "mobileShowId": "블록 ID 표시"
     },
     "itemDisplaySelect": {
       "title": "아이템 디스플레이 추가",
       "search": {
         "label": "검색"
-      }
+      },
+      "mobileShowId": "아이템 ID 표시"
     },
     "exportToMinecraft": {
       "title": "Minecraft로 내보내기",
@@ -97,6 +99,11 @@
             "validateNbtInput": {
               "title": "NBT 입력값 검사 (느림)",
               "desc": "프로젝트 메인 NBT와 각 엔티티의 NBT 값을 파싱하고 검사하여, 올바르지 않은 값이 있으면 경고합니다. 대규모 프로젝트에서 명령어 생성 속도가 느려질 수 있습니다."
+            },
+            "settingsImportAndExport": {
+              "title": "설정 가져오기 및 내보내기",
+              "import": "설정을 파일에서 가져오기",
+              "export": "설정을 파일로 내보내기"
             }
           }
         },
@@ -355,5 +362,11 @@
     "group": "그룹",
     "selectAll": "전체 선택",
     "delete": "삭제"
+  },
+  "crashFallback": {
+    "title": "DEPL이 예기치 못한 오류로 인해 다운되었습니다",
+    "tryRecover": "복구 시도",
+    "reloadApp": "앱 다시 로드",
+    "downloadAutosave": "가장 최신의 자동저장 데이터 다운로드"
   }
 }

@@ -39,8 +39,8 @@ let currentModalPromiseResolveFn:
   | PromiseWithResolvers<boolean>['resolve']
   | null = null
 
-export const useDialogStore = create(
-  immer<DialogState>((set, get) => ({
+export const useDialogStore = create<DialogState>()(
+  immer((set, get) => ({
     activeDialog: null,
     openDialog: (dialog) =>
       set((state) => {

@@ -2,7 +2,7 @@ import { Mutex } from 'async-mutex'
 
 import fetcher from '@/fetcher'
 import { stripMinecraftPrefix } from '@/lib/utils'
-import { AssetFileInfosCache, useCacheStore } from '@/stores/cacheStore'
+import { useCacheStore } from '@/stores/cacheStore'
 import type {
   BlockStateApplyModelInfo,
   BlockStatesFile,
@@ -10,6 +10,7 @@ import type {
 } from '@/types/base'
 
 import { getLogger } from '../logger'
+import { AssetFileInfosCache } from './assetFileInfo'
 
 const logger = getLogger('ResourceLoader/blockstates')
 

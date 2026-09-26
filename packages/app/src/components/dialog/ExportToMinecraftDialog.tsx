@@ -1,6 +1,5 @@
 import { useDebouncedEffect, useDebouncedState } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import JSZip from 'jszip'
 import {
   type ComponentPropsWithoutRef,
   type FC,
@@ -618,6 +617,7 @@ async function downloadAsDatapack(
     throw new Error('Invalid game version id')
   }
 
+  const JSZip = (await import('jszip')).default // use dynamic import to load module only when needed
   const zip = new JSZip()
   zip.file(
     'pack.mcmeta',

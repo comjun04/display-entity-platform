@@ -83,14 +83,18 @@ const BlockDisplay: FC<BlockDisplayProps> = ({
   if (thisEntity?.kind !== 'block') return null
 
   return (
-    <zeroScaledGroup ref={ref} name={`BlockDisplay ${id} ${type}`}>
+    <zeroScaledGroup
+      ref={ref}
+      name={`BlockDisplay ${id} ${type}`}
+      matrixAutoUpdate={false}
+    >
       <BoundingBoxForInstanced
         modelList={modelList}
         visible={thisEntitySelected}
         color="gold"
       />
 
-      <group onClick={onClick}>
+      <group onClick={onClick} matrixAutoUpdate={false}>
         {matchingBlockstatesModels.map((modelToApply, idx) => {
           const resourceLocation = modelToApply.model
           const modelId = `${id}|${resourceLocation}|x:${modelToApply.x}|y:${modelToApply.y}|${idx}`

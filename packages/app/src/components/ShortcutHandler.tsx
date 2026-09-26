@@ -135,9 +135,15 @@ const ShortcutHandler: FC = () => {
           case 'editor.duplicate':
             cloneSelectedEntities()
             break
-          case 'editor.groupOrUngroup':
-            toggleGroup()
+          case 'editor.groupOrUngroup': {
+            const selectedEntitiesCount =
+              useDisplayEntityStore.getState().selectedEntityIds.length
+            if (selectedEntitiesCount > 0) {
+              toggleGroup()
+            }
+
             break
+          }
           case 'editor.deleteEntity':
             deleteEntities(selectedEntityIds)
             break

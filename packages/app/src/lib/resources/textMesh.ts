@@ -9,13 +9,22 @@ import {
 } from 'three'
 
 import { getVersionMetadata } from '@/lib/queries/getVersionMetadata'
-import { useClassObjectCacheStore } from '@/stores/cacheStore'
 import { useProjectStore } from '@/stores/projectStore'
 
 import { createCharTexture as createBitmapFontCharTexture } from './font/bitmap'
 import { createCharTexture as createUnihexFontCharTexture } from './font/unihex'
 
 type Font = 'default' | 'uniform'
+interface FontGlyphData {
+  geometry: PlaneGeometry
+  texture: Texture
+  widthPixels: number
+  baseWidthPixels: number
+  heightPixels: number
+  advance: number
+  ascent: number
+}
+
 type CreateTextMeshArgs = {
   text: string // TODO: handle Raw JSON Text Format
   font: Font
@@ -26,6 +35,8 @@ type CreateTextMeshArgs = {
 
 const UNIT_PIXEL_SIZE = 0.025
 const backgroundGeometry = new PlaneGeometry(1, 1)
+
+const FontGlyphCache = new Map<string, FontGlyphData>()
 
 export async function createTextMesh({
   text,
@@ -187,9 +198,6 @@ async function createCharMesh(char: string, preferFont: Font, color: number) {
   let ascent!: number
 
   // check for cached glyph data
-  const { fontGlyphs: cache, setFontGlyph } =
-    useClassObjectCacheStore.getState()
-
   let fontKey: string = preferFont
   if (preferFont === 'uniform') {
     // unifont glyphs need to be treated separately by assetIndex id
@@ -199,7 +207,7 @@ async function createCharMesh(char: string, preferFont: Font, color: number) {
   }
   const key = `${fontKey};${char.charCodeAt(0).toString(16)}`
 
-  const d = cache.get(key)
+  const d = FontGlyphCache.get(key)
   if (d != null) {
     geometry = d.geometry
     texture = d.texture
@@ -243,7 +251,7 @@ async function createCharMesh(char: string, preferFont: Font, color: number) {
     texture.magFilter = NearestFilter
 
     // cache glyph data
-    setFontGlyph(key, {
+    FontGlyphCache.set(key, {
       geometry,
       texture,
       widthPixels: width,
