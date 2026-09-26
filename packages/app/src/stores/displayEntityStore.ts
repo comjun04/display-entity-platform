@@ -1,6 +1,6 @@
 import { cloneDeep, merge } from 'es-toolkit'
 import { nanoid } from 'nanoid'
-import { Box3, Euler, Vector3 } from 'three'
+import { Box3, Euler, Matrix4, Quaternion, Vector3 } from 'three'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
@@ -786,13 +786,22 @@ export const useDisplayEntityStore = create<DisplayEntityState>()(
 
     exportAll: () => {
       const { entities } = get()
-      const { entityRefs } = useEntityRefStore.getState()
+
+      const _positionVec = new Vector3()
+      const _rotationEuler = new Euler()
+      const _rotationQuat = new Quaternion()
+      const _scaleVec = new Vector3()
+      const _matrix = new Matrix4()
 
       const generateEntitySaveData: (
         entity: DisplayEntity,
       ) => DisplayEntitySaveDataItem = (entity) => {
-        const refData = entityRefs.get(entity.id)!
-        const transforms = refData.objectRef.current.matrix.toArray()
+        _positionVec.set(...entity.position)
+        _rotationEuler.set(...entity.rotation)
+        _rotationQuat.setFromEuler(_rotationEuler)
+        _scaleVec.set(...entity.size)
+        _matrix.compose(_positionVec, _rotationQuat, _scaleVec)
+        const transforms = _matrix.toArray()
 
         if (entity.kind === 'block') {
           return {
