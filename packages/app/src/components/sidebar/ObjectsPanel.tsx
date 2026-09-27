@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { useEditorStore } from '@/stores/editorStore'
 
-import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
+import { SidePanel, SidePanelContent, SidePanelTitle } from './panel-base'
 
 type ObjectItemProps = {
   id: string

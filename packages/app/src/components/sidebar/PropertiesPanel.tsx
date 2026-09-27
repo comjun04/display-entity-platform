@@ -34,9 +34,9 @@ import type {
 } from '@/types/base'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
-import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import { ColorPickerInput } from '../ui/ColorPicker'
 import { Switch } from '../ui/switch'
+import { SidePanel, SidePanelContent, SidePanelTitle } from './panel-base'
 
 const displayValue: (ModelDisplayPositionKey | null)[] = [
   null,
