@@ -6,6 +6,7 @@ import { getLogger } from '@/lib/logger'
 
 // ==========
 type DialogType =
+  | 'firstTimeWelcome'
   | 'welcome'
   | 'modal'
   | 'settings'

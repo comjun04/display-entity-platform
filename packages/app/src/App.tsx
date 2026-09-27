@@ -17,6 +17,7 @@ import Scene from './components/Scene'
 import Sidebar from './components/Sidebar'
 import ToastContainer from './components/ToastContainer'
 import ExportToMinecraftDialog from './components/dialog/ExportToMinecraftDialog'
+import FirstTimeWelcomeDialog from './components/dialog/FirstTimeWelcomeDialog'
 import Modal from './components/dialog/Modal.tsx'
 import PlayerHeadBakingDialog from './components/dialog/PlayerHeadBakingDialog'
 import SettingsDialog from './components/dialog/SettingsDialog'
@@ -84,9 +85,14 @@ const CrashFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
 
 function App() {
   useEffect(() => {
-    const { showWelcomeOnStartup } = useEditorStore.getState().settings.general
-    if (showWelcomeOnStartup) {
-      useDialogStore.getState().openDialog('welcome')
+    const { showWelcomeOnStartup, agreeMinecraftEula } =
+      useEditorStore.getState().settings.general
+    const { openDialog } = useDialogStore.getState()
+
+    if (!agreeMinecraftEula) {
+      openDialog('firstTimeWelcome')
+    } else if (showWelcomeOnStartup) {
+      openDialog('welcome')
     }
   }, [])
 
@@ -126,6 +132,7 @@ function App() {
 
             <Sidebar />
 
+            <FirstTimeWelcomeDialog />
             <WelcomeDialog />
             <Modal />
             <SettingsDialog />

@@ -6,6 +6,20 @@
     "openSourceNotice": "This app is free and open source. <projectLink>Full source code is available on <githubIcon /> GitHub.</projectLink>"
   },
   "dialog": {
+    "firstTimeWelcome": {
+      "title": "Welcome to <br /><styledTitle />",
+      "quickSetup": {
+        "title": "Quick Setup",
+        "fields": {
+          "language": "Language"
+        }
+      },
+      "agreeTerms": {
+        "desc": "You need to agree to these terms in order to use this app.",
+        "minecraftEula": "I agree to the <eulaLink>Minecraft End User License Agreement</eulaLink>"
+      },
+      "startButton": "Start!"
+    },
     "welcome": {
       "action": {
         "new": "Start with something new",
