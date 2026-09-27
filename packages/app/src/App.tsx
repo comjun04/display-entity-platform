@@ -16,13 +16,14 @@ import QuickActionPanel from './components/QuickActionPanel'
 import Scene from './components/Scene'
 import Sidebar from './components/Sidebar'
 import ToastContainer from './components/ToastContainer'
-import BlockDisplaySelectDialog from './components/dialog/BlockDisplaySelectDialog'
 import ExportToMinecraftDialog from './components/dialog/ExportToMinecraftDialog'
-import ItemDisplaySelectDialog from './components/dialog/ItemDisplaySelectDialog'
+import FirstTimeWelcomeDialog from './components/dialog/FirstTimeWelcomeDialog'
 import Modal from './components/dialog/Modal.tsx'
 import PlayerHeadBakingDialog from './components/dialog/PlayerHeadBakingDialog'
 import SettingsDialog from './components/dialog/SettingsDialog'
 import WelcomeDialog from './components/dialog/WelcomeDialog'
+import BlockDisplaySelectDialog from './components/dialog/display-selection/BlockDisplaySelectDialog.tsx'
+import ItemDisplaySelectDialog from './components/dialog/display-selection/ItemDisplaySelectDialog.tsx'
 import { Button } from './components/ui/button'
 import { TooltipProvider } from './components/ui/tooltip'
 import { queryClient } from './lib/query.ts'
@@ -84,9 +85,14 @@ const CrashFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
 
 function App() {
   useEffect(() => {
-    const { showWelcomeOnStartup } = useEditorStore.getState().settings.general
-    if (showWelcomeOnStartup) {
-      useDialogStore.getState().openDialog('welcome')
+    const { showWelcomeOnStartup, agreeMinecraftEula } =
+      useEditorStore.getState().settings.general
+    const { openDialog } = useDialogStore.getState()
+
+    if (!agreeMinecraftEula) {
+      openDialog('firstTimeWelcome')
+    } else if (showWelcomeOnStartup) {
+      openDialog('welcome')
     }
   }, [])
 
@@ -126,6 +132,7 @@ function App() {
 
             <Sidebar />
 
+            <FirstTimeWelcomeDialog />
             <WelcomeDialog />
             <Modal />
             <SettingsDialog />

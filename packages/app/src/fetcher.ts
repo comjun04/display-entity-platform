@@ -1,5 +1,5 @@
 import { CDNBaseUrl } from './constants'
-import { AssetFileInfosCache } from './stores/cacheStore'
+import { AssetFileInfosCache } from './lib/resources/assetFileInfo'
 import { useProjectStore } from './stores/projectStore'
 
 export default async function fetcher<T>(

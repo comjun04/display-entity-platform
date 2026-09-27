@@ -8,15 +8,24 @@ interface TitleProps {
   className?: string
 }
 export const Title: FC<TitleProps> = ({ className }) => {
+  return (
+    <h2 className={cn('text-3xl', className)}>
+      <span className="text-sky-200">D</span>isplay{' '}
+      <span className="text-sky-200">E</span>ntity{' '}
+      <span className="text-sky-200">Pl</span>atform
+    </h2>
+  )
+}
+
+interface TitleAreaProps {
+  className?: string
+}
+export const TitleArea: FC<TitleAreaProps> = ({ className }) => {
   const { t } = useTranslation()
 
   return (
     <div className={className}>
-      <h2 className="text-3xl">
-        <span className="text-sky-200">D</span>isplay{' '}
-        <span className="text-sky-200">E</span>ntity{' '}
-        <span className="text-sky-200">Pl</span>atform
-      </h2>
+      <Title />
       <span>{t(($) => $.branding.desc)}</span>
     </div>
   )

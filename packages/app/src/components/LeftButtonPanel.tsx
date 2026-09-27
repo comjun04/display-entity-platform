@@ -46,6 +46,69 @@ import {
 
 const logger = getLogger('LeftButtonPanel')
 
+const UndoButton: FC = () => {
+  const { t } = useTranslation()
+
+  const shortcutSettings = useEditorStore((state) => state.settings.shortcuts)
+  const { undoAvailable, undoHistory } = useHistoryStore(
+    useShallow((state) => ({
+      undoAvailable: state.undoStack.length > 0,
+      undoHistory: state.undoHistory,
+    })),
+  )
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <FloatingButton
+            onClick={() => undoHistory()}
+            disabled={!undoAvailable}
+          >
+            <LuUndo size={24} />
+          </FloatingButton>
+        }
+      />
+      <TooltipContent side="bottom">
+        {`${t(($) => $.editor.undo)} (${getFormattedShortcutKeyString(
+          shortcutSettings['general.undo'] ?? '',
+        )})`}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+const RedoButton: FC = () => {
+  const { t } = useTranslation()
+
+  const shortcutSettings = useEditorStore((state) => state.settings.shortcuts)
+  const { redoAvailable, redoHistory } = useHistoryStore(
+    useShallow((state) => ({
+      redoAvailable: state.redoStack.length > 0,
+      redoHistory: state.redoHistory,
+    })),
+  )
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <FloatingButton
+            onClick={() => redoHistory()}
+            disabled={!redoAvailable}
+          >
+            <LuRedo size={24} />
+          </FloatingButton>
+        }
+      />
+      <TooltipContent side="bottom">
+        {`${t(($) => $.editor.redo)} (${getFormattedShortcutKeyString(
+          shortcutSettings['general.redo'] ?? '',
+        )})`}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 const LeftButtonPanel: FC = () => {
   const { t } = useTranslation()
 
@@ -71,12 +134,6 @@ const LeftButtonPanel: FC = () => {
   )
   const { setOpenedDialog } = useDialogStore(
     useShallow((state) => ({ setOpenedDialog: state.openDialog })),
-  )
-  const { undoHistory, redoHistory } = useHistoryStore(
-    useShallow((state) => ({
-      undoHistory: state.undoHistory,
-      redoHistory: state.redoHistory,
-    })),
   )
 
   return (
@@ -189,34 +246,8 @@ const LeftButtonPanel: FC = () => {
       </DropdownMenu>
 
       <div className="flex flex-row gap-2">
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <FloatingButton onClick={() => undoHistory()}>
-                <LuUndo size={24} />
-              </FloatingButton>
-            }
-          />
-          <TooltipContent side="bottom">
-            {`${t(($) => $.editor.undo)} (${getFormattedShortcutKeyString(
-              shortcutSettings['general.undo'] ?? '',
-            )})`}
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <FloatingButton onClick={() => redoHistory()}>
-                <LuRedo size={24} />
-              </FloatingButton>
-            }
-          />
-          <TooltipContent side="bottom">
-            {`${t(($) => $.editor.redo)} (${getFormattedShortcutKeyString(
-              shortcutSettings['general.redo'] ?? '',
-            )})`}
-          </TooltipContent>
-        </Tooltip>
+        <UndoButton />
+        <RedoButton />
       </div>
 
       <Tooltip>

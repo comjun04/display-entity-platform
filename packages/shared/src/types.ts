@@ -11,6 +11,20 @@ export interface BlockStateApplyModelInfo {
   y?: number
 }
 
+export type BlockstatesData = {
+  blockstates: Map<
+    string,
+    {
+      states: Set<string>
+      default: string
+    }
+  >
+  models: {
+    when: Record<string, string[]>[]
+    apply: BlockStateApplyModelInfo[]
+  }[]
+}
+
 export type BlockStatesFile =
   | {
       variants:
@@ -62,6 +76,28 @@ export interface ModelElement {
     angle: number
     rescale?: boolean
   }
+}
+
+export type ModelData = {
+  textures: Record<
+    string,
+    | string
+    | {
+        // new textures map format added in minecraft 26.1
+        sprite: string
+        force_translucent: boolean
+      }
+  >
+  textureSize?: [number, number]
+  display: Record<
+    ModelDisplayPositionKey,
+    {
+      rotation?: Number3Tuple
+      translation?: Number3Tuple
+      scale?: Number3Tuple
+    }
+  >
+  elements: ModelElement[]
 }
 
 export interface ModelFile {

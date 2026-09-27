@@ -252,7 +252,7 @@ const TransformControls: FC = () => {
   }, [])
 
   const [handleObjectChangeFrameSync] = useRafCallback(
-    ({ axis }: { axis: OriginalTransformControls['axis'] }) => {
+    ({ axis: targetAxis }: { axis: OriginalTransformControls['axis'] }) => {
       // scale은 양수 값만 가질 수 있음
       const absoluteScale = pivot.scale.toArray().map(Math.abs) as Number3Tuple
       // state를 건드리기 전에 object3d에 먼저 scale 값을 세팅해야 음수 값일 경우 음수 <-> 양수로 계속 바뀌면서 생기는 깜빡거림을 방지할 수 있음
@@ -306,7 +306,7 @@ const TransformControls: FC = () => {
           alteredScale.copy(transformData.scale).multiply(pivot.scale)
           scaleToApply.copy(transformData.scale)
           ;(['x', 'y', 'z'] as const).forEach((axis) => {
-            if (axis != null && axis.toLowerCase().includes(axis)) {
+            if (targetAxis != null && targetAxis.toLowerCase().includes(axis)) {
               const initialAxisScale = transformData.scale[axis]
               const axisScaleDiff = alteredScale[axis] - initialAxisScale
 

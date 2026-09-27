@@ -9,12 +9,11 @@ import {
 } from 'three'
 
 import { getTextureColor } from '@/lib/utils'
-import {
-  AssetFileInfosCache,
-  useCacheStore,
-  useClassObjectCacheStore,
-} from '@/stores/cacheStore'
+import { useCacheStore } from '@/stores/cacheStore'
 import { useProjectStore } from '@/stores/projectStore'
+
+import { AssetFileInfosCache } from './assetFileInfo'
+import { stripSecondHeadLayer } from './player-head'
 
 const materialLoadMutexMap = new Map<string, Mutex>()
 
@@ -38,21 +37,21 @@ type TextureData =
           }
       )
     }
+
+const MaterialCache = new Map<string, MeshStandardMaterial>()
+
 export type LoadMaterialArgs = {
   textureData: TextureData
   modelResourceLocation: string
   textureLayer?: string
   tintindex?: number
 }
-
 export async function loadMaterial({
   textureData,
   modelResourceLocation,
   textureLayer,
   tintindex,
 }: LoadMaterialArgs) {
-  const { setMaterial } = useClassObjectCacheStore.getState()
-
   const { targetGameVersion } = useProjectStore.getState()
   const textureColor = getTextureColor(
     modelResourceLocation,
@@ -82,17 +81,16 @@ export async function loadMaterial({
     const mutex = materialLoadMutexMap.get(materialKey)!
     return await mutex.runExclusive(async () => {
       // check for cached
-      const { materials } = useClassObjectCacheStore.getState()
-      if (materials.has(materialKey)) {
+      if (MaterialCache.has(materialKey)) {
         return {
-          material: materials.get(materialKey)!,
+          material: MaterialCache.get(materialKey)!,
           materialKey,
         }
       }
 
       const material = await makeMaterial(textureData, textureColor)
 
-      setMaterial(materialKey, material)
+      MaterialCache.set(materialKey, material)
       return { material, materialKey }
     })
   } else {
@@ -111,11 +109,12 @@ export async function makeMaterial(
 
   let texture: Texture
   if (textureData.type === 'player_head' && !textureData.playerHead.baked) {
-    texture = new DataTexture(
-      new Uint8ClampedArray(textureData.playerHead.paintTexturePixels),
-      64,
-      64,
-    )
+    let paintTexturePixels = textureData.playerHead.paintTexturePixels
+    if (!textureData.playerHead.showSecondLayer) {
+      paintTexturePixels = stripSecondHeadLayer(paintTexturePixels)
+    }
+
+    texture = new DataTexture(new Uint8ClampedArray(paintTexturePixels), 64, 64)
     texture.needsUpdate = true
     texture.flipY = true
   } else {

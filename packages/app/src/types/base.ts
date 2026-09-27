@@ -20,6 +20,8 @@ export type {
 export type {
   AssetFileInfos,
   BackendAPIV1GetPlayerSkinResponse,
+  BlockstatesData,
+  ModelData,
   ModelFaceKey,
   ModelFile,
   TextureValue,
@@ -55,42 +57,6 @@ export type PartialNumber3Tuple = [
 
 export type CDNBlocksListResponse = {
   blocks: string[]
-}
-
-export type BlockstatesData = {
-  blockstates: Map<
-    string,
-    {
-      states: Set<string>
-      default: string
-    }
-  >
-  models: {
-    when: Record<string, string[]>[]
-    apply: BlockStateApplyModelInfo[]
-  }[]
-}
-
-export type ModelData = {
-  textures: Record<
-    string,
-    | string
-    | {
-        // new textures map format added in minecraft 26.1
-        sprite: string
-        force_translucent: boolean
-      }
-  >
-  textureSize?: [number, number]
-  display: Record<
-    ModelDisplayPositionKey,
-    {
-      rotation?: Number3Tuple
-      translation?: Number3Tuple
-      scale?: Number3Tuple
-    }
-  >
-  elements: ModelElement[]
 }
 
 export type CDNItemsListResponse = {

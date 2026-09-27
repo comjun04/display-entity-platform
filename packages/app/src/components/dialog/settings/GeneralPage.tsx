@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FaFileExport, FaFileImport } from 'react-icons/fa6'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 
@@ -113,7 +114,14 @@ const GeneralPage: FC = () => {
           />
         </Field>
 
-        <div className="flex gap-2">
+        <h4 className="text-lg font-semibold">
+          {t(
+            ($) =>
+              $.dialog.settings.page.general.options.settingsImportAndExport
+                .title,
+          )}
+        </h4>
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button
             onClick={() => {
               const inputElement = document.createElement('input')
@@ -134,7 +142,12 @@ const GeneralPage: FC = () => {
               }
             }}
           >
-            Import Settings from file
+            <FaFileImport />
+            {t(
+              ($) =>
+                $.dialog.settings.page.general.options.settingsImportAndExport
+                  .import,
+            )}
           </Button>
           <Button
             onClick={() => {
@@ -142,7 +155,12 @@ const GeneralPage: FC = () => {
               toast.success('Successfully exported settings to file')
             }}
           >
-            Export Settings to file
+            <FaFileExport />
+            {t(
+              ($) =>
+                $.dialog.settings.page.general.options.settingsImportAndExport
+                  .export,
+            )}
           </Button>
         </div>
       </FieldGroup>
