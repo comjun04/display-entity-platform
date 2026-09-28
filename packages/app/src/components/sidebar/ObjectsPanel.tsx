@@ -1,4 +1,4 @@
-import { type FC, useState } from 'react'
+import { type FC, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IoCubeOutline } from 'react-icons/io5'
 import { LuChevronRight, LuSmile, LuType } from 'react-icons/lu'
@@ -181,13 +181,82 @@ const ObjectsPanel: FC = () => {
     ),
   )
 
+  // handle resizable panel
+  const contentRef = useRef<HTMLDivElement>(null)
+  const objectsRef = useRef<HTMLDivElement>(null)
+  const handleRef = useRef<HTMLButtonElement>(null)
+  const dragStart = useRef<{ y: number; height: number } | null>(null)
+  const [contentHeight, setContentHeight] = useState<number | null>(null)
+
+  const resizeContent = (height: number) => {
+    const objects = objectsRef.current
+    const handle = handleRef.current
+    if (!objects || !handle) return
+
+    const maxHeight = window.innerHeight * 0.8
+    const minHeight = Math.min(
+      objects.scrollHeight + handle.offsetHeight,
+      maxHeight,
+    )
+    setContentHeight(Math.max(minHeight, Math.min(height, maxHeight)))
+  }
+
   return (
-    <SidePanel className="max-h-[50dvh] overflow-x-auto">
+    <SidePanel>
       <SidePanelTitle>{t(($) => $.sidebar.objectsPanel.title)}</SidePanelTitle>
-      <SidePanelContent>
-        {rootEntityIds.map((id) => (
-          <ObjectItem key={id} id={id} />
-        ))}
+      <SidePanelContent
+        ref={contentRef}
+        className="flex max-h-[80dvh] min-h-0 flex-col overflow-hidden"
+        style={{
+          height: contentHeight ?? undefined,
+        }}
+      >
+        <div className="min-h-0 flex-1 overflow-auto">
+          <div ref={objectsRef}>
+            {rootEntityIds.map((id) => (
+              <ObjectItem key={id} id={id} />
+            ))}
+          </div>
+        </div>
+        <button
+          ref={handleRef}
+          type="button"
+          aria-label="Resize objects panel"
+          className="flex h-3 w-full shrink-0 cursor-ns-resize touch-none items-center justify-center rounded-sm text-neutral-500 transition hover:bg-neutral-800 hover:text-neutral-300 focus-visible:outline-2 focus-visible:outline-white"
+          onPointerDown={(evt) => {
+            if (evt.button !== 0) return
+            evt.preventDefault()
+            dragStart.current = {
+              y: evt.clientY,
+              height: contentRef.current?.getBoundingClientRect().height ?? 0,
+            }
+            evt.currentTarget.setPointerCapture(evt.pointerId)
+          }}
+          onPointerMove={(evt) => {
+            const start = dragStart.current
+            if (start) resizeContent(start.height + evt.clientY - start.y)
+          }}
+          onPointerUp={(evt) => {
+            const start = dragStart.current
+            if (start) resizeContent(start.height + evt.clientY - start.y)
+            dragStart.current = null
+            evt.currentTarget.releasePointerCapture(evt.pointerId)
+          }}
+          onPointerCancel={() => {
+            dragStart.current = null
+          }}
+          onKeyDown={(evt) => {
+            if (evt.key !== 'ArrowUp' && evt.key !== 'ArrowDown') return
+            evt.preventDefault()
+            const height =
+              contentHeight ??
+              contentRef.current?.getBoundingClientRect().height ??
+              0
+            resizeContent(height + (evt.key === 'ArrowDown' ? 24 : -24))
+          }}
+        >
+          <span className="h-1 w-8 rounded-full bg-current" />
+        </button>
       </SidePanelContent>
     </SidePanel>
   )
