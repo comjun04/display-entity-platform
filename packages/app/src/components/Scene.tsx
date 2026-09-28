@@ -19,6 +19,7 @@ import DragSelectControl from './DragSelectControl'
 import { InstancedMeshesRootGroup } from './InstancedMeshesRootGroup'
 import ShortcutHandler from './ShortcutHandler'
 import TransformControls from './TransformControls'
+import NorthIndicator from './canvas/NorthIndicator'
 
 const Perf = lazy(() => import('./Perf'))
 
@@ -197,6 +198,7 @@ const Scene: FC = () => {
         infiniteGrid
         side={DoubleSide}
       />
+      <NorthIndicator position={[0.5, 0, -0.5]} visible={!headPainterEnabled} />
 
       <Axes lineScale={500} />
       {/* negative side */}
