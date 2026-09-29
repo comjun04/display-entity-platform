@@ -85,8 +85,8 @@ type EditorState = {
   resetProject: () => void
 }
 
-export const useEditorStore = create(
-  immer<EditorState>((set) => {
+export const useEditorStore = create<EditorState>()(
+  immer((set) => {
     const initialSettings = getStoredSettings()
     globalThis.__depl_alertUncaughtError =
       initialSettings?.debug?.alertUncaughtError

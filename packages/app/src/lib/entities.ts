@@ -25,7 +25,7 @@ export async function createNewEntities(
   const { createNew } = useDisplayEntityStore.getState()
   const createdEntities = await createNew(params)
 
-  if (!skipHistoryAdd) {
+  if (!skipHistoryAdd && createdEntities.length > 0) {
     useHistoryStore.getState().addHistory({
       type: 'createEntities',
       beforeState: {},
@@ -75,7 +75,7 @@ export function batchSetEntityTransformation(
       .transformControl.setSelectedEntitiesTransformationUpdateFlag(true)
   }
 
-  if (!skipHistoryAdd) {
+  if (!skipHistoryAdd && data.length > 0) {
     const historyData = data
       .map((item) => {
         const entity = entities.get(item.id)
@@ -370,7 +370,7 @@ export function deleteEntities(entityIds: string[], skipHistoryAdd = false) {
 
   const deletedEntities = deleteEntities(entityIds)
 
-  if (!skipHistoryAdd) {
+  if (!skipHistoryAdd && deletedEntities.length > 0) {
     useHistoryStore.getState().addHistory({
       type: 'deleteEntities',
       beforeState: { entities: deletedEntities },
@@ -386,6 +386,7 @@ export function groupEntities(
   const { entities, groupEntities } = useDisplayEntityStore.getState()
 
   const targetEntities = targetEntityIds.map((id) => entities.get(id)!)
+  if (targetEntities.length < 1) return
 
   const firstEntityParentId = targetEntities[0].parent
   if (!targetEntities.every((e) => e.parent === firstEntityParentId)) {

@@ -72,17 +72,27 @@ export default class AutosaveService {
     return window.localStorage.getItem(AUTOSAVE_KEY) != null
   }
 
-  async loadSave() {
+  getSave() {
     const saveDataEncoded = window.localStorage.getItem(AUTOSAVE_KEY)
     if (saveDataEncoded == null) {
-      throw new Error('Autosave data does not exist')
+      logger.warn('Autosave data does not exist')
+      return null
     }
 
     logger.log('loading autosaved data')
 
     // base64 decode
     const saveData = decodeBase64ToBinary(saveDataEncoded)
-    await openFromFile(new Blob([saveData]))
+    return new Blob([saveData])
+  }
+
+  async loadSave() {
+    const saveDataBlob = this.getSave()
+    if (saveDataBlob == null) {
+      throw new Error('Autosave data does not exist')
+    }
+
+    await openFromFile(saveDataBlob)
   }
 
   deleteSave() {

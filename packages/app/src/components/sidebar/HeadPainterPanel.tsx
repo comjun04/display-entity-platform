@@ -7,9 +7,9 @@ import { useDisplayEntityStore } from '@/stores/displayEntityStore'
 import { type HeadPainterLayer, useEditorStore } from '@/stores/editorStore'
 import { isItemDisplayPlayerHead } from '@/types/guards'
 
-import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import { ColorPickerInput } from '../ui/ColorPicker'
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
+import { SidePanel, SidePanelContent, SidePanelTitle } from './panel-base'
 
 const HeadPainterPanel: FC = () => {
   const { brushColor, layer, mineskinApiKeyFilled } = useEditorStore(

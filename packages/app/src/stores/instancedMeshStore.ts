@@ -89,6 +89,8 @@ export class InstancedMeshManager {
       )
       dummyMesh.instanceMatrix.needsUpdate = true
 
+      dummyMesh.matrixAutoUpdate = false
+
       const newBatch: InstancedMeshBatchData = {
         key: resourceLocation,
         status: 'loading', // indicate as loading
@@ -132,6 +134,8 @@ export class InstancedMeshManager {
           newMesh.instanceMatrix.needsUpdate = true
           newMesh.geometry.computeBoundingBox()
 
+          newMesh.matrixAutoUpdate = false
+
           batch.mesh.dispose()
 
           batch.mesh = newMesh
@@ -170,6 +174,8 @@ export class InstancedMeshManager {
           batch.capacity * 16,
         )
         newMesh.instanceMatrix.needsUpdate = true
+
+        newMesh.matrixAutoUpdate = false
 
         batch.mesh = newMesh
         batch.capacity *= 2
@@ -298,29 +304,19 @@ export class InstancedMeshManager {
             )
             .premultiply(ReverseHalfBlockTranslatedMatrix)
             .premultiply(
-              // set x rotation
+              // set xy rotation
               new Matrix4().makeRotationFromQuaternion(
                 new Quaternion().setFromEuler(
                   new Euler(
                     MathUtils.degToRad(-1 * instance.rotation[0]),
-                    0,
-                    0,
-                  ),
-                ),
-              ),
-            )
-            .premultiply(
-              // set y rotation
-              new Matrix4().makeRotationFromQuaternion(
-                new Quaternion().setFromEuler(
-                  new Euler(
-                    0,
                     MathUtils.degToRad(-1 * instance.rotation[1]),
                     0,
+                    'YXZ',
                   ),
                 ),
               ),
             )
+
             .premultiply(HalfBlockTranslatedMatrix)
           _matrix.multiply(tempRotatedMatrix4)
         }
@@ -430,27 +426,29 @@ export interface InstancedMeshStoreState {
     data: Partial<Omit<MinimalInstancedMeshBatchData, 'key'>>,
   ) => void
 }
-export const useInstancedMeshStore = create<InstancedMeshStoreState>((set) => ({
-  batches: new Map(),
+export const useInstancedMeshStore = create<InstancedMeshStoreState>()(
+  (set) => ({
+    batches: new Map(),
 
-  _addBatch: (key, data) =>
-    set((state) => {
-      const batchesDraft = new Map(state.batches)
-      batchesDraft.set(key, { key, ...data })
-      return { batches: batchesDraft }
-    }),
-  _updateBatchInfo: (key, data) =>
-    set((state) => {
-      const batchesDraft = new Map(state.batches)
-      const batch = batchesDraft.get(key)
-      if (batch == null) {
-        return {}
-      }
+    _addBatch: (key, data) =>
+      set((state) => {
+        const batchesDraft = new Map(state.batches)
+        batchesDraft.set(key, { key, ...data })
+        return { batches: batchesDraft }
+      }),
+    _updateBatchInfo: (key, data) =>
+      set((state) => {
+        const batchesDraft = new Map(state.batches)
+        const batch = batchesDraft.get(key)
+        if (batch == null) {
+          return {}
+        }
 
-      Object.assign(batch, data)
-      return { batches: batchesDraft }
-    }),
-}))
+        Object.assign(batch, data)
+        return { batches: batchesDraft }
+      }),
+  }),
+)
 
 /**
  * Gets flattened matrix elements with all matrixes are correctly zero-scaled.

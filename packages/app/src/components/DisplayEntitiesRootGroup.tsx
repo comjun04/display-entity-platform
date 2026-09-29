@@ -18,7 +18,11 @@ const DisplayentitiesRootGroup: FC = () => {
   )
 
   return (
-    <group name="Display Entities" ref={rootGroupRefData.objectRef}>
+    <group
+      name="Display Entities"
+      ref={rootGroupRefData.objectRef}
+      matrixAutoUpdate={false}
+    >
       {entityIds.map((id) => (
         <DisplayEntity key={id} id={id} />
       ))}

@@ -119,7 +119,7 @@ const Sidebar: FC = () => {
           <LuEllipsisVertical />
         </div>
 
-        <div className="flex h-full flex-col gap-2 overflow-y-auto">
+        <div className="flex h-full flex-col gap-2 overflow-y-auto *:shrink-0">
           <ObjectsPanel />
           {headPainterEnabled && <HeadPainterPanel />}
           <TransformsPanel />

@@ -7,7 +7,7 @@ import {
   Disclaimer,
   OpenSourceNotice,
   SpecialThanks,
-  Title,
+  TitleArea,
 } from '@/components/brandings'
 import { clearProject } from '@/lib/actions'
 import { openFileFromUserSelect } from '@/lib/file-handler'
@@ -49,7 +49,7 @@ const WelcomeDialog: FC = () => {
   return (
     <Dialog title="" open={isOpen} onClose={closeDialog}>
       <div className="flex h-full flex-col gap-2 overflow-auto">
-        <Title />
+        <TitleArea />
         <div className="h-full overflow-y-auto pt-4 pb-8">
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex-1">

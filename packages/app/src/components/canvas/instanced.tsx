@@ -99,5 +99,5 @@ export const InstancedModel: FC<InstacedModelProps> = ({
     }
   })
 
-  return <group ref={objectRef} matrixWorldAutoUpdate />
+  return <group ref={objectRef} matrixAutoUpdate={false} />
 }

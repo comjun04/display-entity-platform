@@ -10,8 +10,8 @@ import { useEditorStore } from '@/stores/editorStore'
 import { useEntityRefStore } from '@/stores/entityRefStore'
 import type { PartialNumber3Tuple } from '@/types/base'
 
-import { SidePanel, SidePanelContent, SidePanelTitle } from '../SidePanel'
 import XYZInput from './XYZInput'
+import { SidePanel, SidePanelContent, SidePanelTitle } from './panel-base'
 
 const logger = getLogger('TransformsPanel')
 

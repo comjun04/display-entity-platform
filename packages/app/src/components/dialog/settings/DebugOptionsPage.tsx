@@ -1,5 +1,5 @@
 import { reloadResources } from 'i18next'
-import type { FC } from 'react'
+import { type FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
@@ -20,6 +20,16 @@ const DebugOptionsPage: FC = () => {
       setSettings: state.setSettings,
     })),
   )
+
+  const [throwErrorFlag, setThrowErrorFlag] = useState(false)
+  useEffect(() => {
+    // when flag is set, flip the flag to false and force crash
+    if (throwErrorFlag) {
+      setThrowErrorFlag(false)
+
+      throw new Error('Intentionally thrown Error')
+    }
+  }, [throwErrorFlag])
 
   return (
     <>
@@ -142,6 +152,19 @@ const DebugOptionsPage: FC = () => {
           >
             Reload translations
           </Button>
+        </div>
+
+        <div className="flex flex-col gap-2 rounded bg-red-50 p-2 dark:bg-red-950">
+          <div className="text-lg">Danger Zone</div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                setThrowErrorFlag(true)
+              }}
+            >
+              Throw React Error
+            </Button>
+          </div>
         </div>
       </FieldGroup>
     </>

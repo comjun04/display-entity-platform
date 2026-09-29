@@ -42,6 +42,8 @@ const DefaultShortcuts = {
 export const settingsSchema = z.object({
   general: z
     .object({
+      agreeMinecraftEula: z.boolean().default(false),
+
       language: z.enum(['en', 'ko']).default('en'),
       showWelcomeOnStartup: z.boolean().default(true),
       forceUnifont: z.boolean().default(false),

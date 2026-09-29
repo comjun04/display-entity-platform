@@ -5,7 +5,16 @@ export const CDNBaseUrl = import.meta.env.VITE_CDN_BASE_URL
 export const BackendHost = import.meta.env.VITE_BACKEND_HOST
 /* eslint-enable @typescript-eslint/no-unsafe-assignment */
 
-export const GameVersions = [
+export const GameVersions: {
+  id: string
+  label: string
+  datapackVersion: number
+}[] = [
+  {
+    id: '26.1',
+    label: '26.1',
+    datapackVersion: 101,
+  },
   {
     id: '1.21.11',
     label: '1.21.11',
