@@ -4,6 +4,7 @@ import type {
   ModelDisplayPositionKey,
   ModelElement,
   Number3Tuple,
+  PlayerHeadProperties,
 } from '@depl/shared'
 import type { MutableRefObject, RefCallback } from 'react'
 import type { Matrix4Tuple } from 'three'
@@ -15,6 +16,7 @@ export type {
   ModelDisplayPositionKey,
   ModelElement,
   Number3Tuple,
+  PlayerHeadProperties,
 }
 
 export type {
@@ -115,20 +117,6 @@ export type ItemDisplayEntity = BaseDisplayEntity & {
   type: string
   display: ModelDisplayPositionKey | null
   playerHeadProperties?: PlayerHeadProperties // will be available if type === 'player_head'
-}
-
-export interface PlayerHeadProperties {
-  texture:
-    | {
-        baked: true
-        url: string
-      }
-    | {
-        baked: false
-        // paintTexture: string // base64 string of texture
-        paintTexturePixels: number[]
-      }
-    | null
 }
 
 export type TextDisplayAlignment = 'left' | 'center' | 'right'

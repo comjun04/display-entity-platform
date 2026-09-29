@@ -115,6 +115,20 @@ export interface ModelFile {
   texture_size?: [number, number]
 }
 
+export interface PlayerHeadProperties {
+  texture:
+    | {
+        baked: true
+        url: string
+      }
+    | {
+        baked: false
+        // paintTexture: string // base64 string of texture
+        paintTexturePixels: number[]
+      }
+    | null
+}
+
 // other asset cdn data
 
 export type VersionMetadata = {
