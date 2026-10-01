@@ -16,6 +16,7 @@ const modelDataCache = new Map<
   string,
   {
     data: ModelData
+    isBlockShapedItemModel: boolean
   }
 >()
 const modelDataLoadMutexMap = new Map<string, Mutex>()
@@ -79,6 +80,11 @@ export async function loadModel(resourceLocation: string) {
 
     logger.log(`Loading model for ${resourceLocation}`)
 
+    const isItemModel =
+      stripMinecraftPrefix(resourceLocation).startsWith('item/')
+
+    let isBlockShapedItemModel = false
+
     let textures: Record<string, string> = {}
 
     let display = {} as ModelData['display']
@@ -141,6 +147,10 @@ export async function loadModel(resourceLocation: string) {
           }
         }
       } else {
+        if (isItemModel && resourceLocationData.parent?.startsWith('block/')) {
+          isBlockShapedItemModel = true
+        }
+
         // parent 값이 있다면 재귀호출로 parent의 model 데이터를 불러오도록 처리
         await f(stripMinecraftPrefix(resourceLocationData.parent))
       }
@@ -160,7 +170,8 @@ export async function loadModel(resourceLocation: string) {
     // setCachedModelData(key, newModelData, isBlockShapedItemModel)
     modelDataCache.set(key, {
       data: newModelData,
+      isBlockShapedItemModel,
     })
-    return { data: newModelData }
+    return { data: newModelData, isBlockShapedItemModel }
   })
 }
