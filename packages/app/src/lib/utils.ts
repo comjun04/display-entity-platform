@@ -83,7 +83,7 @@ export function isValidTextureUrl(url: string) {
 }
 
 type ItemModelBorderFaceKey = Exclude<ModelFaceKey, 'north' | 'south'>
-const BUILTIN_ITEM_MODEL_Z_OFFSET = 8
+const BUILTIN_ITEM_MODEL_OFFSET = 8
 export async function generateBuiltinItemModel(
   textureResourceLocation: string,
   layerNumber: number,
@@ -95,8 +95,8 @@ export async function generateBuiltinItemModel(
   } = {
     elements: [
       {
-        from: [0, 0, -0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET],
-        to: [16, 16, 0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET],
+        from: [-8, -8, -0.5],
+        to: [8, 8, 0.5],
         faces: {
           north: { uv: [16, 0, 0, 16], texture: layerId },
           south: { uv: [0, 0, 16, 16], texture: layerId },
@@ -200,14 +200,14 @@ export async function generateBuiltinItemModel(
   for (const borderGroup of mergedPixelBorders) {
     const element: ModelElement = {
       from: [
-        borderGroup.rangeStart[0],
-        16 - (borderGroup.rangeEnd[1] + 1),
-        -0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET,
+        borderGroup.rangeStart[0] - BUILTIN_ITEM_MODEL_OFFSET,
+        16 - (borderGroup.rangeEnd[1] + 1) - BUILTIN_ITEM_MODEL_OFFSET,
+        -0.5,
       ],
       to: [
-        borderGroup.rangeEnd[0] + 1,
-        16 - borderGroup.rangeStart[1],
-        0.5 + BUILTIN_ITEM_MODEL_Z_OFFSET,
+        borderGroup.rangeEnd[0] + 1 - BUILTIN_ITEM_MODEL_OFFSET,
+        16 - borderGroup.rangeStart[1] - BUILTIN_ITEM_MODEL_OFFSET,
+        0.5,
       ],
       faces: {
         [borderGroup.direction]: {

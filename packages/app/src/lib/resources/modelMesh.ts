@@ -144,6 +144,7 @@ export type LoadModelMeshArgs = {
   textures: ModelData['textures']
   entityKind: 'block' | 'item'
   isItemModel: boolean
+  isBlockShapedItemModel: boolean
   playerHeadData?: {
     textureData: NonNullable<PlayerHeadProperties['texture']>
     showSecondLayer: boolean
@@ -155,6 +156,7 @@ export async function generateModelMeshIngredients({
   textures,
   entityKind,
   isItemModel,
+  isBlockShapedItemModel,
   playerHeadData,
 }: LoadModelMeshArgs) {
   const mergedGeometries: BufferGeometry[] = []
@@ -439,7 +441,12 @@ export async function generateModelMeshIngredients({
     const vec1 = centerVec.clone().sub(rotationOriginVec)
     const vec2 = rotationOriginVec
       .clone()
-      .subScalar(entityKind === 'item' ? 0.5 : 0)
+      .subScalar(
+        entityKind === 'item' &&
+          (isBlockShapedItemModel || modelResourceLocation.startsWith('block/'))
+          ? 0.5
+          : 0,
+      )
 
     // rotation origin 적용할 때
     // 1. centerVec - rotationOriginVec 위치로 이동 => 회전 중심위치가 (0,0,0)에 위치하도록 함

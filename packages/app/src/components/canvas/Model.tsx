@@ -198,6 +198,7 @@ const Model: FC<ModelNewProps> = ({
         textures: modelData.textures,
         entityKind,
         isItemModel,
+        isBlockShapedItemModel: modelDataTemp.isBlockShapedItemModel,
         playerHeadData,
       }).catch((err) => {
         logger.error(`Failed to load model mesh for ${initialResourceLocation}`)

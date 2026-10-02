@@ -489,7 +489,8 @@ async function prepareMeshIngredients(
   resourceLocation: string,
   entityKind: 'block' | 'item',
 ) {
-  const { data: modelData } = await loadModel(resourceLocation)
+  const { data: modelData, isBlockShapedItemModel } =
+    await loadModel(resourceLocation)
   const isItemModel = stripMinecraftPrefix(resourceLocation).startsWith('item/')
 
   const meshIngredients = await generateModelMeshIngredients({
@@ -498,6 +499,7 @@ async function prepareMeshIngredients(
     textures: modelData.textures,
     entityKind,
     isItemModel,
+    isBlockShapedItemModel,
     playerHeadData: undefined,
   })
   if (meshIngredients == null) {
