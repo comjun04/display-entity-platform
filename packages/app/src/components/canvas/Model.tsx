@@ -200,6 +200,7 @@ const Model: FC<ModelNewProps> = ({
         isItemModel,
         isBlockShapedItemModel: modelDataTemp.isBlockShapedItemModel,
         playerHeadData,
+        gameVersion: targetGameVersion,
       }).catch((err) => {
         logger.error(`Failed to load model mesh for ${initialResourceLocation}`)
         logger.error(err)
@@ -236,6 +237,7 @@ const Model: FC<ModelNewProps> = ({
     modelDataLoading,
     meshLoaded,
     playerHeadData,
+    targetGameVersion,
   ])
 
   useEffect(() => {

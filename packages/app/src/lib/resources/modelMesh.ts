@@ -1,3 +1,4 @@
+import { satisfies } from 'compare-versions'
 import {
   BufferAttribute,
   BufferGeometry,
@@ -149,6 +150,7 @@ export type LoadModelMeshArgs = {
     textureData: NonNullable<PlayerHeadProperties['texture']>
     showSecondLayer: boolean
   }
+  gameVersion: string
 }
 export async function generateModelMeshIngredients({
   modelResourceLocation,
@@ -158,6 +160,7 @@ export async function generateModelMeshIngredients({
   isItemModel,
   isBlockShapedItemModel,
   playerHeadData,
+  gameVersion,
 }: LoadModelMeshArgs) {
   const mergedGeometries: BufferGeometry[] = []
   const fullGeometryGroups: GeometryGroup[] = []
@@ -165,6 +168,10 @@ export async function generateModelMeshIngredients({
     material: Material
     materialKey: string
   }[] = []
+  // minecraft 1.20+ rotates item display model 180 degrees for y axis
+  // based on original model
+  const shouldRotateItemDisplayYAxis =
+    entityKind === 'item' && satisfies(gameVersion, '>=1.20')
 
   // player_head check
   const isPlayerHead = modelResourceLocation === 'item/player_head'
@@ -458,6 +465,10 @@ export async function generateModelMeshIngredients({
       .rotateY(rotation[1])
       .rotateZ(rotation[2])
       .translate(...vec2.toArray())
+
+    if (shouldRotateItemDisplayYAxis) {
+      mergedGeometry.rotateY(MathUtils.degToRad(180))
+    }
 
     mergedGeometries.push(mergeVertices(mergedGeometry))
     fullGeometryGroups.push(...geometryGroups)

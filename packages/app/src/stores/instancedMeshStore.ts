@@ -23,6 +23,7 @@ import type {
 } from '@/types/base'
 
 import { useEntityRefStore } from './entityRefStore'
+import { useProjectStore } from './projectStore'
 
 const DEFAULT_CAPACITY = 16
 const OriginVec = new Vector3()
@@ -493,6 +494,8 @@ async function prepareMeshIngredients(
     await loadModel(resourceLocation)
   const isItemModel = stripMinecraftPrefix(resourceLocation).startsWith('item/')
 
+  const { targetGameVersion } = useProjectStore.getState()
+
   const meshIngredients = await generateModelMeshIngredients({
     modelResourceLocation: resourceLocation,
     elements: modelData.elements,
@@ -501,6 +504,7 @@ async function prepareMeshIngredients(
     isItemModel,
     isBlockShapedItemModel,
     playerHeadData: undefined,
+    gameVersion: targetGameVersion,
   })
   if (meshIngredients == null) {
     throw new Error(`Failed to load model mesh data for ${resourceLocation}`)
