@@ -191,6 +191,8 @@ export const renderableBlockEntityModelTextures = [
 
   // heads
   'creeper/creeper',
+  'enderdragon/dragon',
+  'piglin/piglin',
   'skeleton/skeleton',
   'skeleton/wither_skeleton',
   'zombie/zombie',
