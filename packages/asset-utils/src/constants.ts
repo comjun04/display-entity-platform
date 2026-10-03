@@ -189,6 +189,12 @@ export const renderableBlockEntityModelTextures = [
   // banner
   'banner_base',
 
+  // heads
+  'creeper/creeper',
+  'skeleton/skeleton',
+  'skeleton/wither_skeleton',
+  'zombie/zombie',
+
   // copper_golem (statue)
   'copper_golem/copper_golem',
   'copper_golem/exposed_copper_golem',
