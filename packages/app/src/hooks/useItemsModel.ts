@@ -153,6 +153,12 @@ export const useItemsModel = (
                   return [`minecraft:item/${color}_banner`]
                 }
 
+                // removed in minecraft 26.2+
+                // this is only used in minecraft 26.1
+                case 'minecraft:bed': {
+                  return [model.base]
+                }
+
                 default:
                   logger.warn(
                     `Unhandled minecraft:special model type: ${model.model.type}`,

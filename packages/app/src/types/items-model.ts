@@ -222,3 +222,10 @@ export type ItemsModelSpecialModelType =
       texture: string
       openness?: number
     }
+
+  // removed in minecraft 26.2+
+  | {
+      type: 'minecraft:bed'
+      part: 'head' | 'foot'
+      texture: string
+    }

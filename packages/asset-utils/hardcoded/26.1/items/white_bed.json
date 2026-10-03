@@ -1,0 +1,11 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "minecraft:item/white_bed",
+    "model": {
+      "type": "minecraft:bed",
+      "part": "head",
+      "texture": "minecraft:white"
+    }
+  }
+}
