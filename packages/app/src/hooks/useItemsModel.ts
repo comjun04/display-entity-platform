@@ -159,6 +159,16 @@ export const useItemsModel = (
                   return [model.base]
                 }
 
+                case 'minecraft:head': {
+                  const itemSuffix =
+                    model.model.kind === 'skeleton' ||
+                    model.model.kind === 'wither_skeleton'
+                      ? 'skull'
+                      : 'head'
+                  const modelResourceLocation = `minecraft:item/${model.model.kind}_${itemSuffix}`
+                  return [modelResourceLocation]
+                }
+
                 default:
                   logger.warn(
                     `Unhandled minecraft:special model type: ${model.model.type}`,
