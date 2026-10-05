@@ -197,6 +197,9 @@ export const renderableBlockEntityModelTextures = [
   'skeleton/wither_skeleton',
   'zombie/zombie',
 
+  // player_head
+  'player/slim/steve',
+
   // copper_golem (statue)
   'copper_golem/copper_golem',
   'copper_golem/exposed_copper_golem',
